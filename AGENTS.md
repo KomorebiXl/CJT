@@ -91,6 +91,13 @@ ESLint 规则重点：
 - `src/styles`：全局样式
 - `script/page-gen`：CRUD 页面骨架生成器
 
+以下目录不属于应用源码或项目文档维护范围，除非任务明确要求，否则不要扫描、引用或修改：
+
+- `.codex`：Codex 本地运行配置和缓存
+- `.agents`：代理运行时目录
+- `node_modules`、`dist`：依赖和构建产物
+- 嵌套的 `.git` 目录：独立 Git 元数据
+
 新增业务模块时，保持 `api`、`types`、`views` 的业务域目录一致。例如：
 
 - `src/api/adminManagement/foo-api.ts`
@@ -176,6 +183,8 @@ h(ScDialogForm, {
 
 ## 生成 CRUD 骨架
 
+新增标准 CRUD 页面时，优先使用项目内置的 CRUD 页面骨架生成器；仅当页面交互或结构明显不符合标准 CRUD 场景时，才手动创建页面。
+
 项目内置生成器：
 
 ```bash
@@ -187,7 +196,14 @@ pnpm page:create
 - `script/page-gen/cli.ts`
 - `script/page-gen/README.md`
 
-生成器会创建类型、API 和页面骨架。生成后仍需要补充字段、接口地址、权限码和页面细节。
+生成器会创建类型、API 和页面骨架。生成后仍需要补充字段、接口地址、权限码和页面细节，并遵循本文件的 API 与页面开发约定。
+
+## 项目文档维护
+
+- `PROJECT_MAP.md` 是项目导航地图，应与当前源码、路由、页面和公共组件保持一致。
+- 新增或移除业务域、页面、接口、公共组件、路由或构建插件时，同步更新 `PROJECT_MAP.md` 的对应章节。
+- 文档只描述已纳入项目的代码和配置；更新时忽略 `.codex`、`.agents`、`node_modules`、构建产物及嵌套 `.git` 目录。
+- 路由以 `src/router/modules/staticRoutes.ts` 和后端动态路由生成逻辑为准；不要根据目录存在推断它已注册为静态路由。
 
 ## 修改准则
 
