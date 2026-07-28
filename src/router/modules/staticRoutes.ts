@@ -83,5 +83,19 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
           import('@/views/adminManagement/toolVersion/index.vue')
       }
     ]
+  },
+  {
+    path: '/system/dict-data',
+    hidden: true,
+    component: Layout,
+    permissions: ['system:dict:list'],
+    meta: { title: '字典数据', activeMenu: '/system/dict' },
+    children: [
+      {
+        path: ':dictId',
+        name: 'DictData',
+        component: () => import('@/views/system/dict/dictData.vue')
+      }
+    ]
   }
 ]

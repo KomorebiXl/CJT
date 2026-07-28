@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { getDictDataByDictType } from '@/api/dict-api.ts'
+import { getDictDataByDictType } from '@/api/system/dict-api.ts'
 import type { DictData, DictOption } from '@/types/dict'
 
 export const useDictStore = defineStore('dict', () => {

@@ -62,7 +62,7 @@
 - `src/api/adminManagement`：后台管理相关接口。
 - `src/api/projectManagement-api.ts`：项目管理接口。
 - `src/api/login-api.ts`：登录接口。
-- `src/api/dict-api.ts`：字典接口。
+- `src/api/system/dict-api.ts`：字典接口。
 - `src/api/file-api.ts`：文件接口。
 
 ## 类型声明
