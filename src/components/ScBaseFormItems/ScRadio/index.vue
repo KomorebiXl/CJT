@@ -32,16 +32,15 @@ const formatterDictData = (dictData: Array<DictOption>) => {
 
 // 初始化radio选项
 const initRadioOptions = async () => {
-  // 如果dictField传入，则优先通过字典获取options数据
   if (props.dictField) {
     const dictData = await getDictOptions(props.dictField)
     if (dictData && dictData.length > 0) {
       radioOptions.value = formatterDictData(dictData)
-    } else {
-      // 使用默认的radioOptions
-      radioOptions.value = props.radioOptions
+      return
     }
   }
+  // 没有 dictField，或字典没取到数据，统一走这里
+  radioOptions.value = props.radioOptions ?? []
 }
 
 watch(
@@ -63,9 +62,14 @@ onMounted(() => {
     v-bind="$attrs"
     :disabled="disabled"
     :size="size"
-    :border="border"
   >
-    <el-radio v-for="(r, i) in radioOptions" :key="i" :disabled="r.disabled" :value="r.value">
+    <el-radio
+      v-for="(r, i) in radioOptions"
+      :key="i"
+      :disabled="r.disabled"
+      :value="r.value"
+      :border="border"
+    >
       {{ r.label }}
     </el-radio>
   </el-radio-group>

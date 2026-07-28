@@ -1,13 +1,22 @@
 <script setup lang="ts">
-defineProps<{
-  name: string
-  size?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    name: string
+    size?: string
+  }>(),
+  {
+    size: '1em'
+  }
+)
 </script>
 
 <template>
-  <svg class="svg-icon" :style="{ width: size, height: size }" aria-hidden="true">
-    <use :href="`#icon-${name}`" />
+  <svg
+    class="svg-icon"
+    :style="{ width: props.size, height: props.size }"
+    aria-hidden="true"
+  >
+    <use :href="`#icon-${props.name}`" />
   </svg>
 </template>
 

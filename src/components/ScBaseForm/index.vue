@@ -13,6 +13,7 @@ import {
   ScTree
 } from '../ScBaseFormItems'
 import { ArrowUp } from '@element-plus/icons-vue'
+import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
 
 defineOptions({ name: 'ScBaseForm' })
 
@@ -27,9 +28,13 @@ const props = withDefaults(defineProps<ScBaseFormProps>(), {
 const formRules = computed<FormRules>(() => {
   return props.formItems.reduce((acc, item) => {
     if (item.rules) {
-      acc[String(item.prop)] = Array.isArray(item.rules)
-        ? item.rules
-        : [item.rules]
+      const resolvedRules =
+        typeof item.rules === 'function'
+          ? item.rules(props.modelValue)
+          : item.rules
+      acc[item.prop] = Array.isArray(resolvedRules)
+        ? resolvedRules
+        : [resolvedRules]
     }
     return acc
   }, {} as FormRules)
@@ -84,6 +89,14 @@ const toggleGroup = (groupName: string) => {
   collapsedMap[groupName] = !collapsedMap[groupName]
 }
 
+const isItemVisible = (item: ScBaseFormItem) => {
+  return !item.hide?.(props.modelValue)
+}
+
+const hasVisibleItems = (items: ScBaseFormItem[]) => {
+  return items.some(isItemVisible)
+}
+
 // 表单校验处理
 const handleValidate = async () => {
   try {
@@ -113,6 +126,33 @@ const setItemRef = (prop: string, el: any) => {
 
 const getItemRef = <T = any,>(prop: string): T => itemRefs[prop]
 
+// 解析label
+const resolveLabel = (item: ScBaseFormItem) => {
+  return typeof item.label === 'function'
+    ? item.label(props.modelValue)
+    : item.label
+}
+
+const INPUT_LIKE_TYPES = ['input'] as const
+const SELECT_LIKE_TYPES = ['select', 'date', 'dateRange', 'tree'] as const
+
+// 解析placeholder
+const resolvePlaceholder = (item: ScBaseFormItem) => {
+  const existing = (item as any).componentProps?.placeholder
+  if (existing) return existing
+
+  const label = resolveLabel(item)
+  if (!label) return undefined
+
+  if (INPUT_LIKE_TYPES.includes(item.type as any)) {
+    return `请输入${label}`
+  }
+  if (SELECT_LIKE_TYPES.includes(item.type as any)) {
+    return `请选择${label}`
+  }
+  return undefined
+}
+
 defineExpose<ScBaseFormInstance>({
   validate: handleValidate,
   resetFields: () => scBaseFormRef.value!.resetFields(),
@@ -135,6 +175,7 @@ defineExpose<ScBaseFormInstance>({
         v-for="[groupName, items] in groupedItems"
         :key="groupName"
         class="form-group"
+        v-show="hasVisibleItems(items)"
       >
         <div class="form-group__header" @click="toggleGroup(groupName)">
           <span class="form-group__title">{{ groupName }}</span>
@@ -152,9 +193,9 @@ defineExpose<ScBaseFormInstance>({
         >
           <el-form-item
             v-for="item in items"
-            v-show="!item.hide?.(modelValue)"
+            v-show="isItemVisible(item)"
             :key="item.prop"
-            :label="item.label"
+            :label="resolveLabel(item)"
             :prop="item.prop"
             :style="
               item.colSpan ? { 'grid-column': `span ${item.colSpan}` } : {}
@@ -173,7 +214,10 @@ defineExpose<ScBaseFormInstance>({
                 :data="modelValue"
               />
               <component
-                v-bind="item.componentProps"
+                v-bind="{
+                  ...item.componentProps,
+                  placeholder: resolvePlaceholder(item)
+                }"
                 v-else-if="item.type && componentMap[item.type]"
                 :is="componentMap[item.type]"
                 :modelValue="modelValue[item.prop]"
@@ -191,9 +235,9 @@ defineExpose<ScBaseFormInstance>({
       <div class="form-body" :style="{ '--form-columns': columns }">
         <el-form-item
           v-for="item in formItems"
-          v-show="!item.hide?.(modelValue)"
+          v-show="isItemVisible(item)"
           :key="item.prop"
-          :label="item.label"
+          :label="resolveLabel(item)"
           :prop="item.prop"
           :style="item.colSpan ? { 'grid-column': `span ${item.colSpan}` } : {}"
         >
@@ -211,7 +255,10 @@ defineExpose<ScBaseFormInstance>({
               :ref="(el: any) => setItemRef(item.prop, el)"
             />
             <component
-              v-bind="item.componentProps"
+              v-bind="{
+                ...item.componentProps,
+                placeholder: resolvePlaceholder(item)
+              }"
               v-else-if="item.type && componentMap[item.type]"
               :is="componentMap[item.type]"
               :ref="(el: any) => setItemRef(item.prop, el)"

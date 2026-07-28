@@ -171,6 +171,7 @@ CRUD 页面主要复用这些组件：
 
 系统管理：
 
+- `src/views/system/menu/index.vue`：菜单树管理，支持菜单 CRUD、树形展开收起、上级菜单选择和图标选择。
 - `src/views/system/organizationManagement/index.vue`：组织管理。
 - `src/views/system/permission/index.vue`：权限/菜单相关页面。
 - `src/views/system/role/systemRole/index.vue`：系统角色页面。

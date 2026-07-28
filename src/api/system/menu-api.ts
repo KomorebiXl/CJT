@@ -1,6 +1,33 @@
 import request from '@/utils/request'
 import type { RouterData } from '@/router'
-import type { TreeMenuData, TreeMenuDataByRoleId } from '@/types/system/menu'
+import type {
+  MenuData,
+  MenuFormData,
+  MenuSearchParams,
+  TreeMenuData,
+  TreeMenuDataByRoleId
+} from '@/types/system/menu'
+
+const menuBaseUrl = '/system/menu'
+
+export const getMenuDataAPI = (params: ListQuery<MenuSearchParams>) =>
+  request.get<DataResponse<Array<MenuData>>>({
+    url: `${menuBaseUrl}/list`,
+    params
+  })
+
+export const createMenuAPI = (data: MenuFormData) =>
+  request.post<BaseResponse>({ url: menuBaseUrl, data })
+
+export const getMenuDetailAPI = (id: string | number) =>
+  request.get<DataResponse<MenuData>>({ url: `${menuBaseUrl}/${id}` })
+
+export const updateMenuAPI = (
+  data: MenuFormData & { menuId: string | number }
+) => request.put<BaseResponse>({ url: menuBaseUrl, data })
+
+export const deleteMenuAPI = (data: { ids: Array<string> }) =>
+  request.post<BaseResponse>({ url: `${menuBaseUrl}/delete`, data })
 
 /**
  * @description 获取路由菜单

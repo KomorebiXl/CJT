@@ -9,7 +9,7 @@ import createComponents from './components'
 export default function createVitePlugins(viteEnv: Record<string, string>, isBuild = false) {
   const vitePlugins = [vue(), setupExtend({}), vueJsx()]
   vitePlugins.push(createAutoImport())
-  vitePlugins.push(createSvgIcon(isBuild))
+  vitePlugins.push(createSvgIcon())
   vitePlugins.push(createComponents())
   isBuild && vitePlugins.push(...createCompression(viteEnv))
   return vitePlugins

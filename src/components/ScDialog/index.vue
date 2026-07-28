@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ScDialogEmits, ScDialogProps } from './scDialog.ts'
 import { CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
+import { OverlayVisibleKey } from '@/types/injection-keys.ts'
 
 defineOptions({ name: 'ScDialog' })
 
@@ -19,6 +20,8 @@ const visible = computed({
   get: () => props.modelValue,
   set: val => emit('update:modelValue', val)
 })
+
+provide(OverlayVisibleKey, visible)
 
 const handleConfirm = () => {
   emit('confirm')

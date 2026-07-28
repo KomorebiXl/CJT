@@ -13,8 +13,11 @@ import type {
 
 interface ScBaseFormItemBase {
   prop: string
-  label?: string
-  rules?: FormItemRule | FormItemRule[]
+  label?: string | ((formData: Record<string, any>) => string)
+  rules?:
+    | FormItemRule
+    | FormItemRule[]
+    | ((formData: Record<string, any>) => FormItemRule | FormItemRule[])
   customSlot?: string
   hide?: (formData: Record<string, any>) => boolean
   groupName?: string

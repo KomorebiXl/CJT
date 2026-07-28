@@ -28,7 +28,6 @@ export const useDialogForm = <
       currentId.value = row[idKey]
       if (options.fetchDetail) {
         const { data } = await options.fetchDetail(row[idKey])
-        console.log (data)
         assignObject(formData, data)
       } else {
         assignObject(formData, row)

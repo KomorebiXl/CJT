@@ -44,3 +44,8 @@ type CommonTableData = {
   createBy: string
   sort: number
 }
+
+declare module 'virtual:svg-icons-names' {
+  const icons: string[]
+  export default icons
+}
