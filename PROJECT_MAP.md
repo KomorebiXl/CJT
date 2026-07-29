@@ -75,6 +75,7 @@
 - `src/api/system/dict-api.ts`：字典类型、字典数据和缓存刷新。
 - `src/api/system/logManagement/operlog-api.ts`：操作日志列表。
 - `src/api/system/logManagement/login-log-api.ts`：登录日志列表。
+- `src/api/systemMonitor/onlineUsers-api.ts`：在线用户列表和强制退出。
 - `src/api/system/role/systemRole-api.ts`：系统角色和角色权限。
 - `src/api/system/role/projectRole-api.ts`：项目角色。
 
@@ -86,6 +87,7 @@
 - `src/global.d.ts`、`src/router.d.ts`：全局和路由类型扩展。
 - `src/types/user.d.ts`、`src/types/dict.d.ts`、`src/types/projectManagement.d.ts`：跨模块业务类型。
 - `src/types/system`：用户、菜单、组织、岗位和角色类型；`logManagement` 子目录存放操作日志与登录日志类型。
+- `src/types/systemMonitor`：系统监控业务类型，目前包含在线用户类型。
 - `src/types/adminManagement`：后台管理领域类型。
 - `src/types/injection-keys.ts`：Vue 注入键。
 - `src/types/sm-crypto.d.ts`：`sm-crypto` 类型声明。
@@ -147,6 +149,7 @@
 - `src/views/system/dict`：字典类型管理与字典数据页。
 - `src/views/system/logManagement/operlog`：操作日志，只读列表和详情。
 - `src/views/system/logManagement/loginLog`：登录日志只读列表。
+- `src/views/systemMonitor/onlineUsers`：在线用户查询和强制退出。
 - `src/views/system/permission`：权限页面。
 - `src/views/system/role/systemRole`：系统角色及权限弹窗。
 - `src/views/system/role/projectRole`：项目角色。
