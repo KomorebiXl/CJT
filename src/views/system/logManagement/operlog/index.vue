@@ -67,7 +67,6 @@ const pageConfig: PageConfig<OperlogData> = {
   },
   tableConfig: {
     tableColumns,
-    showSelection: true,
     showDefaultButtons: false,
     customActionButtons: [
       {
