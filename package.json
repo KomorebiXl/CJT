@@ -15,6 +15,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.16.1",
+    "echarts": "^6.1.0",
     "element-plus": "^2.14.0",
     "fast-glob": "^3.3.3",
     "jsencrypt": "^3.5.4",
