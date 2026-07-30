@@ -9,12 +9,12 @@ export interface ScResourcePageConfig<TRow = any> {
   searchConfig: SearchConfig
   operateConfig?: OperateConfig
   tableConfig: TableConfig<TRow>
-  fetchData: (params: any) => Promise<TableData>
+  fetchData: (params: any) => Promise<FetchTableData>
   pageExtraParams?: Record<string, any>
   treeConfig?: TreeConfig
 }
 
-export interface TableData<TRow = any> {
+export interface FetchTableData<TRow = any> {
   rows: Array<TRow>
   total?: number
 }

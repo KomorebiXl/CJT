@@ -1,6 +1,6 @@
 type TableData = string | number | boolean | null
 
-export interface ScTableColumn {
+export type TableColumn = {
   prop: string
   label: string
   width?: string | number
@@ -12,7 +12,7 @@ export interface ScTableColumn {
   showOverflowTooltip?: boolean
 }
 
-export interface TreeConfig {
+export type TreeConfig = {
   rowKey?: string
   treeProps?: {
     children?: string
@@ -21,31 +21,40 @@ export interface TreeConfig {
   defaultExpandAll?: boolean
 }
 
-export interface ScTableProps {
+export type ScTableProps = {
   // 基础配置
   data: Array<Record<string, TableData>>
-  tableColumns: Array<ScTableColumn>
+  tableColumns: Array<TableColumn>
   loading?: boolean
   border?: boolean
   stripe?: boolean
-  rowClassName?: string | ((data: { row: Record<string, TableData>; rowIndex: number }) => string)
+  rowClassName?:
+    | string
+    | ((data: { row: Record<string, TableData>; rowIndex: number }) => string)
+
   // 功能列
   showSelection?: boolean
   showIndex?: boolean
   showAction?: boolean
   actionWidth?: number | string
   actionFixed?: 'left' | 'right'
+
+  // 单选高亮
+  highlightCurrentRow?: boolean
+
   // 分页
   showPagination?: boolean
   total?: number
   pageSize?: number
   pageSizes?: number[]
   paginationLayout?: string
+
   // 树形结构
   treeConfig?: TreeConfig
 }
 
-export interface ScTableInstance {
+export type ScTableInstance = {
   toggleRowExpansion: (row: any, expanded: boolean) => void
   toggleRowSelection: (row: any, selected: boolean) => void
+  setCurrentRow: (row: Record<string, TableData> | undefined) => void
 }

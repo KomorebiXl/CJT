@@ -28,7 +28,7 @@ export const useTableData = (
         return
       }
       tableData.value = rows
-      tableTotal.value = total
+      tableTotal.value = total ?? 0
     } catch (e) {
       console.error('获取表格数据失败===>', e)
     } finally {

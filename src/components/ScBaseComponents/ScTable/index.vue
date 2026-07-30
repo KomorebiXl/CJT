@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<ScTableProps>(), {
   showAction: true,
   actionWidth: 150,
   actionFixed: 'right',
+  highlightCurrentRow: true,
   showPagination: true,
   total: 0,
   pageSize: 30,
@@ -31,6 +32,10 @@ const props = withDefaults(defineProps<ScTableProps>(), {
 const emit = defineEmits<{
   pageChange: [page: number, size: number]
   'selection-change': [selection: any[]]
+  'current-change': [
+    currentRow: Record<string, any> | null,
+    oldRow: Record<string, any> | null
+  ]
 }>()
 
 // ---- attrs 透传 ----
@@ -82,6 +87,14 @@ const handleCurrentChange = (page: number) => {
   emit('pageChange', page, currentPageSize.value)
 }
 
+// 单选行变化，转发给使用方
+const handleCurrentRowChange = (
+  currentRow: Record<string, any> | null,
+  oldRow: Record<string, any> | null
+) => {
+  emit('current-change', currentRow, oldRow)
+}
+
 // ---- 暴露方法 ----
 // 展开单行方法
 const toggleRowExpansion = (row: any, expanded: boolean) => {
@@ -103,9 +116,15 @@ const toggleRowSelection = (row: any, selected: boolean) => {
   tableRef.value?.toggleRowSelection(row, selected)
 }
 
+// 供单选场景使用：手动设置/取消高亮行
+const setCurrentRow = (row: Record<string, any> | undefined) => {
+  tableRef.value?.setCurrentRow(row)
+}
+
 defineExpose<ScTableInstance>({
   toggleRowExpansion,
-  toggleRowSelection
+  toggleRowSelection,
+  setCurrentRow
 })
 </script>
 
@@ -125,8 +144,10 @@ defineExpose<ScTableInstance>({
         :tree-props="resolvedTreeConfig.treeProps"
         :default-expand-all="resolvedTreeConfig.defaultExpandAll"
         :row-class-name="rowClassName"
+        :highlight-current-row="highlightCurrentRow"
         height="100%"
         @selection-change="emit('selection-change', $event)"
+        @current-change="handleCurrentRowChange"
       >
         <!-- 选择列 -->
         <el-table-column
