@@ -4,7 +4,7 @@ import type {
   LoginLogSearchParams
 } from '@/types/system/logManagement/login-log'
 import { getLoginLogDataAPI } from '@/api/system/logManagement/login-log-api.ts'
-import { useDictStore } from '@/store/modules/dict-store.ts'
+import { getDictLabel } from '@/utils/dict.ts'
 
 const searchbarItems = reactive<SearchbarItems<LoginLogSearchParams>>([
   { label: '登录地址', prop: 'ipaddr', type: 'input' },
@@ -38,15 +38,6 @@ const tableColumns = reactive<TableColumns>([
   },
   { label: '访问时间', prop: 'loginTime', minWidth: 160 }
 ])
-
-const dictStore = useDictStore()
-
-const getDictLabel = (dictType: string, value: unknown) => {
-  const option = dictStore.cache[dictType]?.find(
-    item => String(item.value) === String(value)
-  )
-  return option?.label ?? (value === null || value === undefined ? '--' : String(value))
-}
 
 const isFailure = (status: LoginLogData['status']) => String(status) === '1'
 

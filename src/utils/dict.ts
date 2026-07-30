@@ -39,12 +39,29 @@ export const getDictOptionsMap = async (
 }
 
 /**
- * 根据字典类型和字典值获取对应的 label
- * 未匹配时回退返回原始 value
+ * 根据已缓存的字典类型和字典值获取对应的 label
+ * 未匹配时回退返回原始 value，适合在模板中直接调用
  * @param dictType 字典类型
  * @param value 字典值
  */
-export const getDictLabel = async (dictType: string, value: string): Promise<string> => {
+export const getDictLabel = (dictType: string, value: unknown): string => {
+  const dictStore = useDictStore()
+  const fallback =
+    value === undefined || value === null || value === '' ? '--' : String(value)
+  const options = dictStore.cache[dictType]
+  return (
+    options?.find(item => String(item.value) === String(value))?.label ??
+    fallback
+  )
+}
+
+/**
+ * 获取字典选项后再返回对应 label，适合非模板的异步场景
+ */
+export const getDictLabelAsync = async (
+  dictType: string,
+  value: string
+): Promise<string> => {
   const options = await getDictOptions(dictType)
   return options.find(item => item.value === value)?.label ?? value
 }

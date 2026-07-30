@@ -5,7 +5,7 @@ import type {
 } from '@/types/system/logManagement/operlog'
 import { getOperlogDataAPI } from '@/api/system/logManagement/operlog-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
-import { useDictStore } from '@/store/modules/dict-store.ts'
+import { getDictLabel } from '@/utils/dict.ts'
 import { useVisible } from '@/hooks/useVisible.ts'
 
 const searchbarItems = reactive<SearchbarItems<OperlogSearchParams>>([
@@ -38,7 +38,6 @@ const tableColumns = reactive<TableColumns>([
 
 const { visible, setVisible } = useVisible()
 const detailData = ref<OperlogData | null>(null)
-const dictStore = useDictStore()
 
 const isFailure = (status: OperlogData['status']) => String(status) === '1'
 
@@ -46,13 +45,6 @@ const formatValue = (value: unknown) => {
   return value === undefined || value === null || value === ''
     ? '--'
     : String(value)
-}
-
-const getDictLabel = (dictType: string, value: unknown) => {
-  const option = dictStore.cache[dictType]?.find(
-    item => String(item.value) === String(value)
-  )
-  return option?.label ?? formatValue(value)
 }
 
 const handleView = (row: OperlogData) => {

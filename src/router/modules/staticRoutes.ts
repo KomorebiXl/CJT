@@ -97,5 +97,23 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
         component: () => import('@/views/system/dict/dictData.vue')
       }
     ]
+  },
+  {
+    path: '/system-monitor/scheduled-tasks/logs',
+    hidden: true,
+    component: Layout,
+    permissions: ['monitor:job:query'],
+    meta: {
+      title: '调度日志',
+      activeMenu: '/systemMonitor/scheduledTasks'
+    },
+    children: [
+      {
+        path: ':jobId',
+        name: 'ScheduledTaskExecutionLogs',
+        component: () =>
+          import('@/views/systemMonitor/scheduledTasks/executionLogs.vue')
+      }
+    ]
   }
 ]

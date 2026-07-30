@@ -107,7 +107,7 @@ const router = useRouter()
 const handleNameClick = (row: ToolLibraryData) => {
   router.push({
     name: 'ToolVersion',
-    params: { id: row.id },
+    params: { id: row.id }
   })
 }
 </script>
@@ -122,7 +122,10 @@ const handleNameClick = (row: ToolLibraryData) => {
       @delete="handleDelete"
     >
       <template #column-name="{ row }">
-        <ScLinkText :content="row.name" @click="handleNameClick(row)" />
+        <ScLinkText
+          :content="row.name"
+          @click="handleNameClick(row as ToolLibraryData)"
+        />
       </template>
     </ScResourcePage>
     <ScDialogForm

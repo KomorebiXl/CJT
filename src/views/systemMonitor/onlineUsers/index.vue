@@ -18,20 +18,18 @@ const tableColumns = reactive<TableColumns>([
   {
     label: '会话编号',
     prop: 'tokenId',
-    minWidth: 160,
     showOverflowTooltip: true
   },
-  { label: '登录名称', prop: 'userName', minWidth: 120 },
-  { label: '所属部门', prop: 'deptName', minWidth: 120 },
-  { label: '登录地址', prop: 'ipaddr', minWidth: 130 },
-  { label: '登录地点', prop: 'loginLocation', minWidth: 120 },
-  { label: '操作系统', prop: 'os', minWidth: 120 },
-  { label: '浏览器', prop: 'browser', minWidth: 120 },
+  { label: '登录名称', prop: 'userName' },
+  { label: '所属部门', prop: 'deptName' },
+  { label: '登录地址', prop: 'ipaddr' },
+  { label: '登录地点', prop: 'loginLocation' },
+  { label: '操作系统', prop: 'os' },
+  { label: '浏览器', prop: 'browser' },
   {
     label: '登录时间',
     prop: 'loginTime',
-    slot: 'loginTime',
-    minWidth: 180
+    slot: 'loginTime'
   }
 ])
 
