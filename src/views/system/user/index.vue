@@ -309,7 +309,7 @@ const handleChangeUserStatus = async (row: UserData) => {
           inactive-value="1"
           active-text="启用"
           inactive-text="停用"
-          @click="handleChangeUserStatus(row)"
+          @click="handleChangeUserStatus(row as UserData)"
         />
       </template>
     </ScResourcePage>

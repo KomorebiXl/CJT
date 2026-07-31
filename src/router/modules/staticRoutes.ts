@@ -85,6 +85,24 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
     ]
   },
   {
+    path: '/system-tools/code-generation',
+    hidden: true,
+    component: Layout,
+    permissions: ['tool:gen:edit'],
+    meta: {
+      title: '代码生成配置',
+      activeMenu: '/system-tools/code-generation'
+    },
+    children: [
+      {
+        path: 'edit/:tableId',
+        name: 'SystemToolsCodeGenerationEdit',
+        component: () =>
+          import('@/views/systemTools/codeGeneration/edit.vue')
+      }
+    ]
+  },
+  {
     path: '/system/dict-data',
     hidden: true,
     component: Layout,
