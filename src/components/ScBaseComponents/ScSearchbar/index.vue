@@ -52,7 +52,7 @@ const getComponent = (type: string): Component | undefined => {
 
 const updateField = (prop: string, value: any) => {
   props.modelValue[prop] = value
-  emit('update:modelValue', { ...props.modelValue })
+  // emit('update:modelValue', { ...props.modelValue })
 }
 
 const getComponentProps = (item: ScSearchbarItem): Record<string, any> => {
@@ -134,7 +134,7 @@ const handleReset = () => {
       props.modelValue[prop] = null
     }
   })
-  emit('update:modelValue', { ...props.modelValue })
+  // emit('update:modelValue', { ...props.modelValue })
   emit('reset')
 }
 
