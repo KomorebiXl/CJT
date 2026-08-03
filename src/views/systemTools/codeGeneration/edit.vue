@@ -2,7 +2,7 @@
 import {
   getCodeGenerationDetailAPI,
   updateCodeGenerationAPI
-} from '@/api/systemTools/codeGeneration'
+} from '@/api/systemTools/codeGeneration-api.ts'
 import { getMenuTreeData } from '@/api/system/menu-api.ts'
 import type {
   CodeGenerationColumn,

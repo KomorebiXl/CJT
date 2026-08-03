@@ -6,7 +6,7 @@ import {
   generateCodeToPathAPI,
   getCodeGenerationListAPI,
   syncCodeGenerationTableAPI
-} from '@/api/systemTools/codeGeneration'
+} from '@/api/systemTools/codeGeneration-api.ts'
 import type { CodeGenerationRow } from '@/types/systemTools/codeGeneration'
 import {
   codeGenerationSearchbarItems,

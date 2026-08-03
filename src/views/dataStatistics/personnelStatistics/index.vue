@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ScTableColumn } from '@/components/ScBaseComponents'
-import { getPersonnelStatisticsAPI } from '@/api/dataStatistics/personnelStatistics.ts'
+import { getPersonnelStatisticsAPI } from '@/api/dataStatistics/personnelStatistics-api.ts'
 import type {
   PersonnelStatisticsRawRow,
   PersonnelStatisticsRow,

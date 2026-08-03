@@ -2,7 +2,7 @@
 import {
   getImportableTableListAPI,
   importCodeGenerationTablesAPI
-} from '@/api/systemTools/codeGeneration'
+} from '@/api/systemTools/codeGeneration-api.ts'
 import type {
   ImportableTableRow,
   ImportTableSearchParams

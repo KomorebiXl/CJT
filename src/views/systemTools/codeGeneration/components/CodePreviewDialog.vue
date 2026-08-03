@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { previewGeneratedCodeAPI } from '@/api/systemTools/codeGeneration'
+import { previewGeneratedCodeAPI } from '@/api/systemTools/codeGeneration-api.ts'
 import ScMessage from '@/utils/ElUtils/message.ts'
 
 const modelValue = defineModel<boolean>({ default: false })
