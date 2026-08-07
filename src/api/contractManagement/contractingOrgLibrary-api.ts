@@ -32,3 +32,9 @@ export const deleteContractingOrgLibraryAPI = (data: { ids: Array<string> }) =>
     url: `${contractingOrgLibraryBaseUrl}/delete`,
     data
   })
+
+export const getContractingOrgLibraryOptionsAPI = () => {
+  return request.get<ListResponse<ContractingOrgLibraryData>>({
+    url: `${contractingOrgLibraryBaseUrl}/selectList`
+  })
+}

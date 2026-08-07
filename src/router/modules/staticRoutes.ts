@@ -79,8 +79,7 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
       {
         path: 'toolVersion/:id',
         name: 'ToolVersion',
-        component: () =>
-          import('@/views/adminManagement/toolVersion/index.vue')
+        component: () => import('@/views/adminManagement/toolVersion/index.vue')
       }
     ]
   },
@@ -97,8 +96,7 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
       {
         path: 'edit/:tableId',
         name: 'SystemToolsCodeGenerationEdit',
-        component: () =>
-          import('@/views/systemTools/codeGeneration/edit.vue')
+        component: () => import('@/views/systemTools/codeGeneration/edit.vue')
       }
     ]
   },
@@ -131,6 +129,20 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
         name: 'ScheduledTaskExecutionLogs',
         component: () =>
           import('@/views/systemMonitor/scheduledTasks/executionLogs.vue')
+      }
+    ]
+  },
+  {
+    path: '/contractManagement/testEntrustmentContractFilesRecord',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':contractId(\\w+)',
+        name: 'TestEntrustmentContractFilesRecord',
+        component: () =>
+          import('@/views/contractManagement/testEntrustmentContractFiles/index.vue'),
+        meta: { title: '委托测试合同生成记录' }
       }
     ]
   }
