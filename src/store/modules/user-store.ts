@@ -2,7 +2,11 @@ import { loginApi, logout } from '@/api/login-api.ts'
 import { getUserInfo } from '@/api/system/user-api.ts'
 import type { UserState, LoginFormData } from '@/types/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
-import { encryptWithSM4, encryptWithSm2, generateRandomSymmetricKey } from '@/utils/jsencrypt'
+import {
+  encryptWithSM4,
+  encryptWithSm2,
+  generateRandomSymmetricKey
+} from '@/utils/jsencrypt'
 import defaultAvatar from '@/assets/images/defaultAvatar.png'
 
 export const useUserStore = defineStore('user', {
@@ -13,16 +17,30 @@ export const useUserStore = defineStore('user', {
     roles: [],
     permissions: [],
     nickName: '',
-    loginTime: ''
+    loginTime: '',
+    username: ''
   }),
   actions: {
+    setUserPermission(roles: Array<string>, permissions: Array<string>) {
+      if (roles && roles.length !== 0) {
+        this.roles = roles
+        this.permissions = permissions
+      } else {
+        this.roles = ['ROLE_DEFAULT']
+      }
+    },
+
     handleLogin(loginFormData: LoginFormData) {
       // 生成随机对称密钥、IV
       const { symmetricKey, iv } = generateRandomSymmetricKey()
       // 使用公钥对对称密钥进行非对称加密
       const encryptedSymmetricKey = encryptWithSm2(symmetricKey)
       // 使用对称密钥对密码进行加密
-      const encryptedPassword = encryptWithSM4(loginFormData.password, symmetricKey, iv)
+      const encryptedPassword = encryptWithSM4(
+        loginFormData.password,
+        symmetricKey,
+        iv
+      )
       const params: LoginFormData = {
         username: loginFormData.username,
         password: encryptedPassword,
@@ -44,19 +62,16 @@ export const useUserStore = defineStore('user', {
       })
     },
 
-    handleGetUserInfo() {
+    handleGetUserInfo(subjectId?: string) {
       return new Promise((resolve, reject) => {
-        getUserInfo()
+        getUserInfo(subjectId)
           .then(res => {
             const { userName, avatar, nickName } = res.user
             const userAvatar =
-              avatar && avatar.trim() ? import.meta.env.VITE_APP_BASE_API + avatar : defaultAvatar
-            if (res.roles && res.roles.length !== 0) {
-              this.roles = res.roles
-              this.permissions = res.permissions
-            } else {
-              this.roles = ['ROLE_DEFAULT']
-            }
+              avatar && avatar.trim()
+                ? import.meta.env.VITE_APP_BASE_API + avatar
+                : defaultAvatar
+            this.setUserPermission(res.roles, res.permissions)
             this.name = userName
             this.nickName = nickName
             this.avatar = userAvatar
@@ -66,6 +81,13 @@ export const useUserStore = defineStore('user', {
             reject(error)
           })
       })
+    },
+
+    /**
+     * @description 按项目作用域刷新账号权限标识（进入项目流程页时使用）
+     */
+    refreshUserInfo(subjectId: string) {
+      return this.handleGetUserInfo(subjectId)
     },
 
     handleLogout() {

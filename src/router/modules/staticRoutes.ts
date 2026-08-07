@@ -19,6 +19,14 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
     ]
   },
   {
+    path: '/projectProcess',
+    name: 'projectProcess',
+    component: Layout,
+    hidden: true,
+    meta: { title: '项目流程' },
+    children: []
+  },
+  {
     path: '/login',
     component: () => import('@/views/login/index.vue'),
     hidden: true

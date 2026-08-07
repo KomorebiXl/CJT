@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { ScResourcePageConfig } from '@/components/ScBaseComponents/ScResourcePage'
-import type { ScTableColumn } from '@/components/ScBaseComponents'
 import { getProjectManagementList } from '@/api/projectManagement-api.ts'
 import type {
   ProjectManagementData,
   ProjectManagementSearchParams
 } from '@/types/projectManagement'
 
-const searchbarItems = reactive<Array<ScSearchbarItem<ProjectManagementSearchParams>>>([
+const router = useRouter()
+
+const searchbarItems = reactive<SearchbarItems<ProjectManagementSearchParams>>([
   {
     prop: 'name',
     label: '项目名称',
@@ -27,7 +28,7 @@ const searchbarItems = reactive<Array<ScSearchbarItem<ProjectManagementSearchPar
   }
 ])
 
-const tableColumn = ref<Array<ScTableColumn>>([
+const tableColumn = ref<TableColumns>([
   {
     prop: 'code',
     label: '项目编号'
@@ -58,6 +59,28 @@ const tableColumn = ref<Array<ScTableColumn>>([
   }
 ])
 
+const tableConfig: ScResourcePageConfig<ProjectManagementData>['tableConfig'] =
+  {
+    tableColumns: tableColumn.value,
+    defaultButtonsConfig: {
+      edit: { permission: 'background:subject:edit' },
+      delete: { permission: 'background:subject:remove' }
+    },
+    customActionButtons: [
+      {
+        name: '进入项目',
+        type: 'text',
+        permission: 'background:subject:query',
+        onClick: (row: ProjectManagementData) => {
+          router.push({
+            path: '/projectProcess',
+            query: { projectId: row.id }
+          })
+        }
+      }
+    ]
+  }
+
 const pageConfig: ScResourcePageConfig<ProjectManagementData> = {
   searchConfig: {
     searchbarItems: searchbarItems
@@ -67,13 +90,7 @@ const pageConfig: ScResourcePageConfig<ProjectManagementData> = {
       add: { permission: 'background:subject:add' }
     }
   },
-  tableConfig: {
-    tableColumns: tableColumn.value,
-    defaultButtonsConfig: {
-      edit: { permission: 'background:subject:edit' },
-      delete: { permission: 'background:subject:remove' }
-    }
-  },
+  tableConfig: tableConfig,
   fetchData: getProjectManagementList
 }
 </script>

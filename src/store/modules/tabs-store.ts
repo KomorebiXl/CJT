@@ -45,6 +45,13 @@ export const useTabsStore = defineStore('tabs', () => {
     visitedViews.value = visitedViews.value.filter(v => v.meta?.affix)
   }
 
+  /** 移除所有项目流程页（/projectProcess 前缀）标签，退出项目流程作用域时调用 */
+  function delProjectProcessViews() {
+    visitedViews.value = visitedViews.value.filter(
+      v => !v.path.startsWith('/projectProcess')
+    )
+  }
+
   return {
     visitedViews,
     cachedViews,
@@ -53,6 +60,7 @@ export const useTabsStore = defineStore('tabs', () => {
     delOtherViews,
     delLeftViews,
     delRightViews,
-    delAllViews
+    delAllViews,
+    delProjectProcessViews
   }
 })

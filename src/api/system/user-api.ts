@@ -19,9 +19,13 @@ const userBaseUrl = '/system/user'
 
 /**
  * @description 获取用户详情信息
+ * @param subjectId 项目/主体标识，切换项目作用域时按项目拉取权限标识
  */
-export const getUserInfo = () => {
-  return request.get<UserInfo>({ url: '/getInfo' })
+export const getUserInfo = (subjectId?: string) => {
+  return request.get<UserInfo>({
+    url: '/getInfo',
+    params: subjectId ? { subjectId } : undefined
+  })
 }
 
 export const getUserDataAPI = createListAPI<UserSearchParams, UserData>(

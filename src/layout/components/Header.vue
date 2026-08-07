@@ -1,26 +1,34 @@
 <script setup lang="ts">
 import { useLayoutStore } from '../composables/useLayout'
 import { useUserStore } from '@/store/modules/user-store.ts'
+import { useScopeStore } from '@/store/modules/scope-store.ts'
+import { useProjectProcessScope } from '@/hooks/useProjectProcessScope'
 import {
   Expand,
   Fold,
   FullScreen,
   ScaleToOriginal,
   SwitchButton,
-  User
+  User,
+  CircleClose
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const layoutStore = useLayoutStore()
 const userStore = useUserStore()
+const scopeStore = useScopeStore()
+const { closeProjectProcess } = useProjectProcessScope()
 
 const breadcrumbs = computed(() => {
   const matched = route.matched.filter(item => item.meta?.title)
   return matched
     .filter((item, index, arr) => {
       // 过滤掉 title 与下一项相同的重复父级（后端动态路由 Layout 包裹场景）
-      return index === arr.length - 1 || item.meta.title !== arr[index + 1].meta.title
+      return (
+        index === arr.length - 1 ||
+        item.meta.title !== arr[index + 1].meta.title
+      )
     })
     .map(item => ({
       title: item.meta.title as string,
@@ -38,6 +46,11 @@ const handleLogout = () => {
   userStore.handleLogout().then(() => {
     router.push('/login')
   })
+}
+
+// 关闭当前项目流程：恢复原菜单与权限并跳回来源页
+const handleCloseProjectProcess = () => {
+  closeProjectProcess(router)
 }
 
 // 头像 fallback 首字
@@ -72,13 +85,25 @@ const handleAvatarError = (e: Event) => {
           v-for="(crumb, index) in breadcrumbs"
           :key="crumb.path"
           :class="{ 'is-last': index === breadcrumbs.length - 1 }"
-          @click="handleBreadcrumbClick(crumb.path, index === breadcrumbs.length - 1)"
+          @click="
+            handleBreadcrumbClick(crumb.path, index === breadcrumbs.length - 1)
+          "
         >
           {{ crumb.title }}
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
     <div class="header-right">
+      <button
+        v-if="scopeStore.isProcessCurrent"
+        class="icon-btn"
+        title="关闭项目流程"
+        @click="handleCloseProjectProcess"
+      >
+        <el-icon :size="18">
+          <CircleClose />
+        </el-icon>
+      </button>
       <button
         class="icon-btn"
         :title="layoutStore.isFullscreen ? '退出全屏' : '进入全屏'"
@@ -92,7 +117,9 @@ const handleAvatarError = (e: Event) => {
       <div class="header-divider" />
       <el-dropdown trigger="click" popper-class="user-dropdown-popper">
         <div class="user-trigger">
-          <span class="user-name">{{ userStore.nickName || userStore.name }}</span>
+          <span class="user-name">{{
+            userStore.nickName || userStore.name
+          }}</span>
         </div>
 
         <template #dropdown>
