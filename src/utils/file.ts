@@ -91,14 +91,20 @@ export const uploadFile = async (
  */
 export const getFileName = (disposition?: string): string => {
   if (!disposition) return ''
-  // 优先匹配 filename*=UTF-8''
-  const utf8Match = disposition.match(/filename\*=UTF-8''(.+)/)
-  if (utf8Match?.[1]) {
-    return decodeURIComponent(utf8Match[1])
+  // 优先匹配 RFC 5987 格式的 filename*
+  const utf8Match = disposition.match(
+    /(?:^|;)\s*filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i
+  )
+  const normalMatch = disposition.match(
+    /(?:^|;)\s*filename\s*=\s*(?:"([^"]*)"|([^;\s]*))/i
+  )
+  const fileName = utf8Match?.[1] ?? normalMatch?.[1] ?? normalMatch?.[2]
+  if (!fileName) return ''
+  try {
+    return decodeURIComponent(fileName)
+  } catch {
+    return fileName
   }
-  // 再匹配 filename=
-  const normalMatch = disposition.match(/filename="?(.+?)"?$/)
-  return normalMatch?.[1] ?? ''
 }
 
 /**
@@ -108,7 +114,7 @@ export const getFileName = (disposition?: string): string => {
  */
 export const downloadFile = async (
   data: AxiosResponse,
-  fileName: string | null | undefined
+  fileName?: string | null | undefined
 ): Promise<void> => {
   if (data.data instanceof Blob) {
     const url = window.URL.createObjectURL(data.data)
