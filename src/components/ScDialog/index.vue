@@ -44,6 +44,7 @@ const handleCancel = () => {
     :fullscreen="fullscreen"
     :style="{ '--sc-body-min-h': autoHeight ? 'auto' : undefined }"
     append-to-body
+    destroy-on-close
     @close="handleCancel"
     @closed="emit('closed')"
     @open="emit('open')"

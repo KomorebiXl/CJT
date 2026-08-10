@@ -22,10 +22,6 @@ const handleConfirm = async () => {
   emits('confirm', props.formData)
 }
 
-const handleClosed = () => {
-  formRef.value?.resetFields()
-}
-
 defineExpose<ScDialogFormInstance>({
   validate: () => formRef.value!.validate(),
   resetFields: () => formRef.value!.resetFields(),
@@ -46,7 +42,6 @@ defineExpose<ScDialogFormInstance>({
     :fullscreen="config.fullscreen"
     :confirm-loading="confirmLoading"
     @confirm="handleConfirm"
-    @closed="handleClosed"
   >
     <ScBaseForm
       ref="formRef"
