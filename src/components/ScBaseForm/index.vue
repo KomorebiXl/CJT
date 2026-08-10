@@ -153,6 +153,29 @@ const resolvePlaceholder = (item: ScBaseFormItem) => {
   return undefined
 }
 
+// 插槽
+const slots = useSlots()
+
+const renderField = (item: ScBaseFormItem) => {
+  if (item.customSlot) {
+    return slots[`custom-${item.customSlot}`]?.({
+      item,
+      data: props.modelValue
+    })
+  }
+  if (item.type && componentMap[item.type as keyof typeof componentMap]) {
+    return h(componentMap[item.type as keyof typeof componentMap], {
+      ref: (el: any) => setItemRef(item.prop, el),
+      ...(item as any).componentProps,
+      placeholder: resolvePlaceholder(item),
+      modelValue: props.modelValue[item.prop],
+      'onUpdate:modelValue': (val: any) => (props.modelValue[item.prop] = val),
+      onChange: (val: any) => item.onChange?.(val, props.modelValue)
+    })
+  }
+  return null
+}
+
 defineExpose<ScBaseFormInstance>({
   validate: handleValidate,
   resetFields: () => scBaseFormRef.value!.resetFields(),
@@ -207,23 +230,7 @@ defineExpose<ScBaseFormInstance>({
                 :item="item"
                 :data="modelValue"
               />
-              <slot
-                v-if="item.customSlot"
-                :name="`custom-${item.customSlot}`"
-                :item="item"
-                :data="modelValue"
-              />
-              <component
-                v-bind="{
-                  ...item.componentProps,
-                  placeholder: resolvePlaceholder(item)
-                }"
-                v-else-if="item.type && componentMap[item.type]"
-                :is="componentMap[item.type]"
-                :modelValue="modelValue[item.prop]"
-                :ref="(el: any) => setItemRef(item.prop, el)"
-                @update:modelValue="modelValue[item.prop] = $event"
-              />
+              <component :is="() => renderField(item)" />
             </div>
           </el-form-item>
         </div>
@@ -247,24 +254,7 @@ defineExpose<ScBaseFormInstance>({
               :item="item"
               :data="modelValue"
             />
-            <slot
-              v-if="item.customSlot"
-              :name="`custom-${item.customSlot}`"
-              :item="item"
-              :data="modelValue"
-              :ref="(el: any) => setItemRef(item.prop, el)"
-            />
-            <component
-              v-bind="{
-                ...item.componentProps,
-                placeholder: resolvePlaceholder(item)
-              }"
-              v-else-if="item.type && componentMap[item.type]"
-              :is="componentMap[item.type]"
-              :ref="(el: any) => setItemRef(item.prop, el)"
-              :modelValue="modelValue[item.prop]"
-              @update:modelValue="modelValue[item.prop] = $event"
-            />
+            <component :is="() => renderField(item)" />
           </div>
         </el-form-item>
       </div>

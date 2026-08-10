@@ -1,22 +1,25 @@
 import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
 import type { FormItemRule } from 'element-plus'
 
+interface ScFormItemOverrides<T extends Record<string, any>> {
+  prop: keyof T
+  hide?: (formData: T) => boolean
+  label?: string | ((formData: T) => string)
+  rules?:
+    | FormItemRule
+    | FormItemRule[]
+    | ((formData: T) => FormItemRule | FormItemRule[])
+  onChange?: (value: any, formData: T) => void
+}
+
 type WithTypedProps<
   T extends Record<string, any>,
   Item
 > = Item extends ScBaseFormItem
   ? {
-      [K in keyof Item]: K extends 'prop'
-        ? keyof T
-        : K extends 'hide'
-          ? (formData: T) => boolean
-          : K extends 'label'
-            ? string | ((formData: T) => string)
-            : K extends 'rules'
-              ? | FormItemRule
-                | FormItemRule[]
-                | ((formData: T) => FormItemRule | FormItemRule[])
-              : Item[K]
+      [K in keyof Item]: K extends keyof ScFormItemOverrides<T>
+        ? ScFormItemOverrides<T>[K]
+        : Item[K]
     }
   : never
 

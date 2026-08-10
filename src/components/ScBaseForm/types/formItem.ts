@@ -22,6 +22,7 @@ interface ScBaseFormItemBase {
   hide?: (formData: Record<string, any>) => boolean
   groupName?: string
   colSpan?: number
+  onChange?: (value: any, formData: Record<string, any>) => void
 }
 
 export interface ScBaseFormInputItem extends ScBaseFormItemBase {
