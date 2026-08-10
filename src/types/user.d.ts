@@ -6,6 +6,7 @@ export type UserState = {
   permissions: string[]
   nickName: string
   loginTime: string
+  username: string
 }
 
 /**

@@ -1,4 +1,20 @@
 /**
+ * @description 用户/角色关联项
+ */
+export type SubjectRoleUser = {
+  subjectRoleId: string
+  userId: string
+}
+
+/**
+ * @description 评估时间项
+ */
+export type TestTimeItem = {
+  testStart: string
+  testEnd: string
+}
+
+/**
  * @description 项目管理数据
  */
 export type ProjectManagementData = {
@@ -43,4 +59,36 @@ export type ProjectManagementSearchParams = {
   name: string
   largeType: string
   type: string
+}
+
+/**
+ * @description 项目管理表单数据
+ */
+export type ProjectManagementFormData = {
+  code: string
+  name: string
+  largeType: string
+  type: string[]
+  ifUsePlanStealer: string | null
+  ifUseResultStealer: string | null
+  accordanceFileType: string[]
+  reportType: string
+  scene: string
+  seal: string
+  assessMethod: string[]
+  designUnit: string
+  validatePlan: string
+  projectStatus: string
+  subjectRoleUsers: SubjectRoleUser[]
+  testTimes: TestTimeItem[]
+  reportCreator: string
+  reportTime: string
+  assessAddress: string
+  planCreator: string
+  planTime: string
+  supervisionUnit: string
+  constructionDept: string
+  contractorName: string
+  commissionUnitName: string
+  commissionUnitAddress: string
 }

@@ -77,7 +77,7 @@ const pageConfig: ScResourcePageConfig<TestEntrustmentContractFilesData> = {
       {
         name: '下载',
         type: 'text',
-        onClick: row => handleDownloadTestEntrustContractFile(row.id),
+        onClick: row =>    handleDownloadTestEntrustContractFile(row.id),
         permission: 'business:testEntrustmentContract:download'
       }
     ]
