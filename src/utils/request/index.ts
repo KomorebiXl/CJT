@@ -17,7 +17,10 @@ class SCRequest {
     this.interceptors = config.interceptors
 
     // 注册全局拦截器
-    this.instance.interceptors.request.use(globalRequestInterceptor, globalRequestInterceptorCatch)
+    this.instance.interceptors.request.use(
+      globalRequestInterceptor,
+      globalRequestInterceptorCatch
+    )
     this.instance.interceptors.response.use(
       globalResponseInterceptor,
       globalResponseInterceptorCatch
@@ -73,9 +76,25 @@ class SCRequest {
   }
 
   download(config: SCRequestConfig<Blob>): Promise<AxiosResponse<Blob>> {
+    const method = (config.method ?? 'GET').toUpperCase() as 'GET' | 'POST'
+    const { params, method: _m, headers, ...rest } = config
+    if (method === 'GET') {
+      return this.request<any>({
+        ...rest,
+        method,
+        params,
+        responseType: 'blob'
+      })
+    }
     return this.request<any>({
-      ...config,
-      method: config.method ?? 'GET',
+      ...rest,
+      method,
+      data: params,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      transformRequest: [data => new URLSearchParams(data).toString()],
       responseType: 'blob'
     })
   }
