@@ -5,7 +5,7 @@ import type {
   DictDataSearchParams,
   DictOption,
   DictTypeData
-} from '@/types/dict'
+} from '@/api/system/dict'
 import {
   createDictDataAPI,
   deleteDictDataAPI,

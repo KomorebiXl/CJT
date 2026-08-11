@@ -1,5 +1,5 @@
 import { useDictStore } from '@/store/modules/dict-store.ts'
-import type { DictOption } from '@/types/dict'
+import type { DictOption } from '@/api/system/dict'
 
 /**
  * 根据字典类型获取字典选项列表

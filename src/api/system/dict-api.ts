@@ -6,7 +6,7 @@ import type {
   DictTypeData,
   DictTypeFormData,
   DictTypeSearchParams
-} from '@/types/dict'
+} from '@/api/system/dict'
 import { createListAPI } from '@/utils/pageRequest.ts'
 
 const dictTypeBaseUrl = '/system/dict/type'

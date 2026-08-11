@@ -3,7 +3,7 @@ import type {
   CustomConfig,
   ScSelectOption
 } from '@/components/ScBaseFormItems/ScSelect'
-import type { DictOption } from '@/types/dict'
+import type { DictOption } from '@/api/system/dict'
 import type { ScDatePickerType } from '@/components/ScBaseFormItems/ScDatePicker'
 import type { ScDateRangePickerType } from '@/components/ScBaseFormItems/ScDateRangePicker'
 import type {

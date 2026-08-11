@@ -12,7 +12,6 @@ import { sessionStorage } from '@/utils/storage'
 const injectSubjectId = (config: InternalAxiosRequestConfig) => {
   const subjectId = sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
   if (!subjectId) return config
-
   const method = (config.method ?? 'get').toLowerCase()
   if (method === 'get') {
     config.params = { ...(config.params || {}), subjectId }
@@ -29,13 +28,17 @@ const injectSubjectId = (config: InternalAxiosRequestConfig) => {
 }
 
 /** 全局请求拦截：统一注入 token */
-export const globalRequestInterceptor = (config: InternalAxiosRequestConfig) => {
+export const globalRequestInterceptor = (
+  config: InternalAxiosRequestConfig
+) => {
   const token = getToken()
   if (token && config.headers) {
     config.headers['Authorization'] = `Bearer ${token}`
   }
   // 项目流程作用域内自动携带 subjectId；单次请求可通过 needSubjectId: false 跳过
-  if ((config as unknown as { needSubjectId?: boolean }).needSubjectId !== false) {
+  if (
+    (config as unknown as { needSubjectId?: boolean }).needSubjectId !== false
+  ) {
     injectSubjectId(config)
   }
   return config

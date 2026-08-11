@@ -1,4 +1,4 @@
-import type { DictOption } from '@/types/dict'
+import type { DictOption } from '@/api/system/dict'
 
 export interface ScSelectProps {
   modelValue: ScSelectModelValue
