@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UploadInstance, UploadFile } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import type {
   ScBaseUploadEmits,
   ScBaseUploadProps,
@@ -19,7 +19,6 @@ import { ScMessage } from '@/utils/ElUtils'
 const props = defineProps<ScBaseUploadProps>()
 const emit = defineEmits<ScBaseUploadEmits>()
 
-const uploadRef = ref<UploadInstance>()
 const fileList = ref<ScUploadFileItem[]>([])
 const isUploading = ref(false)
 const errorMsg = ref('')
@@ -162,7 +161,7 @@ const handleTemplateDownload = async () => {
     const fileData = await downloadFilesStore.downloadFilesRequest({
       requestUrl: props.templateConfig.templateUrl,
       requestMethod: props.templateConfig?.requestMethod,
-      extraParams: {}
+      extraParams: props.uploadExtraParams ?? {}
     })
     await downloadFile(fileData, fileName)
   }
