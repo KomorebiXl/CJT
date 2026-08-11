@@ -65,7 +65,8 @@ const getOptionDisabled = (item: any): boolean => {
   if (typeof disabledConfig === 'function') {
     return disabledConfig(item)
   }
-  const key = (typeof disabledConfig === 'string' && disabledConfig) || 'disabled'
+  const key =
+    (typeof disabledConfig === 'string' && disabledConfig) || 'disabled'
   return !!item[key]
 }
 
@@ -77,7 +78,9 @@ const isGroup = (item: any): boolean => {
 
 // 获取选项的 key 值，优先用 value 字段，fallback 到 index（由调用方传入）
 const getOptionKey = (item: any, index: number) => {
-  return item[selectField.value.value as any] ?? item.value ?? `fallback-${index}`
+  return (
+    item[selectField.value.value as any] ?? item.value ?? `fallback-${index}`
+  )
 }
 
 const loading = ref<boolean>(false)
@@ -87,7 +90,8 @@ const initOptions = async () => {
     loading.value = true
     if (props.dictField) {
       const dictData = await getDictOptions(props.dictField)
-      tempOptions.value = Array.isArray(dictData) && dictData.length !== 0 ? dictData : []
+      tempOptions.value =
+        Array.isArray(dictData) && dictData.length !== 0 ? dictData : []
     } else {
       tempOptions.value = props.options?.length ? props.options : []
     }
@@ -125,7 +129,9 @@ const labelEllipsisStyle = computed(() => {
   return {
     display: 'inline-block',
     maxWidth:
-      typeof props.labelMaxWidth === 'number' ? `${props.labelMaxWidth}px` : props.labelMaxWidth,
+      typeof props.labelMaxWidth === 'number'
+        ? `${props.labelMaxWidth}px`
+        : props.labelMaxWidth,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -134,7 +140,8 @@ const labelEllipsisStyle = computed(() => {
 })
 
 const handleChange = (value: any) => emit('change', value)
-const handleVisibleChange = (visible: boolean) => emit('visible-change', visible)
+const handleVisibleChange = (visible: boolean) =>
+  emit('visible-change', visible)
 const handleRemoveTag = (value: any) => emit('remove-tag', value)
 const handleClear = () => emit('clear')
 const handleBlur = (event: FocusEvent) => emit('blur', event)
@@ -185,20 +192,29 @@ defineExpose({
     </template>
 
     <template v-else>
-      <template v-for="(item, index) in tempOptions" :key="getOptionKey(item, index)">
+      <template
+        v-for="(item, index) in tempOptions"
+        :key="getOptionKey(item, index)"
+      >
         <!-- 分组选项 -->
         <el-option-group v-if="isGroup(item)" :label="getOptionLabel(item)">
           <el-option
             v-for="(subItem, subIndex) in (item as any)[selectField.options]"
-            :key="getOptionKey(subItem, subIndex)"
+            :key="getOptionKey(subItem, Number(subIndex))"
             :label="getOptionLabel(subItem)"
             :value="subItem[selectField.value]"
             :disabled="getOptionDisabled(subItem)"
           >
             <!-- label 超长省略：有 labelMaxWidth 时才开启 tooltip -->
             <template v-if="labelMaxWidth">
-              <el-tooltip :content="getOptionLabel(subItem)" placement="right" :show-after="300">
-                <span :style="labelEllipsisStyle">{{ getOptionLabel(subItem) }}</span>
+              <el-tooltip
+                :content="getOptionLabel(subItem)"
+                placement="right"
+                :show-after="300"
+              >
+                <span :style="labelEllipsisStyle">{{
+                  getOptionLabel(subItem)
+                }}</span>
               </el-tooltip>
             </template>
           </el-option>
@@ -213,8 +229,14 @@ defineExpose({
         >
           <!-- label 超长省略：有 labelMaxWidth 时才开启 tooltip -->
           <template v-if="labelMaxWidth">
-            <el-tooltip :content="getOptionLabel(item)" placement="right" :show-after="300">
-              <span :style="labelEllipsisStyle">{{ getOptionLabel(item) }}</span>
+            <el-tooltip
+              :content="getOptionLabel(item)"
+              placement="right"
+              :show-after="300"
+            >
+              <span :style="labelEllipsisStyle">{{
+                getOptionLabel(item)
+              }}</span>
             </el-tooltip>
           </template>
         </el-option>
@@ -231,7 +253,9 @@ defineExpose({
         <div class="sc-select-empty__icon">
           <el-icon><DocumentDelete /></el-icon>
         </div>
-        <span class="sc-select-empty__text">{{ loading ? loadingText : noDataText }}</span>
+        <span class="sc-select-empty__text">{{
+          loading ? loadingText : noDataText
+        }}</span>
       </div>
     </template>
   </el-select>
