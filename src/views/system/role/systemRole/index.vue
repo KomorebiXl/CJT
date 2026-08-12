@@ -271,7 +271,7 @@ const { RolePermissionDialog, open: openRolePermission } =
           inactive-value="1"
           active-text="启用"
           inactive-text="停用"
-          @click="handleChangeRoleStatus(row)"
+          @click="handleChangeRoleStatus(row as SystemRoleData)"
         />
       </template>
     </ScResourcePage>

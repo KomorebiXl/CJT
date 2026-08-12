@@ -1,10 +1,18 @@
 import type { PermissionState, RouterData } from '@/router'
-import type { Router, RouteLocationNormalized, ScRouteRecordRaw } from 'vue-router'
+import type {
+  Router,
+  RouteLocationNormalized,
+  ScRouteRecordRaw
+} from 'vue-router'
 import { staticRoutes } from '@/router/modules/staticRoutes'
 import { sessionStorage } from '@/utils/storage'
-import { PROCESS_PROJECT_ID_KEY, PROJECT_ID_KEY } from '@/constant/globalVariables'
+import {
+  PROCESS_PROJECT_ID_KEY,
+  PROJECT_ID_KEY
+} from '@/constant/globalVariables'
 import { getRouters } from '@/api/system/menu-api.ts'
 import Layout from '@/layout/index.vue'
+import ParentView from '@/layout/components/ParentView/index.vue'
 
 // 对views文件夹下的所有.vue文件进行自动导入
 const modules = import.meta.glob('@/views/**/*.vue')
@@ -89,7 +97,11 @@ const isString = (val: unknown): val is string => {
   return typeof val === 'string'
 }
 
-const filterAsyncRoutes = (routesMap: Array<ScRouteRecordRaw>, type = false) => {
+const filterAsyncRoutes = (
+  routesMap: Array<ScRouteRecordRaw>,
+  type = false,
+  depth = 0
+) => {
   return routesMap.filter((r: ScRouteRecordRaw) => {
     if (type && r.children) {
       r.children = filterChildren(r.children)
@@ -97,8 +109,12 @@ const filterAsyncRoutes = (routesMap: Array<ScRouteRecordRaw>, type = false) => 
     if (r.component) {
       if (isString(r.component)) {
         if (r.component === 'Layout') {
+          // 只有最外层（depth === 0）才是真正需要完整应用外壳的根路由
+          // 嵌套在里面的目录节点即便被后端误填成 'Layout'，
+          // 也只会当成 ParentView 透传处理，不会再重复渲染一遍
+          // 导航栏 / 面包屑 / 标签页
           // @ts-ignore
-          r.component = Layout
+          r.component = depth === 0 ? Layout : ParentView
         } else {
           const view = loadView(r.component)
           r.component = view || (() => import('@/views/error/404.vue'))
@@ -106,7 +122,7 @@ const filterAsyncRoutes = (routesMap: Array<ScRouteRecordRaw>, type = false) => 
       }
     }
     if (r.children !== null && r.children && r.children.length) {
-      r.children = filterAsyncRoutes(r.children, type)
+      r.children = filterAsyncRoutes(r.children, type, depth + 1) // 递归时深度 +1
     } else {
       if (!r.children || r.children.length === 0) {
         delete r.children
@@ -116,7 +132,10 @@ const filterAsyncRoutes = (routesMap: Array<ScRouteRecordRaw>, type = false) => 
   })
 }
 
-const filterChildren = (childrenMap: Array<ScRouteRecordRaw>, lastRouter?: ScRouteRecordRaw) => {
+const filterChildren = (
+  childrenMap: Array<ScRouteRecordRaw>,
+  lastRouter?: ScRouteRecordRaw
+) => {
   let children: Array<ScRouteRecordRaw> = []
   childrenMap.forEach(i => {
     if (lastRouter) {
@@ -132,45 +151,53 @@ const filterChildren = (childrenMap: Array<ScRouteRecordRaw>, lastRouter?: ScRou
 }
 
 const loadView = (view: string): (() => Promise<any>) | undefined => {
-  const match = Object.keys(modules).find(path => path.includes(`/views/${view}.vue`))
+  const match = Object.keys(modules).find(path =>
+    path.includes(`/views/${view}.vue`)
+  )
   return match ? modules[match] : undefined
 }
 
-export const useGenerateProcessRouterStore = defineStore('generateProcessRouter', () => {
-  const sidebarRouters = ref<Array<RouterData>>([])
+export const useGenerateProcessRouterStore = defineStore(
+  'generateProcessRouter',
+  () => {
+    const sidebarRouters = ref<Array<RouterData>>([])
 
-  const setSidebarRouters = (routes: Array<RouterData>) => {
-    sidebarRouters.value = routes
-  }
+    const setSidebarRouters = (routes: Array<RouterData>) => {
+      sidebarRouters.value = routes
+    }
 
-  const generateProcessRouter = (subjectId: string) => {
-    return new Promise<Array<ScRouteRecordRaw>>(async resolve => {
-      const { data } = await getRouters({ isSubjectMenu: '2', subjectId })
-      const sidebarData: Array<RouterData> = JSON.parse(
-        JSON.stringify(data)
-      ) as Array<RouterData>
-      // 侧边栏菜单：统一加 /projectProcess 前缀，供菜单跳转使用
-      setSidebarRouters(prefixProcessPath(sidebarData))
-      // 路由挂载：使用相对路径（不含前缀），由 addRoute('projectProcess', r) 拼成完整路径
-      const processSidebarRoutes = generateProcessRoutes(sidebarData)
-      addedProcessRouteNames.length = 0
-      processSidebarRoutes.forEach(r => {
-        if (r.name) addedProcessRouteNames.push(String(r.name))
+    const generateProcessRouter = (subjectId: string) => {
+      return new Promise<Array<ScRouteRecordRaw>>(async resolve => {
+        const { data } = await getRouters({ isSubjectMenu: '2', subjectId })
+        const sidebarData: Array<RouterData> = JSON.parse(
+          JSON.stringify(data)
+        ) as Array<RouterData>
+        // 侧边栏菜单：统一加 /projectProcess 前缀，供菜单跳转使用
+        setSidebarRouters(prefixProcessPath(sidebarData))
+        // 路由挂载：使用相对路径（不含前缀），由 addRoute('projectProcess', r) 拼成完整路径
+        const processSidebarRoutes = generateProcessRoutes(sidebarData)
+        addedProcessRouteNames.length = 0
+        processSidebarRoutes.forEach(r => {
+          if (r.name) addedProcessRouteNames.push(String(r.name))
+        })
+        resolve(processSidebarRoutes)
       })
-      resolve(processSidebarRoutes)
-    })
-  }
+    }
 
-  return {
-    sidebarRouters,
-    generateProcessRouter
+    return {
+      sidebarRouters,
+      generateProcessRouter
+    }
   }
-})
+)
 
 // 已挂载到 projectProcess 父路由下的子路由名，退出项目流程作用域时用于卸载
 const addedProcessRouteNames: Array<string> = []
 
-export const mountProcessRoutes = (router: Router, routes: Array<ScRouteRecordRaw>) => {
+export const mountProcessRoutes = (
+  router: Router,
+  routes: Array<ScRouteRecordRaw>
+) => {
   routes.forEach(r => {
     router.addRoute('projectProcess', r)
   })
@@ -184,7 +211,10 @@ export const removeProcessRoutes = (router: Router) => {
 }
 
 // 将后端返回数据进行处理，生成路由
-function generateProcessRoutes(routes: RouterData[], basePath = ''): ScRouteRecordRaw[] {
+function generateProcessRoutes(
+  routes: RouterData[],
+  basePath = ''
+): ScRouteRecordRaw[] {
   const result: ScRouteRecordRaw[] = []
   routes.forEach(item => {
     if (item.hidden) return
