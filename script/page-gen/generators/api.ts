@@ -17,13 +17,13 @@ export const get${Entity}DataAPI = createListAPI<
   ${Entity}Data
 >(\`\${${entityLower}BaseUrl}/list\`)
 
-export const create${Entity}API = (data: ${Entity}FromData) =>
+export const create${Entity}API = (data: ${Entity}FormData) =>
   request.post<BaseResponse>({ url: \`\${${entityLower}BaseUrl}\`, data })
 
 export const get${Entity}DetailAPI = (id: string) =>
   request.get<DataResponse<${Entity}Data>>({ url: \`\${${entityLower}BaseUrl}/\${id}\` })
 
-export const update${Entity}API = (data: ${Entity}FromData & { id: string }) =>
+export const update${Entity}API = (data: ${Entity}FormData & { id: string }) =>
   request.put<BaseResponse>({ url: \`\${${entityLower}BaseUrl}\`, data })
 
 export const delete${Entity}API = (data: { ids: Array<string> }) =>
