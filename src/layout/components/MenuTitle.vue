@@ -13,8 +13,17 @@ const checkOverflow = () => {
   }
 }
 
+let observer: ResizeObserver | null = null
+
 onMounted(() => {
-  nextTick(checkOverflow)
+  if (titleRef.value) {
+    observer = new ResizeObserver(checkOverflow)
+    observer.observe(titleRef.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
 })
 </script>
 
