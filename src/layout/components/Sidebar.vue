@@ -4,6 +4,7 @@ import { useLayoutStore } from '../composables/useLayout'
 import SidebarMenuItem from './SidebarMenuItem.vue'
 import type { ScRouteRecordRaw } from 'vue-router'
 import logo from '@/assets/images/logo.png'
+import type { MenuInstance } from 'element-plus'
 
 const layoutStore = useLayoutStore()
 const generateRoutesStore = useGenerateRoutesStore()
@@ -13,18 +14,55 @@ const appTitle = import.meta.env.VITE_APP_TITLE
 
 // 当前激活菜单：优先取 meta.activeMenu（用于详情页高亮父菜单），否则取当前路径
 const activeMenu = computed(() => {
-  const { activeMenu } = route.meta as { activeMenu?: string; noCache?: boolean }
+  const { activeMenu } = route.meta as {
+    activeMenu?: string
+    noCache?: boolean
+  }
   return activeMenu || route.path
 })
 
 // 过滤掉 hidden 的顶级路由
 const visibleRoutes = computed(() => {
-  return generateRoutesStore.routers.sidebarRouters.filter(r => !(r as ScRouteRecordRaw).hidden)
+  return generateRoutesStore.routers.sidebarRouters.filter(
+    r => !(r as ScRouteRecordRaw).hidden
+  )
 })
+
+const menuRef = useTemplateRef<MenuInstance>('menuRef')
+const isAdjusting = ref(false)
+
+const activeAncestorChain = computed(() => {
+  const parts = activeMenu.value.split('/').filter(Boolean)
+  const chain: string[] = []
+  let path = ''
+  for (const p of parts) {
+    path += `/${p}`
+    chain.push(path)
+  }
+  return chain
+})
+
+const handleMenuOpen = (index: string) => {
+  if (isAdjusting.value) return // 上一轮还没修完，先不理新的触发
+  const chain = activeAncestorChain.value
+  const pos = chain.indexOf(index)
+  if (pos === -1 || pos + 1 >= chain.length - 1) return
+  isAdjusting.value = true
+  nextTick(() => {
+    menuRef.value?.open(chain[pos + 1])
+    // 再等一轮 DOM 更新彻底落定，才解锁——这里是关键，只等一次 nextTick 不够保险
+    nextTick(() => {
+      isAdjusting.value = false
+    })
+  })
+}
 </script>
 
 <template>
-  <el-aside class="sidebar" :class="{ 'is-collapsed': layoutStore.isCollapsed }">
+  <el-aside
+    class="sidebar"
+    :class="{ 'is-collapsed': layoutStore.isCollapsed }"
+  >
     <div class="sidebar-logo">
       <img :src="logo" class="logo-icon" alt="logo" />
       <transition name="logo-fade">
@@ -35,11 +73,14 @@ const visibleRoutes = computed(() => {
     </div>
     <el-scrollbar class="sidebar-menu-wrap">
       <el-menu
+        ref="menuRef"
         :default-active="activeMenu"
         :collapse="layoutStore.isCollapsed"
         :collapse-transition="false"
+        unique-opened
         router
         class="sidebar-menu"
+        @open="handleMenuOpen"
       >
         <!-- prettier-ignore -->
         <SidebarMenuItem
@@ -177,5 +218,11 @@ const visibleRoutes = computed(() => {
 :deep(.el-menu--inline) {
   border-left: 1px solid var(--sidebar-divider);
   margin-left: 20px;
+}
+</style>
+
+<style lang="scss" scoped>
+.sidebar-menu {
+  user-select: none;
 }
 </style>

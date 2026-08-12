@@ -3,6 +3,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { TopRight } from '@element-plus/icons-vue'
 import type { ScRouteMeta, ScRouteRecordRaw } from 'vue-router'
 import MenuIcon from './MenuIcon.vue'
+import MenuTitle from './MenuTitle.vue'
 
 defineOptions({
   name: 'SidebarMenuItem'
@@ -14,7 +15,10 @@ const props = defineProps<{
 }>()
 
 const visibleChildren = computed(
-  () => (props.item.children as ScRouteRecordRaw[] | undefined)?.filter(c => !c.hidden) ?? []
+  () =>
+    (props.item.children as ScRouteRecordRaw[] | undefined)?.filter(
+      c => !c.hidden
+    ) ?? []
 )
 
 const isSingleLeaf = computed(() => {
@@ -24,7 +28,8 @@ const isSingleLeaf = computed(() => {
 
 function resolvePath(routePath: string, base = ''): string {
   if (!routePath) return base
-  if (routePath.startsWith('/') || routePath.startsWith('http')) return routePath
+  if (routePath.startsWith('/') || routePath.startsWith('http'))
+    return routePath
   return `${base.replace(/\/$/, '')}/${routePath}`
 }
 
@@ -42,7 +47,9 @@ const leafFullPath = computed(() => {
 
 const isExternalLink = computed(() => {
   const link = props.item.meta?.link as string | undefined
-  return (!!link && link.startsWith('http')) || props.item.path.startsWith('http')
+  return (
+    (!!link && link.startsWith('http')) || props.item.path.startsWith('http')
+  )
 })
 
 const externalUrl = computed(() => {
@@ -63,7 +70,9 @@ function resolveIcon(iconName: string) {
   return (ElementPlusIconsVue as Record<string, any>)[pascalCase] ?? null
 }
 
-const currentFullPath = computed(() => resolvePath(props.item.path, props.basePath))
+const currentFullPath = computed(() =>
+  resolvePath(props.item.path, props.basePath)
+)
 
 function getMeta(route: ScRouteRecordRaw) {
   return route.meta as ScRouteMeta | undefined
@@ -72,23 +81,29 @@ function getMeta(route: ScRouteRecordRaw) {
 
 <template>
   <template v-if="!item.hidden">
-    <el-menu-item v-if="isExternalLink" :index="externalUrl" @click="openExternalLink">
+    <el-menu-item
+      v-if="isExternalLink"
+      :index="externalUrl"
+      @click="openExternalLink"
+    >
       <MenuIcon :icon="getMeta(item)?.icon" />
       <template #title>
-        {{ item.meta?.title }}
+        <MenuTitle :title="item.meta?.title as string" />
         <el-icon class="external-icon"><TopRight /></el-icon>
       </template>
     </el-menu-item>
     <el-menu-item v-else-if="isSingleLeaf" :index="leafFullPath">
       <MenuIcon :icon="getMeta(leafRoute)?.icon" />
-      <template #title>{{ leafRoute.meta?.title }}</template>
+      <template #title>
+        <MenuTitle :title="leafRoute.meta?.title as string" />
+      </template>
     </el-menu-item>
     <el-sub-menu v-else :index="currentFullPath">
       <template #title>
         <el-icon v-if="item.meta?.icon">
           <component :is="resolveIcon(item.meta.icon as string)" />
         </el-icon>
-        <span>{{ item.meta?.title }}</span>
+        <MenuTitle :title="item.meta?.title as string" />
       </template>
       <!-- prettier-ignore -->
       <SidebarMenuItem
