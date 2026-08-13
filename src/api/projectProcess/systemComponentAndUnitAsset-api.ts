@@ -1,7 +1,6 @@
 import request from '@/utils/request'
 import { createListAPI } from '@/utils/pageRequest.ts'
 import type {
-  GuideOption,
   SystemComponentAndUnitAssetData,
   SystemComponentAndUnitAssetFormData,
   SystemComponentAndUnitAssetSearchParams
@@ -41,11 +40,4 @@ export const deleteSystemComponentAndUnitAssetAPI = (data: {
   request.post<BaseResponse>({
     url: `${systemComponentAndUnitAssetBaseUrl}/delete`,
     data
-  })
-
-/** 指导书下拉选项 */
-// TODO 后续需要将该API迁移至指导书api
-export const getGuideOptionAPI = () =>
-  request.get<DataResponse<Array<GuideOption>>>({
-    url: '/background/guide/option'
   })

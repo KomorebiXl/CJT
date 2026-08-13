@@ -65,9 +65,3 @@ export type SystemComponentAndUnitAssetFormData = {
   /** 系统组件与单元资产类型（固定传 4） */
   assetType?: string
 }
-
-/** 指导书下拉选项（getGuideOption 返回数据） */
-export type GuideOption = {
-  id: string
-  guideName: string
-}

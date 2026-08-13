@@ -13,10 +13,10 @@ import {
 } from '@/api/adminManagement/controlPoint-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
-import { http } from '@/utils/http.ts'
-import { findFormSelectItem } from '@/utils/formItemUtils.ts'
+import { findFormItem } from '@/utils/formItemUtils.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
+import { getGuideOptionsAPI } from '@/api/adminManagement/guideline-api.ts'
 
 const searchbarItems = reactive<SearchbarItems<ControlPointSearchParams>>([
   { label: '指导书名称', prop: 'guideName', type: 'input' },
@@ -152,14 +152,12 @@ const { handleDelete } = useDeleteAction<ControlPointData>(
 )
 
 const getControlPointOptions = async () => {
-  const { data } = await http.get<DataResponse<Array<ControlPointData>>>(
-    '/background/guide/option'
-  )
+  const { data } = await getGuideOptionsAPI()
   const options = data.map(i => ({
     label: i.guideName,
     value: i.id
   }))
-  const guideItem = findFormSelectItem(formItems, 'guideId')
+  const guideItem = findFormItem(formItems, 'guideId', 'select')
   if (guideItem)
     guideItem.componentProps = {
       ...guideItem.componentProps,

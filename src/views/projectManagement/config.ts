@@ -184,7 +184,8 @@ export const formItems = reactive(
       prop: 'seal',
       label: '盖章',
       type: 'select',
-      componentProps: { dictField: 'background_subject_seal' }
+      componentProps: { dictField: 'background_subject_seal' },
+      rules: [required('未选择盖章类型', 'change')]
     },
     {
       prop: 'assessMethod',

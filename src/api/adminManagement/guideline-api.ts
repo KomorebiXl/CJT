@@ -35,3 +35,9 @@ export const deleteGuidelineAPI = (data: { ids: Array<string> }) => {
     data
   })
 }
+
+export const getGuideOptionsAPI = () => {
+  return request.get<DataResponse<Array<GuidelineData>>>({
+    url: `${guidelineBaseUrl}/option`
+  })
+}

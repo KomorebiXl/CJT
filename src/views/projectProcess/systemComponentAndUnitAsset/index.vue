@@ -9,7 +9,6 @@ import {
   deleteSystemComponentAndUnitAssetAPI,
   getSystemComponentAndUnitAssetDataAPI,
   getSystemComponentAndUnitAssetDetailAPI,
-  getGuideOptionAPI,
   updateSystemComponentAndUnitAssetAPI
 } from '@/api/projectProcess/systemComponentAndUnitAsset-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
@@ -19,6 +18,7 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { getDictOptionsMap } from '@/utils/dict.ts'
 import type { DictOption } from '@/api/system/dict'
+import { getGuideOptionsAPI } from '@/api/adminManagement/guideline-api.ts'
 
 defineOptions({ name: 'AssetComposition' })
 
@@ -42,7 +42,7 @@ const searchbarItems = reactive<
 const tableColumns = reactive<TableColumns>([
   { label: '资产编号', prop: 'assetNo' },
   { label: '资产名称', prop: 'assetName' },
-  { label: '资产分类', prop: 'assetSecondTypeLabel' },
+  { label: '资产三级分类', prop: 'assetThirdTypeLabel' },
   { label: '资产位置', prop: 'assetAddress' },
   { label: '资产IP地址', prop: 'ipAddress' },
   { label: '所属部门', prop: 'responsibleDept' },
@@ -206,7 +206,7 @@ const loadAssetThirdTypeOptions = async () => {
 
 /** 加载指导书选项（guideId 下拉） */
 const loadGuideOptions = async () => {
-  const { data } = await getGuideOptionAPI()
+  const { data } = await getGuideOptionsAPI()
   const guideItem = findFormItem(formItems, 'guideId', 'select')
   if (guideItem?.componentProps) {
     guideItem.componentProps.options = (data ?? []).map(item => ({

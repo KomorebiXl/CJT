@@ -69,21 +69,3 @@ export type SystemAssetFormData = {
   /** 系统资产类型（固定传 3） */
   assetType?: string
 }
-
-/** 指导书下拉选项（getGuideOption 返回数据） */
-export type GuideOption = {
-  id: string
-  guideName: string
-  securityAspect: string
-  standardId: string
-  attribute: string
-  standardType: string
-  importanceLevel: string
-  weight: string
-  securityPoint: string
-  evaluationItem: string
-  evaluationContent: string
-  checkMethod: string
-  recommendedValue: string
-  judgmentCriteria: string
-}

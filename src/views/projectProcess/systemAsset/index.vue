@@ -9,7 +9,6 @@ import {
   deleteSystemAssetAPI,
   getSystemAssetDataAPI,
   getSystemAssetDetailAPI,
-  getGuideOptionAPI,
   updateSystemAssetAPI
 } from '@/api/projectProcess/systemAsset-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
@@ -18,6 +17,7 @@ import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { getDictOptions } from '@/utils/dict.ts'
+import { getGuideOptionsAPI } from '@/api/adminManagement/guideline-api.ts'
 
 const searchbarItems = reactive<SearchbarItems<SystemAssetSearchParams>>([
   {
@@ -208,7 +208,7 @@ const loadAssetSecondTypeOptions = async () => {
 
 /** 加载指导书选项（guideId 下拉） */
 const loadGuideOptions = async () => {
-  const { data } = await getGuideOptionAPI()
+  const { data } = await getGuideOptionsAPI()
   const guideItem = findFormItem(formItems, 'guideId', 'select')
   if (guideItem?.componentProps) {
     guideItem.componentProps.options = (data ?? []).map(item => ({
