@@ -176,6 +176,17 @@ const renderField = (item: ScBaseFormItem) => {
   return null
 }
 
+const fieldRendererCache = new Map<string, () => any>()
+
+const getFieldRenderer = (item: ScBaseFormItem) => {
+  let renderer = fieldRendererCache.get(item.prop)
+  if (!renderer) {
+    renderer = () => renderField(item)
+    fieldRendererCache.set(item.prop, renderer)
+  }
+  return renderer
+}
+
 defineExpose<ScBaseFormInstance>({
   validate: handleValidate,
   resetFields: () => scBaseFormRef.value!.resetFields(),
@@ -230,7 +241,7 @@ defineExpose<ScBaseFormInstance>({
                 :item="item"
                 :data="modelValue"
               />
-              <component :is="() => renderField(item)" />
+              <component :is="getFieldRenderer(item)" />
             </div>
           </el-form-item>
         </div>
@@ -254,7 +265,7 @@ defineExpose<ScBaseFormInstance>({
               :item="item"
               :data="modelValue"
             />
-            <component :is="() => renderField(item)" />
+            <component :is="getFieldRenderer(item)" />
           </div>
         </el-form-item>
       </div>
