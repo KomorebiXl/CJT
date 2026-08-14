@@ -19,6 +19,10 @@ export interface ScDialogProps {
   autoHeight?: boolean
   // 确认按钮禁用状态
   confirmDisabled?: boolean
+  // 隐藏确认按钮
+  showConfirmButton?: boolean
+  // 显示底部操作栏
+  showFooterOperate?: boolean
 }
 
 export interface ScDialogEmits {

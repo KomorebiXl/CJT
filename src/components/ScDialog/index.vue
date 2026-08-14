@@ -11,7 +11,9 @@ const props = withDefaults(defineProps<ScDialogProps>(), {
   cancelText: '取消',
   dialogWidth: '50%',
   draggable: true,
-  fullscreen: false
+  fullscreen: false,
+  showConfirmButton: true,
+  showFooterOperate: true
 })
 
 const emit = defineEmits<ScDialogEmits>()
@@ -60,7 +62,7 @@ const handleCancel = () => {
     <!-- footer：优先使用外部 slot，否则渲染默认按钮 -->
     <template #footer>
       <slot name="footer">
-        <div class="dialog-footer">
+        <div class="dialog-footer" v-if="showFooterOperate">
           <ScButton
             :icon="CircleCloseFilled"
             @click="handleCancel"
@@ -74,6 +76,7 @@ const handleCancel = () => {
             :loading="confirmLoading"
             :disabled="props.confirmDisabled"
             @click="handleConfirm"
+            v-show="showConfirmButton"
           >
             {{ confirmText }}
           </el-button>
