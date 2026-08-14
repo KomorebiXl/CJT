@@ -75,10 +75,3 @@ export type ServerDeviceFormData = {
   /** 资产三级分类（固定传 1） */
   assetThirdType?: string
 }
-
-/** 服务器设备 - 父级系统资产选项（/asset/system/option 返回项） */
-export type ServerDeviceParentOption = {
-  id: string
-  assetName: string
-  ipAddress: string
-}

@@ -47,4 +47,5 @@ export type AssetSystemOption = {
   id: string
   assetNo: string
   assetName: string
+  ipAddress: string
 }

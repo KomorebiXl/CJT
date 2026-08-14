@@ -29,7 +29,7 @@ export const updateAssetAssignmentAPI = (
 export const deleteAssetAssignmentAPI = (data: { ids: Array<string> }) =>
   request.post<BaseResponse>({ url: `${assetAssignmentBaseUrl}/delete`, data })
 
-/** 系统资产选项（新增/编辑时加载关联资产下拉） */
+/** 系统资产选项 */
 export const getAssetSystemOptionsAPI = (params?: Record<string, any>) =>
   request.get<DataResponse<Array<AssetSystemOption>>>({
     url: '/asset/system/option',

@@ -2,8 +2,7 @@
 import type {
   ServerDeviceSearchParams,
   ServerDeviceData,
-  ServerDeviceFormData,
-  ServerDeviceParentOption
+  ServerDeviceFormData
 } from '@/types/projectProcess/informationCollection/serverDevice'
 import {
   createServerDeviceAPI,
@@ -209,8 +208,7 @@ const loadParentOptions = async () => {
   const { data } = await getAssetSystemOptionsAPI({ assetType: '3' })
   const parentItem = findFormItem(formItems, 'parentId', 'select')
   if (parentItem?.componentProps) {
-    const list = (data ?? []) as unknown as Array<ServerDeviceParentOption>
-    parentItem.componentProps.options = list.map(item => ({
+    parentItem.componentProps.options = data.map(item => ({
       label: `${item.assetName} ${item.ipAddress}`,
       value: item.id
     }))
