@@ -3,6 +3,8 @@ import type { AxiosResponse } from 'axios'
 
 /**
  * 递归将对象拍平追加到 FormData
+ * 命名规则（与后端 Spring 绑定一致）：嵌套对象用点号 parent.child；
+ * 数组用下标 parent[i]，数组内对象为 parent[i].child；File 作为文件部分追加
  */
 const appendToFormData = (
   formData: FormData,
@@ -10,7 +12,7 @@ const appendToFormData = (
   parentKey = ''
 ): void => {
   Object.entries(data).forEach(([key, value]) => {
-    const fullKey = parentKey ? `${parentKey}[${key}]` : key
+    const fullKey = parentKey ? `${parentKey}.${key}` : key
     if (value === null || value === undefined) return
     if (value instanceof File) {
       formData.append(fullKey, value, value.name)
@@ -84,6 +86,17 @@ export const uploadFile = async (
   }
   const formData = buildFormData(fileList, extraParams, filesFieldPrefix)
   return uploadFileAPI(uploadUrl, formData)
+}
+
+/**
+ * 将普通对象递归转为 FormData
+ * 命名规则：嵌套对象 parent.child；数组 parent[i]；数组内对象 parent[i].child；
+ * File 作为文件部分追加（如附件数组的 parent[i].file）
+ */
+export const objectToFormData = (data: Record<string, any>): FormData => {
+  const formData = new FormData()
+  appendToFormData(formData, data)
+  return formData
 }
 
 /**

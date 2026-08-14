@@ -3,6 +3,7 @@ import type { UploadFile } from 'element-plus'
 import type {
   ScBaseUploadEmits,
   ScBaseUploadProps,
+  ScTemplateItem,
   ScUploadFileItem
 } from './scBaseUpload.ts'
 import {
@@ -155,16 +156,18 @@ const handleConfirm = async () => {
 
 const downloadFilesStore = useDownloadFilesStore()
 
-const handleTemplateDownload = async () => {
-  const fileName = `${dialogTitle.value}模板`
-  if (props.templateConfig) {
-    const fileData = await downloadFilesStore.downloadFilesRequest({
-      requestUrl: props.templateConfig.templateUrl,
-      requestMethod: props.templateConfig?.requestMethod,
-      extraParams: props.uploadExtraParams ?? {}
-    })
-    await downloadFile(fileData, fileName)
-  }
+const handleTemplateDownload = async (item?: ScTemplateItem) => {
+  if (!props.templateConfig) return
+  const fileName = item?.fileName ?? `${dialogTitle.value}模板`
+  const fileData = await downloadFilesStore.downloadFilesRequest({
+    requestUrl: props.templateConfig.templateUrl,
+    requestMethod: props.templateConfig?.requestMethod,
+    extraParams: {
+      ...(props.uploadExtraParams ?? {}),
+      ...(item?.extraParams ?? {})
+    }
+  })
+  await downloadFile(fileData, fileName)
 }
 
 const handleClosed = () => {
@@ -200,10 +203,21 @@ const STATUS_LABEL = {
   >
     <div v-if="templateConfig?.showTemplateDownload" class="template-bar">
       <ScButton
+        v-for="tpl in templateConfig.templates"
+        :key="tpl.label"
         link
         type="primary"
         :icon="Download"
-        @click="handleTemplateDownload"
+        @click="handleTemplateDownload(tpl)"
+      >
+        {{ tpl.label }}
+      </ScButton>
+      <ScButton
+        v-if="!templateConfig.templates?.length"
+        link
+        type="primary"
+        :icon="Download"
+        @click="handleTemplateDownload()"
       >
         下载模板
       </ScButton>
@@ -279,6 +293,7 @@ const STATUS_LABEL = {
 .template-bar {
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
