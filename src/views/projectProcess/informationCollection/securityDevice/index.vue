@@ -3,14 +3,14 @@ import type {
   SecurityDeviceSearchParams,
   SecurityDeviceData,
   SecurityDeviceFormData
-} from '@/types/projectProcess/securityDevice'
+} from '@/types/projectProcess/informationCollection/securityDevice'
 import {
   createSecurityDeviceAPI,
   deleteSecurityDeviceAPI,
   getSecurityDeviceDataAPI,
   getSecurityDeviceDetailAPI,
   updateSecurityDeviceAPI
-} from '@/api/projectProcess/securityDevice-api.ts'
+} from '@/api/projectProcess/informationCollection/securityDevice-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'

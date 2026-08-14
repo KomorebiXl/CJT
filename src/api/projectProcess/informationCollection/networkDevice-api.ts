@@ -4,7 +4,7 @@ import type {
   NetworkDeviceData,
   NetworkDeviceFormData,
   NetworkDeviceSearchParams
-} from '@/types/informationCollection/networkDevice'
+} from '@/types/projectProcess/informationCollection/networkDevice'
 
 const networkDeviceBaseUrl = '/asset/system'
 

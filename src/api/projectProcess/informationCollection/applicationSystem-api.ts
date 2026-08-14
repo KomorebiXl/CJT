@@ -4,7 +4,7 @@ import type {
   ApplicationSystemData,
   ApplicationSystemFormData,
   ApplicationSystemSearchParams,
-} from '@/types/projectProcess/applicationSystem'
+} from '@/types/projectProcess/informationCollection/applicationSystem'
 
 const applicationSystemBaseUrl = '/asset/system'
 

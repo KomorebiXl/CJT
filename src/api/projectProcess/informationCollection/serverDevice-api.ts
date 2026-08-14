@@ -4,7 +4,7 @@ import type {
   ServerDeviceData,
   ServerDeviceFormData,
   ServerDeviceSearchParams
-} from '@/types/projectProcess/serverDevice'
+} from '@/types/projectProcess/informationCollection/serverDevice'
 
 const serverDeviceBaseUrl = '/asset/system'
 

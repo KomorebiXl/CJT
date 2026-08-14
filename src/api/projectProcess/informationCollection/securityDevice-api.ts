@@ -4,7 +4,7 @@ import type {
   SecurityDeviceData,
   SecurityDeviceFormData,
   SecurityDeviceSearchParams
-} from '@/types/projectProcess/securityDevice'
+} from '@/types/projectProcess/informationCollection/securityDevice'
 
 const securityDeviceBaseUrl = '/asset/system'
 

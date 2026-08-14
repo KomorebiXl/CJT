@@ -3,14 +3,14 @@ import type {
   NetworkDeviceSearchParams,
   NetworkDeviceData,
   NetworkDeviceFormData
-} from '@/types/informationCollection/networkDevice'
+} from '@/types/projectProcess/informationCollection/networkDevice'
 import {
   createNetworkDeviceAPI,
   deleteNetworkDeviceAPI,
   getNetworkDeviceDataAPI,
   getNetworkDeviceDetailAPI,
   updateNetworkDeviceAPI
-} from '@/api/informationCollection/networkDevice-api.ts'
+} from '@/api/projectProcess/informationCollection/networkDevice-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'

@@ -4,14 +4,14 @@ import type {
   ServerDeviceData,
   ServerDeviceFormData,
   ServerDeviceParentOption
-} from '@/types/projectProcess/serverDevice'
+} from '@/types/projectProcess/informationCollection/serverDevice'
 import {
   createServerDeviceAPI,
   deleteServerDeviceAPI,
   getServerDeviceDataAPI,
   getServerDeviceDetailAPI,
   updateServerDeviceAPI
-} from '@/api/projectProcess/serverDevice-api.ts'
+} from '@/api/projectProcess/informationCollection/serverDevice-api.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'

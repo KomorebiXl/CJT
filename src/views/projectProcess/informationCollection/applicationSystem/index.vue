@@ -3,14 +3,14 @@ import type {
   ApplicationSystemSearchParams,
   ApplicationSystemData,
   ApplicationSystemFormData
-} from '@/types/projectProcess/applicationSystem'
+} from '@/types/projectProcess/informationCollection/applicationSystem'
 import {
   createApplicationSystemAPI,
   deleteApplicationSystemAPI,
   getApplicationSystemDataAPI,
   getApplicationSystemDetailAPI,
   updateApplicationSystemAPI
-} from '@/api/projectProcess/applicationSystem-api.ts'
+} from '@/api/projectProcess/informationCollection/applicationSystem-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
