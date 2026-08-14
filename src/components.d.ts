@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
@@ -32,6 +33,7 @@ declare module 'vue' {
     ElForm: typeof import('element-plus/es')['ElForm']
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElIcon: typeof import('element-plus/es')['ElIcon']
+    ElImageViewer: typeof import('element-plus/es')['ElImageViewer']
     ElInput: typeof import('element-plus/es')['ElInput']
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
@@ -56,6 +58,9 @@ declare module 'vue' {
     ElTree: typeof import('element-plus/es')['ElTree']
     ElTreeSelect: typeof import('element-plus/es')['ElTreeSelect']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    FileList: typeof import('./components/FileReferenceInput/components/FileList.vue')['default']
+    FileReferenceInput: typeof import('./components/FileReferenceInput/index.vue')['default']
+    Highlighttextarea: typeof import('./components/FileReferenceInput/components/Highlighttextarea.vue')['default']
     IconPanel: typeof import('./components/ScIconPicker/IconPanel.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
@@ -91,6 +96,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
   const ElAlert: typeof import('element-plus/es')['ElAlert']
   const ElAside: typeof import('element-plus/es')['ElAside']
   const ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
@@ -111,6 +117,7 @@ declare global {
   const ElForm: typeof import('element-plus/es')['ElForm']
   const ElFormItem: typeof import('element-plus/es')['ElFormItem']
   const ElIcon: typeof import('element-plus/es')['ElIcon']
+  const ElImageViewer: typeof import('element-plus/es')['ElImageViewer']
   const ElInput: typeof import('element-plus/es')['ElInput']
   const ElMenu: typeof import('element-plus/es')['ElMenu']
   const ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
@@ -135,6 +142,9 @@ declare global {
   const ElTree: typeof import('element-plus/es')['ElTree']
   const ElTreeSelect: typeof import('element-plus/es')['ElTreeSelect']
   const ElUpload: typeof import('element-plus/es')['ElUpload']
+  const FileList: typeof import('./components/FileReferenceInput/components/FileList.vue')['default']
+  const FileReferenceInput: typeof import('./components/FileReferenceInput/index.vue')['default']
+  const Highlighttextarea: typeof import('./components/FileReferenceInput/components/Highlighttextarea.vue')['default']
   const IconPanel: typeof import('./components/ScIconPicker/IconPanel.vue')['default']
   const RouterLink: typeof import('vue-router')['RouterLink']
   const RouterView: typeof import('vue-router')['RouterView']

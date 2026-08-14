@@ -128,3 +128,18 @@ export const downloadFile = async (
     console.error(errorMsg)
   }
 }
+
+/**
+ * 将 Base64 字符串转换为 Blob 对象
+ * @param base64   Base64 字符串（不含 Data URL 前缀）
+ * @param mimeType MIME 类型，如 image/png
+ */
+export const base64ToBlob = (base64: string, mimeType: string): Blob => {
+  const byteCharacters = atob(base64)
+  const byteNumbers = new Array(byteCharacters.length)
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i)
+  }
+  const byteArray = new Uint8Array(byteNumbers)
+  return new Blob([byteArray], { type: mimeType })
+}
