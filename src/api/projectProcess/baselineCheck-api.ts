@@ -34,4 +34,4 @@ export const deleteBaselineCheckAPI = (data: { ids: Array<string> }) =>
  * 生成测试日志
  */
 export const generateSubjectLogAPI = (data: { step: string; type: string }) =>
-  request.post<BaseResponse>({ url: '/subject/log', data })
+  request.get<BaseResponse>({ url: '/subject/log/generate', data })
