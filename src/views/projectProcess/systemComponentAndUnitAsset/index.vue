@@ -17,7 +17,7 @@ import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { getDictOptionsMap } from '@/utils/dict.ts'
-import type { DictOption } from '@/api/system/dict'
+import type { DictOption } from '@/types/system/dict'
 import { getGuideOptionsAPI } from '@/api/adminManagement/guideline-api.ts'
 
 defineOptions({ name: 'AssetComposition' })

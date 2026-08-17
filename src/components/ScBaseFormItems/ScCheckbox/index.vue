@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ScCheckboxEmits, ScCheckboxOption, ScCheckboxProps } from './scCheckbox.ts'
 import { getDictOptions } from '@/utils/dict.ts'
-import type { DictOption } from '@/api/system/dict'
+import type { DictOption } from '@/types/system/dict'
 
 defineOptions({ name: 'ScCheckbox', inheritAttrs: false })
 

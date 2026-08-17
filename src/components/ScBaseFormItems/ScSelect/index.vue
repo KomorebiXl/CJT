@@ -6,7 +6,7 @@ import type {
   ScSelectProps
 } from './scSelect.ts'
 import { getDictOptions } from '@/utils/dict.ts'
-import type { DictOption } from '@/api/system/dict'
+import type { DictOption } from '@/types/system/dict'
 import type { SelectInstance } from 'element-plus'
 import { DocumentDelete } from '@element-plus/icons-vue'
 

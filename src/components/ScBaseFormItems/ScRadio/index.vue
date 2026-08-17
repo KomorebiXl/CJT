@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ScRadioEmits, ScRadioOption, ScRadioProps } from './scRadio.ts'
 import { getDictOptions } from '@/utils/dict.ts'
-import type { DictOption } from '@/api/system/dict'
+import type { DictOption } from '@/types/system/dict'
 
 defineOptions({ name: 'ScRadio' })
 

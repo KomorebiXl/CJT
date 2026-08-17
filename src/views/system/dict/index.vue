@@ -3,7 +3,7 @@ import type {
   DictTypeData,
   DictTypeFormData,
   DictTypeSearchParams
-} from '@/api/system/dict'
+} from '@/types/system/dict'
 import {
   createDictTypeAPI,
   deleteDictTypeAPI,

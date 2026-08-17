@@ -11,7 +11,7 @@
 | `src/api` | Axios 业务接口模块 |
 | `src/types` | 业务类型声明和全局类型桥接 |
 | `src/views` | 页面、业务组件和页面级 TSX 辅助 |
-| `src/components` | 通用组件库，详见 `.codex/maps/common-components-map.md` |
+| `src/components` | 通用组件库，详见 `.codex/maps/common-map.md` |
 | `src/hooks` | 组合式逻辑 |
 | `src/store/modules` | Pinia Store |
 | `src/router/modules` | 静态和动态路由模块 |
@@ -27,10 +27,13 @@
 | --- | --- |
 | 系统管理 `system` | `.codex/maps/system-map.md` |
 | 系统监控 `systemMonitor` | `.codex/maps/system-monitor-map.md` |
-| 后台管理 `adminManagement` | `.codex/maps/admin-management-map.md` |
-| 工具 `tool`（后台管理子域） | `.codex/maps/tool-map.md` |
+| 后台管理 `adminManagement`（含工具子域） | `.codex/maps/admin-management-map.md` |
+| 系统工具 `systemTools` | `.codex/maps/system-tools-map.md` |
+| 合同管理 `contractManagement`（含签约单位库子域） | `.codex/maps/contract-management-map.md` |
 | 项目管理 `projectManagement` | `.codex/maps/project-management-map.md` |
-| 公共能力、路由与 Store | `.codex/maps/common-components-map.md` |
+| 项目流程 `projectProcess`（含信息收集子域） | `.codex/maps/project-process-map.md` |
+| 数据统计 `dataStatistics` | `.codex/maps/data-statistics-map.md` |
+| 公共能力、路由与 Store | `.codex/maps/common-map.md` |
 
 ## 路由判断
 
