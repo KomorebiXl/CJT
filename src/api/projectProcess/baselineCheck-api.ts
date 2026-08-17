@@ -32,7 +32,6 @@ export const deleteBaselineCheckAPI = (data: { ids: Array<string> }) =>
 
 /**
  * 生成测试日志
- * 注意：真实地址与方法未在分析阶段核实（权限 subject:log:add），暂按项目新增约定实现，待人工确认。
  */
-export const generateSubjectLogAPI = (data: { step: number; type: string }) =>
+export const generateSubjectLogAPI = (data: { step: string; type: string }) =>
   request.post<BaseResponse>({ url: '/subject/log', data })

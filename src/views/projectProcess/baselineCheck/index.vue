@@ -24,6 +24,8 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import FileReferenceInput from '@/components/FileReferenceInput/index.vue'
 
+let step: string = '1'
+
 const searchbarItems = reactive<SearchbarItems<BaselineCheckSearchParams>>([
   {
     label: '资产名称',
@@ -190,7 +192,7 @@ const handleGenerateLog = async () => {
     message: '确定生成测试日志吗？',
     confirmText: '确定生成'
   })
-  await generateSubjectLogAPI({ step: 1, type: '4' })
+  await generateSubjectLogAPI({ step, type: '4' })
   ScMessage.success('生成成功')
   await scResourcePageRef.value?.refresh()
 }
@@ -222,7 +224,7 @@ const { open: importOpen } = useUploadDialog({
   uploadConfig,
   templateConfig,
   title: '基线核查导入',
-  extraParams: { step: '1' },
+  extraParams: { step },
   onSuccess: () => scResourcePageRef.value?.refresh()
 })
 
@@ -255,7 +257,7 @@ const formatPoint = (row: BaselineCheckData) => {
 
 const pageConfig: PageConfig<BaselineCheckData> = {
   searchConfig: { searchbarItems },
-  pageExtraParams: { step: '1' },
+  pageExtraParams: { step },
   operateConfig: {
     defaultButtons: ['add', 'import'],
     defaultButtonsConfig: {
