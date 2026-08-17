@@ -14,7 +14,7 @@ export const useDialogForm = <
   /** 提交前将表单数据转换为实际请求体（如 FormData）；编辑场景在注入 id 之后执行，id 会随请求体一起发送 */
   transformRequest?: (data: T & Partial<Record<K, IdType>>) => R
   onCreate?: (data: R) => Promise<any>
-  onUpdate: (data: R) => Promise<any>
+  onUpdate: (data: R & Record<K, IdType>) => Promise<any>
   onSuccess?: () => void
   beforeOpen?: (formData: T, row?: any) => void | Promise<void>
 }) => {
@@ -55,7 +55,7 @@ export const useDialogForm = <
           : submitData
       ) as R
       if (currentId.value !== undefined) {
-        await options.onUpdate(body)
+        await options.onUpdate(body as R & Record<K, IdType>)
       } else {
         if (!options.onCreate) {
           throw new Error(
