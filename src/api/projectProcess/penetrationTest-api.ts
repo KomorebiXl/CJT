@@ -12,7 +12,7 @@ export const getPenetrationTestDataAPI = createListAPI<
   PenetrationTestData
 >(`${penetrationTestBaseUrl}/list`)
 
-/** 新增渗透测试（FormData：表单字段与 result_files 附件整体扁平化） */
+/** 新增渗透测试 */
 export const createPenetrationTestAPI = (data: FormData) =>
   request.post<BaseResponse>({ url: penetrationTestBaseUrl, data })
 
@@ -22,9 +22,9 @@ export const getPenetrationTestDetailAPI = (id: string) =>
     url: `${penetrationTestBaseUrl}/${id}`
   })
 
-/** 编辑渗透测试（FormData：id 与表单字段、附件一起扁平化） */
+/** 编辑渗透测试 */
 export const updatePenetrationTestAPI = (data: FormData) =>
   request.put<BaseResponse>({ url: penetrationTestBaseUrl, data })
 
-/** 生成测试日志（复用已有日志 API 封装，type=1 为渗透测试） */
+/** 生成测试日志 */
 export { generateSubjectLogAPI } from './baselineCheck-api.ts'

@@ -13,6 +13,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
+    DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
@@ -97,6 +98,7 @@ declare module 'vue' {
 // For TSX support
 declare global {
   const ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
+  const DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
   const ElAlert: typeof import('element-plus/es')['ElAlert']
   const ElAside: typeof import('element-plus/es')['ElAside']
   const ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
