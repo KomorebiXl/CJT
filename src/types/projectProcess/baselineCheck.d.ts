@@ -45,12 +45,27 @@ export type BaselineCheckFormData = {
   point: string
   /** 测评项 */
   item: string
-  /** 检查结果 */
+} & Partial<BaselineCheckFirstTestFormData> &
+  Partial<BaselineCheckRegressionTestFormData>
+
+export type BaselineCheckFirstTestFormData = {
+  /** 首轮检查结果 */
   resultDescription: string
-  /** 检查结果附件列表 */
+  /** 首轮检查结果附件列表 */
   resultDescription_files: FileItem[]
-  /** 是否符合规范 */
+  /** 首轮是否符合规范 */
   result: string
-  /** 整改建议 */
+  /** 首轮整改建议 */
   suggestion: string
+}
+
+export type BaselineCheckRegressionTestFormData = {
+  /** 回归检查结果 */
+  regressionDescription: string
+  /** 回归检查结果附件列表 */
+  regressionDescription_files: FileItem[]
+  /** 回归是否符合规范 */
+  regressionResult: string
+  /** 回归整改建议 */
+  regressionSuggestion: string
 }

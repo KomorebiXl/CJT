@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type {
   BaselineCheckData,
-  BaselineCheckFormData,
-  BaselineCheckSearchParams
+  BaselineCheckFormData
 } from '@/types/projectProcess/baselineCheck'
 import {
   createBaselineCheckAPI,
@@ -16,135 +15,33 @@ import { Document } from '@element-plus/icons-vue'
 import { objectToFormData } from '@/utils/file.ts'
 import { ScMessage } from '@/utils/ElUtils'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
-import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import FileReferenceInput from '@/components/FileReferenceInput/index.vue'
+import {
+  searchbarItems,
+  createBaselineCheckTableColumns,
+  createBaselineCheckFormData,
+  createBaselineCheckCommonFormItems,
+  firstTestFormItems,
+  regressionFormItems
+} from './baselineCheck.config.ts'
 
-let step: string = '1'
+const route = useRoute()
 
-const searchbarItems = reactive<SearchbarItems<BaselineCheckSearchParams>>([
-  {
-    label: '资产名称',
-    prop: 'assetName',
-    type: 'input',
-    placeholder: '请输入资产名称'
-  },
-  {
-    label: '测评指标',
-    prop: 'point',
-    type: 'input',
-    placeholder: '请输入测评指标'
-  },
-  {
-    label: '测评项',
-    prop: 'item',
-    type: 'input',
-    placeholder: '请输入测评项'
-  }
-])
-
-const tableColumns = reactive<TableColumns>([
-  { label: '资产名称', prop: 'assetName', slot: 'assetName' },
-  { label: '测评指标', prop: 'point', slot: 'point' },
-  {
-    label: '测评项',
-    prop: 'item'
-  },
-  {
-    label: '检查结果',
-    prop: 'resultDescription'
-  },
-  {
-    label: '是否符合规范',
-    prop: 'resultLabel'
-  },
-  {
-    label: '整改建议',
-    prop: 'suggestion'
-  }
-])
+let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
-const dialogFormData = reactive<BaselineCheckFormData>({
-  assetId: '',
-  attribute: '',
-  level: '',
-  point: '',
-  item: '',
-  resultDescription: '',
-  resultDescription_files: [],
-  result: '',
-  suggestion: ''
-})
+const dialogFormData = createBaselineCheckFormData(step)
 
-const formItems = defineFormItems<BaselineCheckFormData>([
-  {
-    label: '资产名称',
-    prop: 'assetId',
-    type: 'select',
-    rules: [{ required: true, message: '请选择资产名称', trigger: 'blur' }],
-    componentProps: {
-      options: []
-    }
-  },
-  {
-    label: '属性',
-    prop: 'attribute',
-    type: 'select',
-    componentProps: {
-      dictField: 'background_attribute'
-    }
-  },
-  {
-    label: '等级',
-    prop: 'level',
-    type: 'select',
-    componentProps: {
-      dictField: 'background_point_grade'
-    }
-  },
-  {
-    label: '测评指标',
-    prop: 'point',
-    type: 'input',
-    rules: [{ required: true, message: '请输入测评指标', trigger: 'blur' }]
-  },
-  {
-    label: '测评项',
-    prop: 'item',
-    type: 'input',
-    rules: [{ required: true, message: '请输入测评项', trigger: 'blur' }]
-  },
-  {
-    label: '检查结果',
-    prop: 'resultDescription',
-    customSlot: 'resultDescription',
-    rules: [{ required: true, message: '请输入检查结果', trigger: 'blur' }]
-  },
-  {
-    label: '是否符合规范',
-    prop: 'result',
-    type: 'select',
-    rules: [{ required: true, message: '请选择是否符合规范', trigger: 'blur' }],
-    componentProps: {
-      dictField: 'background_point_result'
-    }
-  },
-  {
-    label: '整改建议',
-    prop: 'suggestion',
-    type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    }
-  }
-])
+const formItems = [
+  ...createBaselineCheckCommonFormItems(),
+  ...(step === '1' ? firstTestFormItems : regressionFormItems)
+]
 
 const handlePageClick = (row: BaselineCheckData | undefined = undefined) =>
   open(row)
@@ -153,7 +50,25 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
   useDialogForm<BaselineCheckFormData, 'id', string, FormData>({
     defaultFormData: dialogFormData,
     title: '基线核查',
-    transformRequest: data => objectToFormData(data),
+    transformRequest: data => {
+      const payload =
+        step === '1'
+          ? {
+              ...data,
+              regressionDescription: undefined,
+              regressionDescription_files: undefined,
+              regressionResult: undefined,
+              regressionSuggestion: undefined
+            }
+          : {
+              ...data,
+              resultDescription: undefined,
+              resultDescription_files: undefined,
+              result: undefined,
+              suggestion: undefined
+            }
+      return objectToFormData(payload)
+    },
     fetchDetail: id => getBaselineCheckDetailAPI(id),
     onCreate: data => createBaselineCheckAPI(data),
     onUpdate: data => updateBaselineCheckAPI(data),
@@ -276,7 +191,7 @@ const pageConfig: PageConfig<BaselineCheckData> = {
     ]
   },
   tableConfig: {
-    tableColumns,
+    tableColumns: createBaselineCheckTableColumns(step),
     defaultButtonsConfig: {
       edit: { permission: 'asset:baseline:edit' },
       delete: { permission: 'asset:baseline:remove' }
@@ -324,8 +239,14 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
           placeholder="请输入检查结果"
         />
       </template>
+      <template #custom-regressionDescription="{ data }">
+        <FileReferenceInput
+          v-model="data.regressionDescription"
+          v-model:file-list="data.regressionDescription_files"
+          :rows="5"
+          placeholder="请输入复测结果"
+        />
+      </template>
     </ScDialogForm>
   </div>
 </template>
-
-<style scoped lang="scss"></style>
