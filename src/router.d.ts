@@ -16,6 +16,7 @@ declare module 'vue-router' {
     link?: string
     activeMenu: string
     fullHeight?: boolean
+    query?: Record<string, any>
   }
 }
 

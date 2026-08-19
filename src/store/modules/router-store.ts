@@ -13,6 +13,7 @@ import {
 import { getRouters } from '@/api/system/menu-api.ts'
 import Layout from '@/layout/index.vue'
 import ParentView from '@/layout/components/ParentView/index.vue'
+import { parseComponentPath } from '@/utils/routeQuery.ts'
 
 // 对views文件夹下的所有.vue文件进行自动导入
 const modules = import.meta.glob('@/views/**/*.vue')
@@ -40,9 +41,11 @@ const prefixProcessPath = (
 ): Array<RouterData> => {
   return routes.map(item => {
     const fullPath = `${basePath.replace(/\/$/, '')}/${item.path.replace(/^\//, '')}`
+    const { query } = parseComponentPath(item.component)
     return {
       ...item,
       path: fullPath,
+      meta: query ? { ...item.meta, query } : item.meta,
       children:
         item.children && item.children.length
           ? prefixProcessPath(item.children, fullPath)
@@ -116,7 +119,9 @@ const filterAsyncRoutes = (
           // @ts-ignore
           r.component = depth === 0 ? Layout : ParentView
         } else {
-          const view = loadView(r.component)
+          const { componentPath, query } = parseComponentPath(r.component)
+          if (query) r.meta = { ...r.meta, query }
+          const view = loadView(componentPath)
           r.component = view || (() => import('@/views/error/404.vue'))
         }
       }
@@ -211,10 +216,10 @@ export const removeProcessRoutes = (router: Router) => {
 }
 
 // 将后端返回数据进行处理，生成路由
-function generateProcessRoutes(
+const generateProcessRoutes = (
   routes: RouterData[],
   basePath = ''
-): ScRouteRecordRaw[] {
+): ScRouteRecordRaw[] => {
   const result: ScRouteRecordRaw[] = []
   routes.forEach(item => {
     if (item.hidden) return
@@ -224,13 +229,17 @@ function generateProcessRoutes(
         result.push(...generateProcessRoutes(item.children, fullPath))
       }
     } else {
-      const componentPath = `/src/views/${item.component}.vue`
+      const { componentPath: viewName, query } = parseComponentPath(
+        item.component
+      )
+      const meta = query ? { ...item.meta, query } : item.meta
+      const componentPath = `/src/views/${viewName}.vue`
       if (modules[componentPath]) {
         result.push({
           path: fullPath,
           name: item.name,
           component: modules[componentPath],
-          meta: item.meta
+          meta
         } as unknown as ScRouteRecordRaw)
       } else {
         // 组件尚未迁移时兜底为系统 404（挂载在 projectProcess 父路由下，渲染在主 Layout 内）
@@ -239,7 +248,7 @@ function generateProcessRoutes(
           path: fullPath,
           name: item.name,
           component: () => import('@/views/error/404.vue'),
-          meta: item.meta
+          meta
         } as unknown as ScRouteRecordRaw)
       }
       if (item.children && item.children.length > 0) {

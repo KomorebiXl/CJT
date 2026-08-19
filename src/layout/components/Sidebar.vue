@@ -18,7 +18,7 @@ const activeMenu = computed(() => {
     activeMenu?: string
     noCache?: boolean
   }
-  return activeMenu || route.path
+  return activeMenu || route.fullPath
 })
 
 // 过滤掉 hidden 的顶级路由
@@ -32,7 +32,8 @@ const menuRef = useTemplateRef<MenuInstance>('menuRef')
 const isAdjusting = ref(false)
 
 const activeAncestorChain = computed(() => {
-  const parts = activeMenu.value.split('/').filter(Boolean)
+  const pathOnly = activeMenu.value.split('?')[0]
+  const parts = pathOnly.split('/').filter(Boolean)
   const chain: string[] = []
   let path = ''
   for (const p of parts) {
@@ -56,6 +57,17 @@ const handleMenuOpen = (index: string) => {
     })
   })
 }
+
+const router = useRouter()
+
+const handleSelect = (index: string) => {
+  if (index.startsWith('http')) return
+  const [path, queryStr] = index.split('?')
+  const query = queryStr
+    ? Object.fromEntries(new URLSearchParams(queryStr))
+    : undefined
+  router.push({ path, query })
+}
 </script>
 
 <template>
@@ -78,9 +90,9 @@ const handleMenuOpen = (index: string) => {
         :collapse="layoutStore.isCollapsed"
         :collapse-transition="false"
         unique-opened
-        router
         class="sidebar-menu"
         @open="handleMenuOpen"
+        @select="handleSelect"
       >
         <!-- prettier-ignore -->
         <SidebarMenuItem

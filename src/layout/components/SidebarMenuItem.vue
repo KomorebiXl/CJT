@@ -4,6 +4,7 @@ import { TopRight } from '@element-plus/icons-vue'
 import type { ScRouteMeta, ScRouteRecordRaw } from 'vue-router'
 import MenuIcon from './MenuIcon.vue'
 import MenuTitle from './MenuTitle.vue'
+import { appendQuery } from '@/utils/routeQuery.ts'
 
 defineOptions({
   name: 'SidebarMenuItem'
@@ -26,7 +27,7 @@ const isSingleLeaf = computed(() => {
   return visibleChildren.value.length <= 1
 })
 
-function resolvePath(routePath: string, base = ''): string {
+const resolvePath = (routePath: string, base = ''): string => {
   if (!routePath) return base
   if (routePath.startsWith('/') || routePath.startsWith('http'))
     return routePath
@@ -57,11 +58,11 @@ const externalUrl = computed(() => {
   return link?.startsWith('http') ? link : props.item.path
 })
 
-function openExternalLink() {
+const openExternalLink = () => {
   window.open(externalUrl.value, '_blank', 'noopener,noreferrer')
 }
 
-function resolveIcon(iconName: string) {
+const resolveIcon = (iconName: string) => {
   if (!iconName) return null
   const pascalCase = iconName
     .split('-')
@@ -74,9 +75,16 @@ const currentFullPath = computed(() =>
   resolvePath(props.item.path, props.basePath)
 )
 
-function getMeta(route: ScRouteRecordRaw) {
+const getMeta = (route: ScRouteRecordRaw) => {
   return route.meta as ScRouteMeta | undefined
 }
+
+const leafQuery = computed(
+  () => getMeta(leafRoute.value)?.query as Record<string, string> | undefined
+)
+const leafIndexWithQuery = computed(() =>
+  appendQuery(leafFullPath.value, leafQuery.value)
+)
 </script>
 
 <template>
@@ -92,7 +100,7 @@ function getMeta(route: ScRouteRecordRaw) {
         <el-icon class="external-icon"><TopRight /></el-icon>
       </template>
     </el-menu-item>
-    <el-menu-item v-else-if="isSingleLeaf" :index="leafFullPath">
+    <el-menu-item v-else-if="isSingleLeaf" :index="leafIndexWithQuery">
       <MenuIcon :icon="getMeta(leafRoute)?.icon" />
       <template #title>
         <MenuTitle :title="leafRoute.meta?.title as string" />
