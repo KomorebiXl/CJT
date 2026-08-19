@@ -25,5 +25,10 @@ export const getHostScanDetailAPI = (id: string) =>
 export const updateHostScanAPI = (data: HostScanFormData & { id: string }) =>
   request.put<BaseResponse>({ url: hostScanBaseUrl, data })
 
-/** 生成测试日志（复用已有日志 API 封装，type=3 为主机扫描） */
+/** 删除主机扫描 */
+export const deleteHostScanAPI = (data: { ids: Array<string> }) => {
+  return request.post<BaseResponse>({ url: `${hostScanBaseUrl}/delete`, data })
+}
+
+/** 生成测试日志 */
 export { generateSubjectLogAPI } from './baselineCheck-api.ts'

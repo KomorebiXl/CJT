@@ -6,6 +6,7 @@ import type {
 } from '@/types/projectProcess/hostScan'
 import {
   createHostScanAPI,
+  deleteHostScanAPI,
   generateSubjectLogAPI,
   getHostScanDataAPI,
   getHostScanDetailAPI,
@@ -19,8 +20,11 @@ import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
+import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 
-let step: string = '1'
+const route = useRoute()
+
+let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
 
 const searchbarItems = reactive<SearchbarItems<HostScanSearchParams>>([
   {
@@ -73,14 +77,18 @@ const formItems = defineFormItems<HostScanFormData>([
     label: '资产名称',
     prop: 'assetId',
     type: 'select',
-    componentProps: {
-      options: []
-    }
+    componentProps: { options: [] },
+    rules: [
+      { required: step === '2', message: '未填写资产名称', trigger: 'blur' }
+    ]
   },
   {
     label: '端口',
     prop: 'loopholeAddress',
-    type: 'input'
+    type: 'input',
+    rules: [
+      { required: step === '2', message: '未填写端口号', trigger: 'blur' }
+    ]
   },
   {
     label: '协议',
@@ -95,44 +103,39 @@ const formItems = defineFormItems<HostScanFormData>([
       dictField: 'background_code_status'
     }
   },
-
   {
     label: '漏洞等级',
     prop: 'level',
     type: 'select',
-    componentProps: {
-      dictField: 'background_loophole_level'
-    }
+    componentProps: { dictField: 'background_loophole_level' },
+    rules: [
+      { required: step === '2', message: '未选择漏洞等级', trigger: 'blur' }
+    ]
   },
   {
     label: '漏洞名称',
     prop: 'loopholeName',
     type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    },
+    componentProps: { type: 'textarea', rows: 3 },
     colSpan: 2
   },
   {
     label: '详细描述',
     prop: 'reason',
     type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    },
-    colSpan: 2
+    componentProps: { type: 'textarea', rows: 3 },
+    colSpan: 2,
+    rules: [{ required: step === '2', message: '未填写描述', trigger: 'blur' }]
   },
   {
     label: '解决方案',
     prop: 'suggestion',
     type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    },
-    colSpan: 2
+    componentProps: { type: 'textarea', rows: 3 },
+    colSpan: 2,
+    rules: [
+      { required: step === '2', message: '未填写解决方案', trigger: 'blur' }
+    ]
   }
 ])
 
@@ -229,7 +232,7 @@ const pageConfig: PageConfig<HostScanData> = {
     tableColumns,
     defaultButtonsConfig: {
       edit: { permission: 'asset:host:edit' },
-      delete: { show: () => false }
+      delete: { show: () => step === '2' }
     }
   },
   fetchData: getHostScanDataAPI
@@ -240,6 +243,13 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
   title: dialogTitle.value,
   columns: 2
 }))
+
+const { handleDelete } = useDeleteAction<HostScanData>(
+  ids => deleteHostScanAPI({ ids }),
+  {
+    onSuccess: () => scResourcePageRef.value?.refresh()
+  }
+)
 </script>
 
 <template>
@@ -250,6 +260,7 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
       @add="handlePageClick"
       @edit="handlePageClick"
       @import="importOpen()"
+      @delete="handleDelete"
     >
       <template #column-assetName="{ row }">
         {{ formatAssetName(row as HostScanData) }}
