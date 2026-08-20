@@ -24,7 +24,9 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import type { DynamicFormListItem } from '@/components/DynamicFormList/dynamicFormList.ts'
 
-let step: string = '1'
+const route = useRoute()
+
+let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
 
 const DEFAULT_DETAILS: Omit<WebScanDetail, 'levelLabel' | 'statusLabel'> = {
   loopholeAddress: '',
@@ -55,8 +57,8 @@ const searchbarItems = reactive<SearchbarItems<WebScanSearchParams>>([
 ])
 
 const tableColumns = reactive<TableColumns>([
-  { label: '资产名称', prop: 'assetName', minWidth: 100 },
-  { label: '漏洞名称', prop: 'loopholeName', minWidth: 100 },
+  { label: '资产名称', prop: 'assetName' },
+  { label: '漏洞名称', prop: 'loopholeName' },
   { label: '漏洞详情', prop: 'loopholes', slot: 'loopholes' },
   { label: '漏洞数量', prop: 'loopholeNum' }
 ])
@@ -129,7 +131,7 @@ const dynamicFormItems = reactive<
     type: 'select',
     prop: 'status',
     dictField: 'background_code_status',
-    placeholder: '请选择地址状态',
+    placeholder: '请选择地址状态'
   }
 ])
 
