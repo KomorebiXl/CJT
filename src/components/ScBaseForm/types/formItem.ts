@@ -8,7 +8,8 @@ import type {
   ScFormSelectProps,
   ScFormSwitchProps,
   ScFormTreeSelectProps,
-  ScFormTreeProps
+  ScFormTreeProps,
+  ScFormCascaderProps
 } from './componentProps.ts'
 
 interface ScBaseFormItemBase {
@@ -75,6 +76,11 @@ export interface ScBaseFormTreeItem extends ScBaseFormItemBase {
   componentProps?: ScFormTreeProps
 }
 
+export interface ScBaseFormCascaderItem extends ScBaseFormItemBase {
+  type: 'cascader'
+  componentProps?: ScFormCascaderProps
+}
+
 export type ScBaseFormItem =
   | ScBaseFormInputItem
   | ScBaseFormSelectItem
@@ -85,4 +91,5 @@ export type ScBaseFormItem =
   | ScBaseFormSwitchItem
   | ScBaseFormTreeSelectItem
   | ScBaseFormTreeItem
+  | ScBaseFormCascaderItem
   | ScBaseFormCustomItem

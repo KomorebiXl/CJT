@@ -22,6 +22,7 @@ import type {
   ScTreeFieldName,
   ScTreeOption
 } from '@/components/ScBaseFormItems/ScTree'
+import type { ScCascaderProps } from '@/components/ScBaseFormItems/ScCascader'
 
 export interface ScFormInputProps {
   type?: ScInputType
@@ -138,3 +139,5 @@ export interface ScFormTreeProps {
   filterable?: boolean
   emptyText?: string
 }
+
+export type ScFormCascaderProps = Omit<ScCascaderProps, 'modelValue'>

@@ -7,6 +7,7 @@ import ScCheckbox from './ScCheckbox'
 import ScSwitch from './ScSwitch'
 import ScTreeSelect from './ScTreeSelect'
 import ScTree from './ScTree'
+import ScCascader from './ScCascader'
 
 export {
   ScInput,
@@ -17,7 +18,8 @@ export {
   ScCheckbox,
   ScSwitch,
   ScTreeSelect,
-  ScTree
+  ScTree,
+  ScCascader
 }
 
 export type { ScTreeOption, ScTreeFieldName } from './types/tree.ts'

@@ -10,7 +10,8 @@ import {
   ScDatePicker,
   ScDateRangePicker,
   ScTreeSelect,
-  ScTree
+  ScTree,
+  ScCascader
 } from '../ScBaseFormItems'
 import { ArrowUp } from '@element-plus/icons-vue'
 import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
@@ -50,7 +51,8 @@ const componentMap = {
   checkbox: ScCheckbox,
   switch: ScSwitch,
   treeSelect: ScTreeSelect,
-  tree: ScTree
+  tree: ScTree,
+  cascader: ScCascader
 } as const
 
 const scBaseFormRef = useTemplateRef<FormInstance>('scBaseFormRef')
@@ -134,7 +136,13 @@ const resolveLabel = (item: ScBaseFormItem) => {
 }
 
 const INPUT_LIKE_TYPES = ['input'] as const
-const SELECT_LIKE_TYPES = ['select', 'date', 'dateRange', 'tree'] as const
+const SELECT_LIKE_TYPES = [
+  'select',
+  'date',
+  'dateRange',
+  'tree',
+  'cascader'
+] as const
 
 // 解析placeholder
 const resolvePlaceholder = (item: ScBaseFormItem) => {
