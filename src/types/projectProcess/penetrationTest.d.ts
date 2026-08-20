@@ -60,10 +60,21 @@ export type PenetrationTestFormData = {
   suggestion: string
   /** 漏洞地址列表 */
   addresses: Array<Omit<PenetrationTestAddress, 'statusLabel'>>
-  /** 测试过程 */
-  result: string
-  /** 测试过程附件列表 */
-  result_files: Array<FileItem>
   /** 项目流程固定参数 */
   step: string
+} & Partial<PenetrationTestFirstFormData> &
+  Partial<PenetrationTestRegressionFormData>
+
+export type PenetrationTestFirstFormData = {
+  /** 首轮测试过程 */
+  result: string
+  /** 首轮测试过程附件列表 */
+  result_files: Array<FileItem>
+}
+
+export type PenetrationTestRegressionFormData = {
+  /** 回归测试过程 */
+  regressionResult: string
+  /** 回归测试过程附件列表 */
+  regressionResult_files: Array<FileItem>
 }

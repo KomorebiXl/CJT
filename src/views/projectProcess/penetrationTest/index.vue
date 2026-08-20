@@ -2,174 +2,51 @@
 import type {
   PenetrationTestAddress,
   PenetrationTestData,
-  PenetrationTestFormData,
-  PenetrationTestSearchParams
+  PenetrationTestFormData
 } from '@/types/projectProcess/penetrationTest'
 import type { VulnerabilityLibraryOption } from '@/types/adminManagement/vulnerabilityLibrary'
 import {
   createPenetrationTestAPI,
+  deletePenetrationTestAPI,
   generateSubjectLogAPI,
   getPenetrationTestDataAPI,
   getPenetrationTestDetailAPI,
   updatePenetrationTestAPI
 } from '@/api/projectProcess/penetrationTest-api.ts'
-import { Delete, Document, Plus } from '@element-plus/icons-vue'
+import { Document } from '@element-plus/icons-vue'
 import { objectToFormData } from '@/utils/file.ts'
 import { ScMessage } from '@/utils/ElUtils'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
-import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import { getVulnerabilityLibraryOptionsAPI } from '@/api/adminManagement/vulnerabilityLibrary-api.ts'
+import {
+  searchbarItems,
+  createDefaultAddressFormData,
+  createPenetrationTestFormData,
+  createPenetrationTestFormItems,
+  penetrationTestFirstItem,
+  penetrationTestRegressionItem,
+  createPenetrationTestTableColumns
+} from '@/views/projectProcess/penetrationTest/penetrationTest-config.ts'
+import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import FileReferenceInput from '@/components/FileReferenceInput/index.vue'
+import type { DynamicFormListItem } from '@/components/DynamicFormList/dynamicFormList.ts'
 
-let step: string = '1'
+const route = useRoute()
 
-const DEFAULT_ADDRESSES: Omit<PenetrationTestAddress, 'statusLabel'> = {
-  loopholeAddress: '',
-  status: '',
-  step: '1'
-}
-
-const searchbarItems = reactive<SearchbarItems<PenetrationTestSearchParams>>([
-  {
-    label: '漏洞名称',
-    prop: 'loopholeName',
-    type: 'input',
-    placeholder: '请输入漏洞名称'
-  },
-  {
-    label: '资产名称',
-    prop: 'assetName',
-    type: 'input',
-    placeholder: '请输入资产名称'
-  },
-  {
-    label: '漏洞等级',
-    prop: 'level',
-    type: 'select',
-    dictField: 'background_loophole_level'
-  }
-])
-
-const tableColumns = reactive<TableColumns>([
-  { label: '资产名称', prop: 'assetName' },
-  { label: '漏洞名称', prop: 'loopholeName' },
-  { label: '检查项', prop: 'itemLabel' },
-  { label: '漏洞等级', prop: 'levelLabel' },
-  { label: '漏洞描述', prop: 'description', showOverflowTooltip: true },
-  { label: '漏洞危害', prop: 'hazard', showOverflowTooltip: true },
-  { label: '修复建议', prop: 'suggestion', showOverflowTooltip: true },
-  { label: '测试过程', prop: 'result' },
-  { label: '漏洞位置', prop: 'loopholeAddress', slot: 'loopholeAddress' }
-])
+let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
-const dialogFormData = reactive<PenetrationTestFormData>({
-  assetId: '',
-  loopholeId: '',
-  item: '',
-  level: '',
-  loopholeName: '',
-  description: '',
-  hazard: '',
-  suggestion: '',
-  addresses: [DEFAULT_ADDRESSES],
-  result: '',
-  result_files: [],
-  step
-})
+const dialogFormData = createPenetrationTestFormData(step)
 
-const formItems = defineFormItems<PenetrationTestFormData>([
-  {
-    label: '资产名称',
-    prop: 'assetId',
-    type: 'select',
-    rules: [{ required: true, message: '请选择资产名称', trigger: 'blur' }],
-    componentProps: {
-      options: []
-    }
-  },
-  {
-    label: '关联测试项',
-    prop: 'loopholeId',
-    customSlot: 'loopholeId'
-  },
-  {
-    label: '检查项',
-    prop: 'item',
-    type: 'input',
-    componentProps: {
-      disabled: true,
-      placeholder: '选择漏洞后自动回填'
-    }
-  },
-  {
-    label: '漏洞等级',
-    prop: 'level',
-    type: 'select',
-    rules: [{ required: true, message: '请选择漏洞等级', trigger: 'blur' }],
-    componentProps: {
-      dictField: 'background_loophole_level'
-    }
-  },
-  {
-    label: '漏洞名称',
-    prop: 'loopholeName',
-    type: 'input',
-    rules: [{ required: true, message: '请输入漏洞名称', trigger: 'blur' }]
-  },
-  {
-    label: '漏洞描述',
-    prop: 'description',
-    type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    },
-    colSpan: 2,
-    rules: [{ required: true, message: '请输入漏洞描述', trigger: 'blur' }]
-  },
-  {
-    label: '漏洞危害',
-    prop: 'hazard',
-    type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    },
-    colSpan: 2,
-    rules: [{ required: true, message: '请输入漏洞危害', trigger: 'blur' }]
-  },
-  {
-    label: '修复建议',
-    prop: 'suggestion',
-    type: 'input',
-    componentProps: {
-      type: 'textarea',
-      rows: 3
-    },
-    colSpan: 2,
-    rules: [{ required: true, message: '请输入修复建议', trigger: 'blur' }]
-  },
-  {
-    label: '漏洞地址',
-    prop: 'addresses',
-    customSlot: 'addresses',
-    colSpan: 2,
-    rules: [{ required: true, message: '请添加漏洞地址', trigger: 'blur' }]
-  },
-  {
-    label: '测试过程',
-    prop: 'result',
-    customSlot: 'result',
-    colSpan: 2,
-    rules: [{ required: true, message: '请输入测试过程', trigger: 'blur' }]
-  }
-])
+const formItems = [
+  ...createPenetrationTestFormItems(),
+  ...(step === '1' ? penetrationTestFirstItem : penetrationTestRegressionItem)
+]
 
 const handlePageClick = (row: PenetrationTestData | undefined = undefined) =>
   open(row)
@@ -181,7 +58,7 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
     transformRequest: data => objectToFormData(data),
     beforeOpen: async data => {
       if (!data.addresses || !data.addresses.length) {
-        data.addresses = [DEFAULT_ADDRESSES]
+        data.addresses = [createDefaultAddressFormData(step)]
       }
     },
     fetchDetail: id => getPenetrationTestDetailAPI(id),
@@ -229,16 +106,6 @@ const handleLoopholeChange = (value: string) => {
   formData.description = target.description ?? ''
   formData.hazard = target.risk ?? ''
   formData.suggestion = target.suggestion ?? ''
-}
-
-/** 添加漏洞地址行 */
-const handleAddAddress = () => {
-  formData.addresses.push(DEFAULT_ADDRESSES)
-}
-
-/** 删除漏洞地址行 */
-const handleRemoveAddress = (index: number) => {
-  formData.addresses.splice(index, 1)
 }
 
 onMounted(() => Promise.allSettled([loadAssetOptions(), loadLoopholeOptions()]))
@@ -296,10 +163,10 @@ const pageConfig: PageConfig<PenetrationTestData> = {
     ]
   },
   tableConfig: {
-    tableColumns,
+    tableColumns: createPenetrationTestTableColumns(step),
     defaultButtonsConfig: {
       edit: { permission: 'asset:penetrate:edit' },
-      delete: { show: () => false }
+      delete: { permission: 'asset:penetrate:remove' }
     }
   },
   fetchData: getPenetrationTestDataAPI
@@ -310,6 +177,26 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
   title: dialogTitle.value,
   columns: 2
 }))
+
+const { handleDelete } = useDeleteAction<PenetrationTestData>(
+  ids => deletePenetrationTestAPI({ ids }),
+  {
+    message: '确定删除该渗透测试吗？删除后不可恢复。',
+    onSuccess: () => scResourcePageRef.value?.refresh()
+  }
+)
+
+const dynamicFormItems = reactive<
+  Array<DynamicFormListItem<PenetrationTestAddress>>
+>([
+  { type: 'input', prop: 'loopholeAddress', placeholder: '请输入漏洞地址' },
+  {
+    type: 'select',
+    prop: 'status',
+    dictField: 'background_code_status',
+    placeholder: '请选择漏洞等级'
+  }
+])
 </script>
 
 <template>
@@ -320,6 +207,7 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
       @add="handlePageClick"
       @edit="handlePageClick"
       @import="importOpen()"
+      @delete="handleDelete"
     >
       <template #column-loopholeAddress="{ row }">
         <div
@@ -347,37 +235,20 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
         />
       </template>
       <template #custom-addresses="{ data }">
-        <div class="address-list">
-          <div
-            v-for="(address, index) in data.addresses"
-            :key="index"
-            class="address-row"
-          >
-            <ScInput
-              v-model="address.loopholeAddress"
-              placeholder="请输入漏洞地址"
-            />
-            <ScSelect
-              v-model="address.status"
-              dict-field="background_code_status"
-              placeholder="请选择地址状态"
-            />
-            <ScButton
-              type="danger"
-              text
-              :icon="Delete"
-              @click="handleRemoveAddress(Number(index))"
-            />
-          </div>
-          <ScButton type="primary" :icon="Plus" @click="handleAddAddress">
-            添加地址
-          </ScButton>
-        </div>
+        <DynamicFormList v-model="data.addresses" :items="dynamicFormItems" />
       </template>
       <template #custom-result="{ data }">
         <FileReferenceInput
           v-model="data.result"
           v-model:file-list="data.result_files"
+          :rows="5"
+          placeholder="请输入测试过程"
+        />
+      </template>
+      <template #custom-regressionResult="{ data }">
+        <FileReferenceInput
+          v-model="data.regressionResult"
+          v-model:file-list="data.regressionResult_files"
           :rows="5"
           placeholder="请输入测试过程"
         />

@@ -26,5 +26,9 @@ export const getPenetrationTestDetailAPI = (id: string) =>
 export const updatePenetrationTestAPI = (data: FormData) =>
   request.put<BaseResponse>({ url: penetrationTestBaseUrl, data })
 
+/** 删除渗透测试 */
+export const deletePenetrationTestAPI = (data: { ids: Array<string> }) =>
+  request.post<BaseResponse>({ url: `${penetrationTestBaseUrl}/delete`, data })
+
 /** 生成测试日志 */
 export { generateSubjectLogAPI } from './baselineCheck-api.ts'
