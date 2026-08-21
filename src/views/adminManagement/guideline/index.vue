@@ -11,8 +11,7 @@ import {
   getGuidelineDetailAPI,
   updateGuidelineDataAPI
 } from '@/api/adminManagement/guideline-api.ts'
-import { http } from '@/utils/http.ts'
-import type { IndustryStandardData } from '@/types/adminManagement/industryStandard'
+import { getIndustryStandardOptionsAPI } from '@/api/adminManagement/industryStandard-api.ts'
 import { findSelectItem } from '@/utils/searchbarUtils.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { findFormSelectItem } from '@/utils/formItemUtils.ts'
@@ -122,9 +121,7 @@ const { handleDelete } = useDeleteAction<GuidelineFormData>(
 )
 
 const getIndustryStandardData = async () => {
-  const { data } = await http.get<DataResponse<Array<IndustryStandardData>>>(
-    '/background/standard/option'
-  )
+  const { data } = await getIndustryStandardOptionsAPI()
   const options = mapSelectOptions(data, {
     label: ['standardNo', 'standardName'],
     value: 'id'
