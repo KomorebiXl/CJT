@@ -18,6 +18,7 @@ import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
+import { mapSelectOptions } from '@/utils/optionUtils.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
@@ -156,12 +157,10 @@ const loadAssetOptions = async () => {
   const { data } = await getAssetSystemOptionsAPI()
   const assetItem = findFormItem(formItems, 'assetId', 'select')
   if (assetItem?.componentProps) {
-    assetItem.componentProps.options = (data ?? []).map(item => ({
-      label: item.ipAddress
-        ? `${item.assetName} ${item.ipAddress}`
-        : item.assetName,
-      value: item.id
-    }))
+    assetItem.componentProps.options = mapSelectOptions(data, {
+      label: ['assetName', 'ipAddress'],
+      value: 'id'
+    })
   }
 }
 

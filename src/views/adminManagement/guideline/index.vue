@@ -16,6 +16,7 @@ import type { IndustryStandardData } from '@/types/adminManagement/industryStand
 import { findSelectItem } from '@/utils/searchbarUtils.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import { findFormSelectItem } from '@/utils/formItemUtils.ts'
+import { mapSelectOptions } from '@/utils/optionUtils.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 
@@ -124,10 +125,10 @@ const getIndustryStandardData = async () => {
   const { data } = await http.get<DataResponse<Array<IndustryStandardData>>>(
     '/background/standard/option'
   )
-  const options = data.map(item => ({
-    label: `${item.standardNo} ${item.standardName}`,
-    value: item.id
-  }))
+  const options = mapSelectOptions(data, {
+    label: ['standardNo', 'standardName'],
+    value: 'id'
+  })
   const standardItem = findSelectItem(searchbarItems, 'standardId')
   if (standardItem) standardItem.options = options
   const formItem = findFormSelectItem(formItems, 'standardId')

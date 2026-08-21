@@ -32,3 +32,9 @@ export const deleteCommonTestEnvironmentsAPI = (data: { ids: Array<string> }) =>
     url: `${commonTestEnvironmentsBaseUrl}/delete`,
     data
   })
+
+/** 常用测试环境选项 */
+export const getCommonTestEnvironmentsOptionsAPI = () =>
+  request.get<DataResponse<Array<CommonTestEnvironmentsData>>>({
+    url: `${commonTestEnvironmentsBaseUrl}/option`
+  })
