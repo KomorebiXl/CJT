@@ -21,8 +21,12 @@ const whiteList = new Set(['/login'])
 
 const isProjectProcessPath = (path: string) => path.startsWith(PROJECT_PROCESS_PREFIX)
 
+// /redirect/projectProcess/... 是流程页的刷新中转，剥掉前缀后再按流程路径判断，
+// 避免刷新被误判为退出流程作用域而卸载流程路由
+const stripRedirectPrefix = (path: string) => path.replace(/^\/redirect(?=\/)/, '')
+
 const isProjectProcessRoute = (route: Pick<RouteLocationNormalized, 'fullPath' | 'path'>) => {
-  return isProjectProcessPath(route.fullPath)
+  return isProjectProcessPath(stripRedirectPrefix(route.fullPath))
 }
 
 export const beforeEach = (router: Router) => {
