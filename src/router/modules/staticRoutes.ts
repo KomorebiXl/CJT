@@ -24,7 +24,16 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
     component: Layout,
     hidden: true,
     meta: { title: '项目流程' },
-    children: []
+    children: [
+      {
+        // 空路径子路由：裸 /projectProcess 进入流程模式时的落地页，
+        // 渲染空态提示，具体页面由用户点击左侧菜单选择
+        path: '',
+        name: 'ProcessEntry',
+        component: () => import('@/views/projectProcess/processEntry.vue'),
+        meta: { title: '项目流程' }
+      }
+    ]
   },
   {
     path: '/login',
