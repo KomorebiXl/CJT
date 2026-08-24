@@ -26,8 +26,7 @@ export const getTestEnvironmentDetailAPI = (id: string) =>
 /** 编辑测试环境 */
 export const updateTestEnvironmentAPI = (
   data: TestEnvironmentFormData & { id: string }
-) =>
-  request.put<BaseResponse>({ url: `${testEnvironmentBaseUrl}`, data })
+) => request.put<BaseResponse>({ url: `${testEnvironmentBaseUrl}`, data })
 
 /** 删除测试环境 */
 export const deleteTestEnvironmentAPI = (data: { ids: Array<string> }) =>
