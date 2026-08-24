@@ -13,7 +13,8 @@ const props = withDefaults(defineProps<ScDialogProps>(), {
   draggable: true,
   fullscreen: false,
   showConfirmButton: true,
-  showFooterOperate: true
+  showFooterOperate: true,
+  destroyOnClose: true
 })
 
 const emit = defineEmits<ScDialogEmits>()
@@ -46,7 +47,7 @@ const handleCancel = () => {
     :fullscreen="fullscreen"
     :style="{ '--sc-body-min-h': autoHeight ? 'auto' : undefined }"
     append-to-body
-    destroy-on-close
+    :destroy-on-close="destroyOnClose"
     @close="handleCancel"
     @closed="emit('closed')"
     @open="emit('open')"

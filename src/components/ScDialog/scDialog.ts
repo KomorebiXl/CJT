@@ -23,6 +23,8 @@ export interface ScDialogProps {
   showConfirmButton?: boolean
   // 显示底部操作栏
   showFooterOperate?: boolean
+  // 关闭时销毁弹窗内容；内容含大数据量组件（如整棵树下拉）时可设 false 避免每次打开重建
+  destroyOnClose?: boolean
 }
 
 export interface ScDialogEmits {

@@ -40,6 +40,7 @@ defineExpose<ScDialogFormInstance>({
     :dialog-width="config.dialogWidth"
     :draggable="config.draggable"
     :fullscreen="config.fullscreen"
+    :destroy-on-close="config.destroyOnClose"
     :confirm-loading="confirmLoading"
     @confirm="handleConfirm"
   >

@@ -13,6 +13,8 @@ export interface ScDialogFormConfig {
   inline?: boolean
   columns?: number
   groupModel?: boolean
+  /** 关闭时销毁内容；表单含大数据树时可设 false 提升再次打开速度 */
+  destroyOnClose?: boolean
 }
 
 export interface ScDialogFormProps {

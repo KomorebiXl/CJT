@@ -12,6 +12,7 @@ import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { listToTree } from '@/utils/tree.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import SvgIcon from '@/components/SvgIcon/index.vue'
+import type { ScDialogFormInstance } from '@/components/ScDialogForm'
 import MenuCopyDialog from './components/MenuCopyDialog.vue'
 import {
   searchbarItems,
@@ -56,7 +57,22 @@ const pageConfig: PageConfig<MenuData> = {
     })
     const parentMenuItem = findFormItem(formItems, 'parentId', 'treeSelect')
     if (parentMenuItem?.componentProps) {
-      parentMenuItem.componentProps.options = treeData
+      // 包裹「主类目」根节点（menuId 0）供顶层菜单回显与选择；
+      // 排除按钮节点：按钮不可作上级，且显著降低树选项构建开销
+      parentMenuItem.componentProps.options = [
+        {
+          menuId: 0,
+          menuName: '主类目',
+          children: listToTree(
+            data.filter(item => item.menuType !== 'F'),
+            {
+              idKey: 'menuId',
+              parentIdKey: 'parentId',
+              rootParentId: 0
+            }
+          )
+        }
+      ]
     }
     return {
       rows: treeData
@@ -96,8 +112,17 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
 
 const pageDialogConfig = computed<DialogFormConfig>(() => ({
   formItems,
-  title: dialogTitle.value
+  title: dialogTitle.value,
+  // 菜单树选项数据量大，保留弹窗内容避免每次打开重建树形下拉
+  destroyOnClose: false
 }))
+
+const menuFormDialogRef =
+  useTemplateRef<ScDialogFormInstance>('menuFormDialogRef')
+
+/** 内容常驻后清除上次会话残留的校验状态；nextTick 等首次打开时表单挂载完成 */
+const handleDialogOpen = () =>
+  nextTick(() => menuFormDialogRef.value?.clearValidate())
 
 const handleAddMenu = (row: MenuData) => {
   open(undefined, { parentId: row.menuId })
@@ -118,10 +143,12 @@ const handleAddMenu = (row: MenuData) => {
       </template>
     </ScResourcePage>
     <ScDialogForm
+      ref="menuFormDialogRef"
       v-model="visible"
       :form-data="formData"
       :config="pageDialogConfig"
       :confirm-loading="confirmLoading"
+      @open="handleDialogOpen"
       @confirm="handleConfirm"
     >
       <template #custom-menuIconSlot>
