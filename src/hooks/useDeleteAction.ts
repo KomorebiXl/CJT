@@ -40,13 +40,19 @@ const mountConfirm = (options: { message?: string }): Promise<void> => {
  * 封装带二次确认的删除操作
  *
  * @example
+ * // 按 id 数组删除（rows 与 ids 一一对应，不需要时可忽略）
  * const { handleDelete } = useDeleteAction(
- *   (data) => deleteIndustryStandardAPI(data),
+ *   ids => deleteFooAPI({ ids }),
+ *   { onSuccess: fetchList }
+ * )
+ * // 按整行数据删除（部分删除契约要求提交行对象而非 id）
+ * const { handleDelete } = useDeleteAction<FooData>(
+ *   (_ids, rows) => deleteFooRowAPI(rows[0]),
  *   { onSuccess: fetchList }
  * )
  */
 export const useDeleteAction = <T extends Record<string, unknown>>(
-  deleteFn: (ids: string[]) => Promise<unknown>,
+  deleteFn: (ids: string[], rows: Array<T>) => Promise<unknown>,
   options: DeleteActionOptions<T> = {}
 ) => {
   const {
@@ -62,8 +68,8 @@ export const useDeleteAction = <T extends Record<string, unknown>>(
       return
     }
 
-    const ids = Array.isArray(row) ? row.map(getId) : [getId(row)]
-    await deleteFn(ids)
+    const rows = Array.isArray(row) ? row : [row]
+    await deleteFn(rows.map(getId), rows)
     ScMessage.success(successMessage)
     onSuccess?.()
   }
