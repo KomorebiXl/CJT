@@ -243,7 +243,7 @@ const dialogFormConfig: DialogFormConfig = {
 </script>
 
 <template>
-  <div class="page-card"  >
+  <div class="page-card">
     <ScResourcePage
       ref="scResourcePageRef"
       :page-config="pageConfig"

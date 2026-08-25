@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ScButtonProps } from './scButton.ts'
-import type { ButtonInstance } from 'element-plus'
 
 defineOptions({
   name: 'ScButton',
@@ -24,7 +23,7 @@ const props = withDefaults(defineProps<ScButtonProps>(), {
 })
 
 // el-button 组件实例
-const buttonRef = useTemplateRef<ButtonInstance>('buttonRef')
+// const buttonRef = useTemplateRef<ButtonInstance>('buttonRef')
 
 const attrs = useAttrs()
 
@@ -75,7 +74,11 @@ const handleClick = async (e: MouseEvent) => {
     @click="handleClick"
   >
     <!--  透传所有插槽供外部使用  -->
-    <template v-for="(slotFn, name) in $slots" :key="name" v-slot:[name]="slotProps">
+    <template
+      v-for="(slotFn, name) in $slots"
+      :key="name"
+      v-slot:[name]="slotProps"
+    >
       <component :is="slotFn" v-bind="slotProps" />
     </template>
   </el-button>

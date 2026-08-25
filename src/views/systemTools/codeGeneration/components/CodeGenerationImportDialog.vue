@@ -26,7 +26,8 @@ const handleOpen = async () => {
   await resourcePageRef.value?.refresh()
 }
 const handleConfirm = async () => {
-  const selectedRows = (resourcePageRef.value?.getSelectedRows() ?? []) as ImportableTableRow[]
+  const selectedRows = (resourcePageRef.value?.getSelectedRows() ??
+    []) as ImportableTableRow[]
   if (!selectedRows.length) {
     ScMessage.warning('请选择要导入的数据库表')
     return
@@ -40,10 +41,22 @@ const handleConfirm = async () => {
 }
 
 const pageConfig: PageConfig<ImportableTableRow> = {
-  searchConfig: { searchbarItems: reactive<SearchbarItems<ImportTableSearchParams>>([
-    { label: '表名称', prop: 'tableName', type: 'input', placeholder: '请输入表名称' },
-    { label: '表描述', prop: 'tableComment', type: 'input', placeholder: '请输入表描述' }
-  ]) },
+  searchConfig: {
+    searchbarItems: reactive<SearchbarItems<ImportTableSearchParams>>([
+      {
+        label: '表名称',
+        prop: 'tableName',
+        type: 'input',
+        placeholder: '请输入表名称'
+      },
+      {
+        label: '表描述',
+        prop: 'tableComment',
+        type: 'input',
+        placeholder: '请输入表描述'
+      }
+    ])
+  },
   operateConfig: { defaultButtons: [] },
   tableConfig: {
     tableColumns,
@@ -67,16 +80,11 @@ defineExpose({ open: handleOpen })
     auto-height
   >
     <div class="import-content">
-      <ScResourcePage
-        ref="resourcePageRef"
-        :page-config="pageConfig"
-      />
+      <ScResourcePage ref="resourcePageRef" :page-config="pageConfig" />
     </div>
     <template #footer>
       <ScButton @click="modelValue = false">取消</ScButton>
-      <ScButton type="primary" @click="handleConfirm">
-        确认导入
-      </ScButton>
+      <ScButton type="primary" @click="handleConfirm"> 确认导入 </ScButton>
     </template>
   </ScDialog>
 </template>

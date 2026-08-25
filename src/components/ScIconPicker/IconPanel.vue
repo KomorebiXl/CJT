@@ -28,7 +28,8 @@ const activeSource = ref<'svg' | 'element'>(
 const searchKeyword = ref('')
 
 // 切换来源时清空搜索词，避免上一个来源的关键字带到新来源里
-const handleSwitchSource = (source: 'svg' | 'element') => {
+const handleSwitchSource = (source: string | number | boolean | undefined) => {
+  if (source !== 'svg' && source !== 'element') return
   activeSource.value = source
   searchKeyword.value = ''
 }

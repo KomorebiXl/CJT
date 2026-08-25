@@ -2,6 +2,7 @@ import request from '@/utils/request'
 import { createListAPI } from '@/utils/pageRequest.ts'
 import type {
   WebScanData,
+  WebScanFormData,
   WebScanSearchParams
 } from '@/types/projectProcess/webScan'
 

@@ -123,7 +123,7 @@ const handleClick1 = async () => {
 const dialogVisible = ref<boolean>(false)
 const dialogConfig: ScDialogFormConfig = {
   formItems,
-  onSubmit: () => new Promise(resolve => resolve()),
+  // onSubmit: () => new Promise(resolve => resolve()),
   // dialogWidth: '80%'
 }
 </script>

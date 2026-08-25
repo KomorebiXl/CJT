@@ -64,7 +64,8 @@ const { handleDelete } = useDeleteAction<CodeGenerationRow>(
   }
 )
 const handleBatchDelete = () => {
-  const selectedRows = (scResourcePageRef.value?.getSelectedRows() ?? []) as CodeGenerationRow[]
+  const selectedRows = (scResourcePageRef.value?.getSelectedRows() ??
+    []) as CodeGenerationRow[]
   return handleDelete(selectedRows)
 }
 const openImportDialog = () => importDialogRef.value?.open()

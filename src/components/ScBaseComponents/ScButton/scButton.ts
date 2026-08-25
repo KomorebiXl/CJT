@@ -19,5 +19,6 @@ export interface ScButtonProps {
   dark?: boolean
   tag?: string | object
   stop?: boolean
-  onClick?: (e: MouseEvent) => void | Promise<any>
+  /** 返回 Promise 时按钮自动进入 loading，其余返回值被忽略 */
+  onClick?: (e: MouseEvent) => unknown
 }
