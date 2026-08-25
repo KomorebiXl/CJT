@@ -26,21 +26,25 @@ import {
   createBaselineCheckTableColumns,
   createBaselineCheckFormData,
   createBaselineCheckCommonFormItems,
-  firstTestFormItems,
-  regressionFormItems
+  createFirstTestFormItems,
+  createRegressionFormItems
 } from './baselineCheck.config.ts'
 
 const route = useRoute()
 
+/** step：'1' 首次测评，'2' 回归测评；stateGrid：国网安全形态（路由 query stateGrid=1） */
 let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
+const stateGrid = route.query.stateGrid === '1'
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
-const dialogFormData = createBaselineCheckFormData(step)
+const dialogFormData = createBaselineCheckFormData(step, stateGrid)
 
 const formItems = [
-  ...createBaselineCheckCommonFormItems(),
-  ...(step === '1' ? firstTestFormItems : regressionFormItems)
+  ...createBaselineCheckCommonFormItems(stateGrid),
+  ...(step === '1'
+    ? createFirstTestFormItems(stateGrid)
+    : createRegressionFormItems(stateGrid))
 ]
 
 const handlePageClick = (row: BaselineCheckData | undefined = undefined) =>
@@ -51,12 +55,13 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
     defaultFormData: dialogFormData,
     title: '基线核查',
     transformRequest: data => {
-      const payload =
+      const stripped =
         step === '1'
           ? {
               ...data,
               regressionDescription: undefined,
               regressionDescription_files: undefined,
+              regressionCheckResult: undefined,
               regressionResult: undefined,
               regressionSuggestion: undefined
             }
@@ -64,9 +69,14 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
               ...data,
               resultDescription: undefined,
               resultDescription_files: undefined,
+              checkResult: undefined,
               result: undefined,
               suggestion: undefined
             }
+      // 国网形态按源契约附带 step 且不含 attribute；常规形态保持原有提交字段不变
+      const payload = stateGrid
+        ? { ...stripped, step, attribute: undefined }
+        : stripped
       return objectToFormData(payload)
     },
     fetchDetail: id => getBaselineCheckDetailAPI(id),
@@ -114,7 +124,10 @@ const handleGenerateLog = async () => {
 
 const uploadConfig: UploadConfig = {
   uploadUrl: '/asset/baseline/import',
-  accept: ['.xlsx', '.docx', '.zip']
+  accept:
+    stateGrid && step === '2'
+      ? ['.xls', '.xlsx', '.doc', '.docx']
+      : ['.xlsx', '.docx', '.zip']
 }
 
 const templateConfig: TemplateConfig = {
@@ -139,7 +152,7 @@ const { open: importOpen } = useUploadDialog({
   uploadConfig,
   templateConfig,
   title: '基线核查导入',
-  extraParams: { step },
+  extraParams: { step, ...(stateGrid ? { stateGrid: '1' } : {}) },
   onSuccess: () => scResourcePageRef.value?.refresh()
 })
 
@@ -149,8 +162,11 @@ const isAssetThirdType = (
   ...types: Array<string | number>
 ) => types.some(t => String(row.assetThirdType) === String(t))
 
-/** 资产名称：assetName 为主体，三级类型为 6/7 时拼接 brandModel，再拼接非空 ipAddress */
+/** 资产名称：国网形态为 assetName + ipAddress；常规形态下三级类型 6/7 时拼接 brandModel，再拼接非空 ipAddress */
 const formatAssetName = (row: BaselineCheckData) => {
+  if (stateGrid) {
+    return row.ipAddress ? `${row.assetName} ${row.ipAddress}` : row.assetName
+  }
   let text = row.assetName ?? ''
   if (isAssetThirdType(row, '6', '7') && row.brandModel) {
     text += ` ${row.brandModel}`
@@ -170,9 +186,19 @@ const formatPoint = (row: BaselineCheckData) => {
   return text
 }
 
+/** 结果内容输入占位：国网形态统一「测试结果内容」，常规形态区分检查/复测结果 */
+const resultPlaceholder = stateGrid
+  ? '请输入测试结果内容'
+  : step === '1'
+    ? '请输入检查结果'
+    : '请输入复测结果'
+
 const pageConfig: PageConfig<BaselineCheckData> = {
   searchConfig: { searchbarItems },
-  pageExtraParams: { step },
+  pageExtraParams: {
+    step,
+    ...(stateGrid ? { stateGrid: '1', queryType: 1 } : {})
+  },
   operateConfig: {
     defaultButtons: ['add', 'import'],
     defaultButtonsConfig: {
@@ -191,7 +217,7 @@ const pageConfig: PageConfig<BaselineCheckData> = {
     ]
   },
   tableConfig: {
-    tableColumns: createBaselineCheckTableColumns(step),
+    tableColumns: createBaselineCheckTableColumns(step, stateGrid),
     defaultButtonsConfig: {
       edit: { permission: 'asset:baseline:edit' },
       delete: { permission: 'asset:baseline:remove' }
@@ -236,7 +262,7 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
           v-model="data.resultDescription"
           v-model:file-list="data.resultDescription_files"
           :rows="5"
-          placeholder="请输入检查结果"
+          :placeholder="resultPlaceholder"
         />
       </template>
       <template #custom-regressionDescription="{ data }">
@@ -244,7 +270,7 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
           v-model="data.regressionDescription"
           v-model:file-list="data.regressionDescription_files"
           :rows="5"
-          placeholder="请输入复测结果"
+          :placeholder="resultPlaceholder"
         />
       </template>
     </ScDialogForm>
