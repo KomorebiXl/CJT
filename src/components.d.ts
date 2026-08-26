@@ -12,8 +12,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ClampText: typeof import('./components/DynamicFormList/ClampText.vue')['default']
     ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
     DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
+    DynamicFormListCard: typeof import('./components/DynamicFormList/DynamicFormListCard.vue')['default']
+    DynamicFormListDialog: typeof import('./components/DynamicFormList/DynamicFormListDialog.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
@@ -100,8 +103,11 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const ClampText: typeof import('./components/DynamicFormList/ClampText.vue')['default']
   const ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
   const DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
+  const DynamicFormListCard: typeof import('./components/DynamicFormList/DynamicFormListCard.vue')['default']
+  const DynamicFormListDialog: typeof import('./components/DynamicFormList/DynamicFormListDialog.vue')['default']
   const ElAlert: typeof import('element-plus/es')['ElAlert']
   const ElAside: typeof import('element-plus/es')['ElAside']
   const ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
