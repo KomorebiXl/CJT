@@ -26,11 +26,13 @@ export const searchbarItems: SearchbarItems<PenetrationTestSearchParams> = [
   }
 ]
 
-export const createPenetrationTestTableColumns = (step: '1' | '2'): TableColumns => [
+export const createPenetrationTestTableColumns = (
+  step: '1' | '2'
+): TableColumns => [
   { label: '资产名称', prop: 'assetName' },
   { label: '漏洞名称', prop: 'loopholeName' },
   { label: '检查项', prop: 'itemLabel' },
-  { label: '漏洞等级', prop: 'levelLabel' },
+  { label: '漏洞等级', prop: 'levelLabel', showOverflowTooltip: true },
   { label: '漏洞描述', prop: 'description', showOverflowTooltip: true },
   { label: '漏洞危害', prop: 'hazard', showOverflowTooltip: true },
   { label: '修复建议', prop: 'suggestion', showOverflowTooltip: true },
@@ -51,7 +53,6 @@ const penetrationTestCommonFormData = (
 ): PenetrationTestFormData => ({
   assetId: '',
   loopholeId: '',
-  item: '',
   level: '',
   loopholeName: '',
   description: '',
@@ -62,44 +63,39 @@ const penetrationTestCommonFormData = (
 })
 
 export const createPenetrationTestFormData = (
-  step: '1' | '2'
+  step: '1' | '2',
+  stateGrid: boolean
 ): PenetrationTestFormData =>
   step == '1'
     ? {
         ...penetrationTestCommonFormData(step),
+        ...(stateGrid ? {} : { item: '', loopholeCategory: '' }),
         result: '',
         result_files: []
       }
     : {
         ...penetrationTestCommonFormData(step),
+        ...(stateGrid ? {} : { item: '', loopholeCategory: '' }),
         regressionResult: '',
         regressionResult_files: []
       }
 
-export const createPenetrationTestFormItems = () =>
+export const createPenetrationTestFormItems = (stateGrid: boolean) =>
   defineFormItems<PenetrationTestFormData>([
     {
-      label: '资产名称',
+      label: '资产',
       prop: 'assetId',
       type: 'select',
-      rules: [{ required: true, message: '请选择资产名称', trigger: 'blur' }],
+      rules: [{ required: true, message: '请选择资产', trigger: 'blur' }],
       componentProps: {
-        options: []
+        options: [],
+        clearable: stateGrid
       }
     },
     {
-      label: '关联测试项',
+      label: stateGrid ? '测试项' : '关联测试项',
       prop: 'loopholeId',
       customSlot: 'loopholeId'
-    },
-    {
-      label: '检查项',
-      prop: 'item',
-      type: 'input',
-      componentProps: {
-        disabled: true,
-        placeholder: '选择漏洞后自动回填'
-      }
     },
     {
       label: '漏洞等级',
@@ -155,6 +151,28 @@ export const createPenetrationTestFormItems = () =>
       customSlot: 'addresses',
       colSpan: 2,
       rules: [{ required: true, message: '请添加漏洞地址', trigger: 'blur' }]
+    }
+  ])
+
+/** 常规形态独有展示字段：测试项（关联漏洞回填）、具体漏洞类型（详情带回），均不提交后端 */
+export const penetrationTestRegularItem =
+  defineFormItems<PenetrationTestFormData>([
+    {
+      label: '测试项',
+      prop: 'item',
+      type: 'input',
+      componentProps: {
+        disabled: true,
+        placeholder: '选择漏洞后自动回填'
+      }
+    },
+    {
+      label: '具体漏洞类型',
+      prop: 'loopholeCategory',
+      type: 'input',
+      componentProps: {
+        disabled: true
+      }
     }
   ])
 

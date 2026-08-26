@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type {
   PenetrationTestAddress,
+  PenetrationTestAssetOption,
   PenetrationTestData,
   PenetrationTestFormData
 } from '@/types/projectProcess/penetrationTest'
+import type { DictOption } from '@/types/system/dict'
 import type { VulnerabilityLibraryOption } from '@/types/adminManagement/vulnerabilityLibrary'
 import {
   createPenetrationTestAPI,
@@ -22,6 +24,7 @@ import { findFormItem } from '@/utils/formItemUtils.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { getAssetSystemOptionsAPI } from '@/api/projectProcess/assetAssignment-api.ts'
 import { getVulnerabilityLibraryOptionsAPI } from '@/api/adminManagement/vulnerabilityLibrary-api.ts'
+import { getDictOptionsMap } from '@/utils/dict.ts'
 import {
   searchbarItems,
   createDefaultAddressFormData,
@@ -29,6 +32,7 @@ import {
   createPenetrationTestFormItems,
   penetrationTestFirstItem,
   penetrationTestRegressionItem,
+  penetrationTestRegularItem,
   createPenetrationTestTableColumns
 } from '@/views/projectProcess/penetrationTest/penetrationTest-config.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
@@ -37,14 +41,17 @@ import type { DynamicFormListItem } from '@/components/DynamicFormList/dynamicFo
 
 const route = useRoute()
 
+/** step：'1' 首次测试，'2' 回归测试；stateGrid：国网安全形态（路由 query stateGrid=1） */
 let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
+const stateGrid = route.query.stateGrid === '1'
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
-const dialogFormData = createPenetrationTestFormData(step)
+const dialogFormData = createPenetrationTestFormData(step, stateGrid)
 
 const formItems = [
-  ...createPenetrationTestFormItems(),
+  ...createPenetrationTestFormItems(stateGrid),
+  ...(stateGrid ? [] : penetrationTestRegularItem),
   ...(step === '1' ? penetrationTestFirstItem : penetrationTestRegressionItem)
 ]
 
@@ -60,6 +67,9 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
       if (!data.addresses || !data.addresses.length) {
         data.addresses = [createDefaultAddressFormData(step)]
       }
+      if (stateGrid && data.assetId) {
+        syncStateGridItemOptions(data.assetId)
+      }
     },
     fetchDetail: id => getPenetrationTestDetailAPI(id),
     onCreate: data => createPenetrationTestAPI(data),
@@ -67,12 +77,16 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
     onSuccess: () => scResourcePageRef.value?.refresh()
   })
 
+/** 资产选项原始数据（国网形态按 applicationMode 切换检查项字典） */
+const assetOptions = ref<Array<PenetrationTestAssetOption>>([])
+
 /** 加载资产系统选项 */
 const loadAssetOptions = async () => {
   const { data } = await getAssetSystemOptionsAPI()
+  assetOptions.value = (data ?? []) as Array<PenetrationTestAssetOption>
   const assetItem = findFormItem(formItems, 'assetId', 'select')
   if (assetItem?.componentProps) {
-    assetItem.componentProps.options = (data ?? []).map(item => ({
+    assetItem.componentProps.options = assetOptions.value.map(item => ({
       label: item.ipAddress
         ? `${item.assetName} ${item.ipAddress}`
         : item.assetName,
@@ -96,19 +110,56 @@ const loopholeSelectOptions = computed(() =>
   }))
 )
 
-/** 选择漏洞后回填字段 */
+/** 常规形态：选择漏洞后回填（为空才回填，测试项除外——源对 item 为无条件覆盖） */
 const handleLoopholeChange = (value: string) => {
+  if (stateGrid) return
   const target = loopholeOptions.value.find(item => item.id === value)
   if (!target) return
   formData.item = target.itemLabel ?? ''
-  formData.level = target.level ?? ''
-  formData.loopholeName = target.name ?? ''
-  formData.description = target.description ?? ''
-  formData.hazard = target.risk ?? ''
-  formData.suggestion = target.suggestion ?? ''
+  formData.level = formData.level || target.level || ''
+  formData.loopholeName = formData.loopholeName || target.name || ''
+  formData.description = formData.description || target.description || ''
+  formData.hazard = formData.hazard || target.risk || ''
+  formData.suggestion = formData.suggestion || target.suggestion || ''
 }
 
-onMounted(() => Promise.allSettled([loadAssetOptions(), loadLoopholeOptions()]))
+/** 国网形态：BS/CS 检查项字典选项，按资产应用模式切换 */
+const penetrateItemOptionsMap = ref<Record<string, DictOption[]>>({})
+const stateGridItemOptions = ref<Array<DictOption>>([])
+
+const loadPenetrateItemDicts = async () => {
+  penetrateItemOptionsMap.value = await getDictOptionsMap([
+    'background_penetrate_stateGrid_BS',
+    'background_penetrate_stateGrid_CS'
+  ])
+}
+
+/** 按资产应用模式同步国网检查项选项：B/S 系统取 BS 字典，C/S 系统取 CS 字典 */
+const syncStateGridItemOptions = (assetId: string) => {
+  const asset = assetOptions.value.find(item => item.id === assetId)
+  if (asset?.applicationMode === '1') {
+    stateGridItemOptions.value =
+      penetrateItemOptionsMap.value['background_penetrate_stateGrid_BS'] ?? []
+  }
+  if (asset?.applicationMode === '2') {
+    stateGridItemOptions.value =
+      penetrateItemOptionsMap.value['background_penetrate_stateGrid_CS'] ?? []
+  }
+}
+
+if (stateGrid) {
+  const assetItem = findFormItem(formItems, 'assetId', 'select')
+  if (assetItem) {
+    assetItem.onChange = (value: string) => syncStateGridItemOptions(value)
+  }
+}
+
+onMounted(() =>
+  Promise.allSettled([
+    loadAssetOptions(),
+    ...(stateGrid ? [loadPenetrateItemDicts()] : [loadLoopholeOptions()])
+  ])
+)
 
 const { scConfirm } = useScConfirm()
 
@@ -189,12 +240,18 @@ const { handleDelete } = useDeleteAction<PenetrationTestData>(
 const dynamicFormItems = reactive<
   Array<DynamicFormListItem<PenetrationTestAddress>>
 >([
-  { type: 'input', prop: 'loopholeAddress', placeholder: '请输入漏洞地址' },
   {
+    label: '漏洞未知',
+    type: 'input',
+    prop: 'loopholeAddress',
+    placeholder: '请输入漏洞地址'
+  },
+  {
+    label: '状态',
     type: 'select',
     prop: 'status',
     dictField: 'background_code_status',
-    placeholder: '请选择漏洞等级'
+    placeholder: '请选择状态'
   }
 ])
 </script>
@@ -229,8 +286,9 @@ const dynamicFormItems = reactive<
       <template #custom-loopholeId="{ data }">
         <ScSelect
           v-model="data.loopholeId"
-          :options="loopholeSelectOptions"
-          placeholder="请选择漏洞"
+          :options="stateGrid ? stateGridItemOptions : loopholeSelectOptions"
+          :clearable="!stateGrid"
+          :placeholder="stateGrid ? '请选择测试项' : '请选择漏洞'"
           @change="handleLoopholeChange"
         />
       </template>
