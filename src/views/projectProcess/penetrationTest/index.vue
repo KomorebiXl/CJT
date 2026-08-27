@@ -77,7 +77,7 @@ const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
     onSuccess: () => scResourcePageRef.value?.refresh()
   })
 
-/** 资产选项原始数据（国网形态按 applicationMode 切换检查项字典） */
+/** 资产选项原始数据 */
 const assetOptions = ref<Array<PenetrationTestAssetOption>>([])
 
 /** 加载资产系统选项 */
@@ -95,7 +95,7 @@ const loadAssetOptions = async () => {
   }
 }
 
-/** 漏洞选项（复用漏洞库列表数据） */
+/** 漏洞选项 */
 const loopholeOptions = ref<Array<VulnerabilityLibraryOption>>([])
 
 const loadLoopholeOptions = async () => {
@@ -110,7 +110,7 @@ const loopholeSelectOptions = computed(() =>
   }))
 )
 
-/** 常规形态：选择漏洞后回填（为空才回填，测试项除外——源对 item 为无条件覆盖） */
+/** 常规形态：选择漏洞后回填 */
 const handleLoopholeChange = (value: string) => {
   if (stateGrid) return
   const target = loopholeOptions.value.find(item => item.id === value)
@@ -318,19 +318,5 @@ const dynamicFormItems = reactive<
 <style scoped lang="scss">
 .address-cell {
   line-height: 1.6;
-}
-
-.address-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-
-  .address-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-  }
 }
 </style>
