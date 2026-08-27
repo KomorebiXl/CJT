@@ -12,7 +12,7 @@ export const searchbarItems: SearchbarItems<MenuSearchParams> = [
 ]
 
 export const tableColumns: TableColumns = [
-  { label: '菜单名称', prop: 'menuName' },
+  { label: '菜单名称', prop: 'menuName', slot: 'menuName' },
   { label: '图标', prop: 'icon', slot: 'icon' },
   { label: '菜单排序', prop: 'orderNum' },
   { label: '权限字符', prop: 'perms', showOverflowTooltip: true },
@@ -25,7 +25,8 @@ export const dialogFormData: MenuFormData = {
   menuType: 'M',
   icon: '',
   subjectLargeType: '',
-  subjectType: '',
+  // 后端实体是 List<String>，空值必须给数组，字符串会导致 JSON 反序列化失败
+  subjectType: [],
   menuName: '',
   orderNum: '',
   isFrame: '',
@@ -57,6 +58,7 @@ export const formItems = defineFormItems<MenuFormData>([
     groupName: '基本信息',
     type: 'radio',
     componentProps: {
+      // 按钮类型（F）已拆至按钮权限管理页维护
       radioOptions: [
         {
           label: '目录',
@@ -65,10 +67,6 @@ export const formItems = defineFormItems<MenuFormData>([
         {
           label: '菜单',
           value: 'C'
-        },
-        {
-          label: '按钮',
-          value: 'F'
         }
       ],
       border: true

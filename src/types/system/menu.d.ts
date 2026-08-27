@@ -19,7 +19,7 @@ export type MenuFormData = {
   parentId: string | number
   menuType: string
   icon: string
-  subjectLargeType: string
+  subjectLargeType: string | null
   subjectType: string | Array<string>
   menuName: string
   orderNum: string
