@@ -66,13 +66,13 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
     ]
   },
   {
-    path: '/codeVulnerabilityLibrary',
+    path: '/sourceCodeVulnerabilityLibrary',
     hidden: true,
     component: Layout,
     permissions: ['background:code:list'],
     meta: {
       title: '源代码-标准漏洞库',
-      activeMenu: '/codeVulnerabilityLibrary'
+      activeMenu: '/sourceCodeVulnerabilityLibrary'
     },
     children: [
       {

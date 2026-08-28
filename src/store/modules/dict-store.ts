@@ -10,6 +10,8 @@ export const useDictStore = defineStore('dict', () => {
    * 将 DictData 数组映射为 label/value 格式
    */
   const mapDictData = (data: DictData[]): DictOption[] => {
+    // 字典数据后端可能存在不返回data情况，需要对此做判断
+    if (!Array.isArray(data)) return []
     return data.map(item => ({
       label: item.dictLabel,
       value: item.dictValue,
