@@ -28,19 +28,23 @@ import {
   createSourceCodeDetailRow,
   createSourceCodeFormData,
   createSourceCodeFormItems,
-  searchbarItems,
-  tableColumns
+  createSourceCodeTableColumns,
+  searchbarItems
 } from './sourceCode-config.ts'
 
 const route = useRoute()
 
+/** step：'1' 首次测试，'2' 回归测试；stateGrid：国网安全测试大类形态（路由 query stateGrid=1），缺省为源代码大类形态（多漏洞大类字段） */
 let step: '1' | '2' = route.query.step === '2' ? '2' : '1'
+const stateGrid = route.query.stateGrid === '1'
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
-const dialogFormData = createSourceCodeFormData(step)
+const dialogFormData = createSourceCodeFormData(step, stateGrid)
 
-const formItems = createSourceCodeFormItems(step)
+const formItems = createSourceCodeFormItems(step, stateGrid)
+
+const tableColumns = createSourceCodeTableColumns(stateGrid)
 
 const handlePageClick = (row: SourceCodeData | undefined = undefined) =>
   open(row)

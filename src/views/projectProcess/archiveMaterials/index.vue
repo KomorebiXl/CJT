@@ -40,7 +40,7 @@ const handleGenerateArchive = async (confirmStep: number) => {
       confirmStep,
       id: getProjectIdFromRoute(route)
     }),
-    { message: '生成归档资料失败' }
+    { showError: false }
   )
   closeLoading()
   if (err || !res) return
@@ -50,7 +50,7 @@ const handleGenerateArchive = async (confirmStep: number) => {
     } catch {
       return
     }
-    handleGenerateArchive(res.confirmStep)
+    await handleGenerateArchive(res.confirmStep)
     return
   }
   ScMessage.success('归档资料生成成功')

@@ -34,8 +34,11 @@ export const searchbarItems: SearchbarItems<SourceCodeSearchParams> = [
   }
 ]
 
-export const tableColumns: TableColumns = [
+export const createSourceCodeTableColumns = (
+  stateGrid: boolean
+): TableColumns => [
   { label: '资产', prop: 'assetName' },
+  ...(stateGrid ? [] : [{ label: '漏洞大类', prop: 'typeLabel' }]),
   { label: '标准大类', prop: 'languageTypeLabel' },
   { label: '类型', prop: 'categoryName' },
   { label: '漏洞名称', prop: 'loopholeName' },
@@ -55,9 +58,11 @@ export const createSourceCodeDetailRow = (
     : { content: '', entryPoint: '', status: '', repairContent: '' }
 
 export const createSourceCodeFormData = (
-  step: SourceCodeStep
+  step: SourceCodeStep,
+  stateGrid: boolean
 ): SourceCodeFormData => ({
   assetId: '',
+  ...(stateGrid ? {} : { type: '' }),
   categoryId: '',
   level: '',
   loopholeNum: 0,
@@ -70,7 +75,7 @@ export const createSourceCodeFormData = (
   ...(step === '2' ? { repairNum: 0 } : {})
 })
 
-const createSourceCodeBaseItems = () =>
+const createSourceCodeAssetItems = () =>
   defineFormItems<SourceCodeFormData>([
     {
       label: '资产',
@@ -78,11 +83,28 @@ const createSourceCodeBaseItems = () =>
       type: 'select',
       rules: [{ required: true, message: '请选择资产', trigger: 'blur' }],
       componentProps: { options: [] }
-    },
+    }
+  ])
+
+/** 漏洞大类为源代码大类（常规）形态独有，国网安全测试形态无此项 */
+const createSourceCodeTypeItems = () =>
+  defineFormItems<SourceCodeFormData>([
+    {
+      label: '漏洞大类',
+      prop: 'type',
+      type: 'select',
+      rules: [{ required: true, message: '请选择漏洞大类', trigger: 'blur' }],
+      componentProps: { dictField: 'background_code_large_category' }
+    }
+  ])
+
+const createSourceCodeBaseItems = () =>
+  defineFormItems<SourceCodeFormData>([
     {
       label: '漏洞类型',
       prop: 'categoryId',
       type: 'select',
+      rules: [{ required: true, message: '请选择漏洞类型', trigger: 'blur' }],
       componentProps: { options: [] }
     },
     {
@@ -151,7 +173,12 @@ const createSourceCodeDescriptionItems = () =>
     }
   ])
 
-export const createSourceCodeFormItems = (step: SourceCodeStep) => [
+export const createSourceCodeFormItems = (
+  step: SourceCodeStep,
+  stateGrid: boolean
+) => [
+  ...createSourceCodeAssetItems(),
+  ...(stateGrid ? [] : createSourceCodeTypeItems()),
   ...createSourceCodeBaseItems(),
   ...(step === '2' ? sourceCodeRegressionItems : []),
   ...createSourceCodeDescriptionItems()

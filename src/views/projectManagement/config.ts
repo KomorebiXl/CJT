@@ -51,6 +51,7 @@ export const searchbarItems: SearchbarItems<ProjectManagementSearchParams> = [
 export const tableColumns: TableColumns = [
   { label: '项目编号', prop: 'code', minWidth: 160 },
   { label: '项目名称', prop: 'name', minWidth: 100 },
+  { label: '项目大类', prop: 'largeTypeLabel' },
   { label: '测试地址', prop: 'assessAddress', minWidth: 100 },
   { label: '测试方式', prop: 'assessMethodLabel', minWidth: 100 },
   { label: '项目类型', prop: 'typeLabel', minWidth: 100 },

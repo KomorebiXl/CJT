@@ -37,6 +37,8 @@ export type SourceCodeSearchParams = {
 export type SourceCodeData = {
   /** 资产名称 */
   assetName: string
+  /** 漏洞大类 */
+  typeLabel: string
   /** 标准大类 */
   languageTypeLabel: string
   /** 类型 */
@@ -63,6 +65,12 @@ export type SourceCodeRegressionFormData = {
   repairNum: number
 }
 
+/** 源代码大类（常规）形态表单扩展字段 */
+export type SourceCodeRegularFormData = {
+  /** 漏洞大类 */
+  type: string
+}
+
 export type SourceCodeFormData = {
   /** 资产 id */
   assetId: string
@@ -87,4 +95,5 @@ export type SourceCodeFormData = {
    * 编辑时源契约不携带（提交前置 null）
    */
   step: string | null
-} & Partial<SourceCodeRegressionFormData>
+} & Partial<SourceCodeRegularFormData> &
+  Partial<SourceCodeRegressionFormData>
