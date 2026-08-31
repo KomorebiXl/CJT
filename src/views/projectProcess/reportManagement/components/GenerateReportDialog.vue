@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { generateSubjectReportAPI } from '@/api/projectProcess/reportManagement-api.ts'
-import { getProjectManagementDetailAPI } from '@/api/projectManagement-api.ts'
+import { getProcessProjectDetail } from '@/utils/processProject'
 import { ScMessage } from '@/utils/ElUtils'
 import { WarningFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 
@@ -67,14 +67,11 @@ const resetState = () => {
   progress.value = 0
 }
 
-/** 打开弹窗时加载项目详情，判断是否海南模板 */
+/** 打开弹窗时读取流程作用域项目详情缓存，判断是否海南模板 */
 const loadSubjectDetail = async () => {
-  try {
-    const { data } = await getProjectManagementDetailAPI(subjectId.value)
-    isHainanReport.value = data.largeType === '10' && data.reportType === '10-1'
-  } catch {
-    isHainanReport.value = false
-  }
+  const detail = await getProcessProjectDetail()
+  isHainanReport.value =
+    !!detail && detail.largeType === '10' && detail.reportType === '10-1'
 }
 
 const open = (id: string) => {

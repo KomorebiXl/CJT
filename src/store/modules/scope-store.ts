@@ -1,5 +1,8 @@
 import type { ScRouteRecordRaw } from 'vue-router'
-import { PROCESS_PROJECT_ID_KEY, PROJECT_ID_KEY } from '@/constant/globalVariables'
+import {
+  PROCESS_PROJECT_ID_KEY,
+  PROJECT_ID_KEY
+} from '@/constant/globalVariables'
 import { sessionStorage } from '@/utils/storage'
 import { useUserStore } from '@/store/modules/user-store'
 import { useGenerateRoutesStore } from '@/store/modules/router-store'

@@ -11,6 +11,10 @@ import { useUserStore } from '@/store/modules/user-store'
 import { useTabsStore } from '@/store/modules/tabs-store'
 import { PROCESS_PROJECT_ID_KEY, PROJECT_ID_KEY } from '@/constant/globalVariables'
 import { sessionStorage } from '@/utils/storage'
+import {
+  clearProcessProjectDetail,
+  warmProcessProjectDetail
+} from '@/utils/processProject'
 
 /**
  * 项目流程作用域：进入/退出/切换的统一逻辑
@@ -35,6 +39,8 @@ export const useProjectProcessScope = () => {
 
     const projectId = getProjectIdFromRoute(to)
     sessionStorage.set(PROCESS_PROJECT_ID_KEY, projectId)
+    // 预热项目详情缓存，流程页统一从缓存读取（失败静默，页面读取时读穿透自愈）
+    warmProcessProjectDetail(projectId)
 
     // 按项目刷新账号权限标识
     await userStore.refreshUserInfo(projectId)
@@ -68,6 +74,7 @@ export const useProjectProcessScope = () => {
       sessionStorage.remove(PROJECT_ID_KEY)
     }
     sessionStorage.remove(PROCESS_PROJECT_ID_KEY)
+    clearProcessProjectDetail()
     removeProcessRoutes(router)
     generateStore.setSidebarRouters(prev.sidebarRouters)
     // 清理残留的项目流程页标签，避免退出后点击标签 404
@@ -86,6 +93,8 @@ export const useProjectProcessScope = () => {
 
     const projectId = getProjectIdFromRoute(to)
     sessionStorage.set(PROCESS_PROJECT_ID_KEY, projectId)
+    // 切换项目后重取新项目详情缓存（同项目命中缓存时跳过）
+    warmProcessProjectDetail(projectId)
 
     // 先卸载旧项目流程路由，再按新项目拉取并挂载
     removeProcessRoutes(router)
