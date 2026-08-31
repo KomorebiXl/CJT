@@ -11,6 +11,13 @@
   flex-direction: column;
 }
 
+// 锁高卡片（.h-viewport）内"固定头 + 内容滚动"结构的滚动区
+.page-card__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .p-10 {
   padding: 10px;
 }
@@ -21,6 +28,15 @@
 
 .h-100 {
   height: 100%;
+}
+
+// 高度锁定为应用内容视口：卡片不再撑高页面，超出部分由内部滚动。
+// 仅用于页面根容器；不可用于弹窗内（会锚定到弹窗），同级多卡片布局应改为
+// 外层一张锁高卡内部分割；absolute 下卡片外边距（如 m-t-10）不生效
+.h-viewport {
+  position: absolute;
+  inset: var(--app-content-gap, 16px);
+  overflow-y: auto;
 }
 
 .m-t-10 {

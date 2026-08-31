@@ -102,38 +102,42 @@ const handleNodeClick = (data: MenuData) => {
 <template>
   <div class="menu-tree-panel">
     <ScInput v-model="filterText" placeholder="请输入菜单名称" />
-    <el-tree
-      ref="treeRef"
-      :data="treeData"
-      node-key="menuId"
-      :props="{ label: 'menuName', children: 'children' }"
-      :filter-node-method="handleFilterNode"
-      highlight-current
-      :expand-on-click-node="false"
-      @node-click="handleNodeClick"
-    >
-      <template #default="{ data }">
-        <span class="menu-tree-node">
-          <span class="menu-tree-label">{{ data.menuName }}</span>
-          <el-tag
-            v-if="data.menuType === 'orphan'"
-            size="small"
-            type="warning"
-            effect="plain"
-          >
-            {{ orphanButtons?.length }} 个按钮
-          </el-tag>
-          <el-tag
-            v-else-if="data.menuType === 'C' && buttonCountMap.get(data.menuId)"
-            size="small"
-            type="info"
-            effect="plain"
-          >
-            {{ buttonCountMap.get(data.menuId) }} 个按钮
-          </el-tag>
-        </span>
-      </template>
-    </el-tree>
+    <el-scrollbar class="menu-tree-panel__scroll">
+      <el-tree
+        ref="treeRef"
+        :data="treeData"
+        node-key="menuId"
+        :props="{ label: 'menuName', children: 'children' }"
+        :filter-node-method="handleFilterNode"
+        highlight-current
+        :expand-on-click-node="false"
+        @node-click="handleNodeClick"
+      >
+        <template #default="{ data }">
+          <span class="menu-tree-node">
+            <span class="menu-tree-label">{{ data.menuName }}</span>
+            <el-tag
+              v-if="data.menuType === 'orphan'"
+              size="small"
+              type="warning"
+              effect="plain"
+            >
+              {{ orphanButtons?.length }} 个按钮
+            </el-tag>
+            <el-tag
+              v-else-if="
+                data.menuType === 'C' && buttonCountMap.get(data.menuId)
+              "
+              size="small"
+              type="info"
+              effect="plain"
+            >
+              {{ buttonCountMap.get(data.menuId) }} 个按钮
+            </el-tag>
+          </span>
+        </template>
+      </el-tree>
+    </el-scrollbar>
   </div>
 </template>
 
@@ -142,6 +146,21 @@ const handleNodeClick = (data: MenuData) => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
+
+  &__scroll {
+    flex: 1;
+    min-height: 0;
+
+    :deep(.el-scrollbar__thumb) {
+      background-color: var(--card-border);
+      border-radius: 4px;
+
+      &:hover {
+        background-color: var(--text-muted);
+      }
+    }
+  }
 }
 
 .menu-tree-node {

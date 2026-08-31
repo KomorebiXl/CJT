@@ -10,9 +10,9 @@ const cachedViews = computed(() => tabsStore.cachedViews)
     <el-scrollbar class="app-main__scrollbar">
       <div class="app-main__content">
         <router-view v-slot="{ Component, route }">
-            <keep-alive :include="cachedViews">
-              <component :is="Component" :key="route.fullPath" />
-            </keep-alive>
+          <keep-alive :include="cachedViews">
+            <component :is="Component" :key="route.fullPath" />
+          </keep-alive>
         </router-view>
       </div>
     </el-scrollbar>
@@ -49,7 +49,10 @@ const cachedViews = computed(() => tabsStore.cachedViews)
   }
 
   &__content {
-    padding: 16px;
+    // h-viewport 锁高卡片的定位锚点，勿删
+    position: relative;
+    --app-content-gap: 16px;
+    padding: var(--app-content-gap);
     flex: 1;
     min-height: 0;
     box-sizing: border-box;

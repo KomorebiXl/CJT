@@ -144,7 +144,7 @@ onMounted(loadMenuList)
 </script>
 
 <template>
-  <div class="page-card button-perm-page">
+  <div class="page-card h-viewport button-perm-page">
     <MenuTree
       class="menu-tree-wrapper"
       :menu-list="fullMenuList"
@@ -190,10 +190,6 @@ onMounted(loadMenuList)
 .menu-tree-wrapper {
   width: 260px;
   flex-shrink: 0;
-  overflow: auto;
-  /* 外层滚动容器允许内容反馈撑高页面，用视口锚定钉死树面板高度：
-     偏移 = 顶部导航/标签栏(~95) + 内容区与卡片内边距(~73) */
-  max-height: calc(100vh - 168px);
 }
 
 .table-wrapper {
