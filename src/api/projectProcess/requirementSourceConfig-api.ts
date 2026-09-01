@@ -3,7 +3,7 @@ import type {
   RequirementSourceConfigData,
   RequirementSourceConfigFormData,
   RequirementSourceConfigSearchParams
-} from '@/types/projectProcess/archiveManagement/requirementSourceConfig'
+} from '@/types/projectProcess/requirementSourceConfig'
 import { createListAPI } from '@/utils/pageRequest.ts'
 
 const requirementSourceConfigBaseUrl = '/background/config'

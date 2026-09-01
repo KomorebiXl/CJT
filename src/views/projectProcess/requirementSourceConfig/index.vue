@@ -3,12 +3,12 @@ import type {
   RequirementSourceConfigData,
   RequirementSourceConfigFormData,
   RequirementSourceConfigSearchParams
-} from '@/types/projectProcess/archiveManagement/requirementSourceConfig'
+} from '@/types/projectProcess/requirementSourceConfig'
 import {
   getRequirementSourceConfigDataAPI,
   getRequirementSourceConfigDetailAPI,
   updateRequirementSourceConfigAPI
-} from '@/api/projectProcess/archiveManagement/requirementSourceConfig-api.ts'
+} from '@/api/projectProcess/requirementSourceConfig-api.ts'
 import { ScMessage } from '@/utils/ElUtils'
 import { defineFormItems } from '@/utils/form.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
