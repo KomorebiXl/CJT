@@ -54,13 +54,17 @@ const tableEvents = computed(() => {
   return events
 })
 
-// ---- 树形配置合并默认值 ----
-const resolvedTreeConfig = computed(() => ({
-  rowKey: 'id',
-  treeProps: { children: 'children' },
-  defaultExpandAll: false,
-  ...props.treeConfig
-}))
+// ---- 树形配置合并默认值：children/hasChildren 平铺声明，归并进 el-table 的 tree-props ----
+const resolvedTreeConfig = computed(() => {
+  const { children = 'children', hasChildren = 'hasChildren', ...rest } =
+    props.treeConfig
+  return {
+    rowKey: 'id',
+    defaultExpandAll: false,
+    ...rest,
+    treeProps: { children, hasChildren }
+  }
+})
 
 // ---- 分页状态 ----
 const currentPage = ref(1)

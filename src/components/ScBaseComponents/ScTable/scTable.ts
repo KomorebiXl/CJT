@@ -14,10 +14,10 @@ export type ScTableColumn = {
 
 export type TreeConfig = {
   rowKey?: string
-  treeProps?: {
-    children?: string
-    hasChildren?: string
-  }
+  /** 子节点字段名，默认 'children' */
+  children?: string
+  /** 懒加载场景下标记行是否有子节点的字段名，默认 'hasChildren' */
+  hasChildren?: string
   defaultExpandAll?: boolean
 }
 
