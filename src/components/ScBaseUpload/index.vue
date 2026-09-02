@@ -15,7 +15,7 @@ import {
   WarningFilled
 } from '@element-plus/icons-vue'
 import { useDownloadFilesStore } from '@/store/modules/download-store.ts'
-import { uploadFile, downloadFile } from '@/utils/file'
+import { uploadFile, downloadFile, getFileName } from '@/utils/file'
 import { ScMessage } from '@/utils/ElUtils'
 
 const props = defineProps<ScBaseUploadProps>()
@@ -144,7 +144,6 @@ const downloadFilesStore = useDownloadFilesStore()
 
 const handleTemplateDownload = async (item?: ScTemplateItem) => {
   if (!props.templateConfig) return
-  const fileName = item?.fileName ?? `${dialogTitle.value}模板`
   const fileData = await downloadFilesStore.downloadFilesRequest({
     requestUrl: props.templateConfig.templateUrl,
     requestMethod: props.templateConfig?.requestMethod,
@@ -153,6 +152,11 @@ const handleTemplateDownload = async (item?: ScTemplateItem) => {
       ...(item?.extraParams ?? {})
     }
   })
+  // 优先取后端 content-disposition 文件名（getFileName 缺头返回空串），配置名与「标题+模板」依次兜底
+  const fileName =
+    item?.fileName ||
+    getFileName(fileData.headers?.['content-disposition']) ||
+    `${dialogTitle.value}模板`
   await downloadFile(fileData, fileName)
 }
 

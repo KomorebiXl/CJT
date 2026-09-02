@@ -1,5 +1,8 @@
 import request from '@/utils/request'
 import type {
+  FeatureReviewFormData,
+  FeatureReviewListResponse,
+  FeatureReviewSearchParams,
   SystemDetailFormData,
   SystemDetailListResponse,
   SystemDetailResult,
@@ -30,3 +33,16 @@ export const updateSystemDetailAPI = (data: SystemDetailFormData & { id: string 
 /** 删除系统详情记录 */
 export const deleteSystemDetailAPI = (data: { ids: Array<string> }) =>
   request.post<BaseResponse>({ url: `${planBaseUrl}/delete`, data })
+
+/** 特性方案列表（feature='2'~'9'，不带 subsystem） */
+export const getFeatureReviewListAPI = (
+  params: ListQuery<FeatureReviewSearchParams & { feature: string }>
+) => request.get<FeatureReviewListResponse>({ url: `${planBaseUrl}/list`, params })
+
+/** 新增特性方案记录 */
+export const addFeatureReviewAPI = (data: FeatureReviewFormData) =>
+  request.post<BaseResponse>({ url: planBaseUrl, data })
+
+/** 更新特性方案记录 */
+export const updateFeatureReviewAPI = (data: FeatureReviewFormData & { id: string }) =>
+  request.put<BaseResponse>({ url: planBaseUrl, data })
