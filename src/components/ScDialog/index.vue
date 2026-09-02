@@ -8,7 +8,7 @@ defineOptions({ name: 'ScDialog' })
 const props = withDefaults(defineProps<ScDialogProps>(), {
   title: '弹窗标题',
   confirmText: '确认',
-  cancelText: '取消',
+  cancelText: '关闭',
   dialogWidth: '50%',
   draggable: true,
   fullscreen: false,
