@@ -95,6 +95,7 @@ declare module 'vue' {
     ScTable: typeof import('./components/ScBaseComponents/ScTable/index.vue')['default']
     ScTree: typeof import('./components/ScBaseFormItems/ScTree/index.vue')['default']
     ScTreeSelect: typeof import('./components/ScBaseFormItems/ScTreeSelect/index.vue')['default']
+    ScUploadDragger: typeof import('./components/ScUploadDragger/index.vue')['default']
     SvgIcon: typeof import('./components/SvgIcon/index.vue')['default']
   }
   export interface GlobalDirectives {
@@ -187,5 +188,6 @@ declare global {
   const ScTable: typeof import('./components/ScBaseComponents/ScTable/index.vue')['default']
   const ScTree: typeof import('./components/ScBaseFormItems/ScTree/index.vue')['default']
   const ScTreeSelect: typeof import('./components/ScBaseFormItems/ScTreeSelect/index.vue')['default']
+  const ScUploadDragger: typeof import('./components/ScUploadDragger/index.vue')['default']
   const SvgIcon: typeof import('./components/SvgIcon/index.vue')['default']
 }
