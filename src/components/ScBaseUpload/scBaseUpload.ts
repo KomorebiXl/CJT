@@ -3,13 +3,13 @@ export interface ScBaseUploadProps {
   uploadConfig: ScUploadConfig
   templateConfig?: ScTemplateConfig
   title?: string
-  uploadFn?: (files: Array<File>) => Promise<void>
-  uploadExtraParams?:Record<string, any>
+  uploadFn?: (files: Array<File>) => Promise<any>
+  uploadExtraParams?: Record<string, any>
 }
 
 export interface ScBaseUploadEmits {
   (e: 'update:modelValue', val: boolean): void
-  (e: 'uploadSuccess'): void
+  (e: 'uploadSuccess', response: any): void
 }
 
 export interface ScUploadConfig {
@@ -18,6 +18,12 @@ export interface ScUploadConfig {
   accept?: string[]
   multiple?: boolean
   successMsg?: string
+  /**
+   * 自定义成功反馈文案；
+   * 返回非空字符串 → 弹窗保留、以反馈区展示，等待用户手动关闭；
+   * 返回空串 / 未配置 → 走默认自动关闭 + ScMessage 提示。
+   */
+  formatSuccessMessage?: (response: any) => string
 }
 
 export interface ScTemplateItem {
@@ -46,4 +52,11 @@ export interface ScUploadFileItem {
   size: number
   status: UploadFileStatus
   errorMsg?: string
+}
+
+export type FeedbackType = 'success' | 'error'
+
+export interface UploadFeedback {
+  type: FeedbackType
+  message: string
 }

@@ -4,13 +4,14 @@ import type {
   ScBaseUploadEmits,
   ScBaseUploadProps,
   ScTemplateItem,
-  ScUploadFileItem
+  ScUploadFileItem,
+  UploadFeedback
 } from './scBaseUpload.ts'
 import {
+  CircleCheckFilled,
   Delete,
   Download,
   Loading,
-  UploadFilled,
   WarningFilled
 } from '@element-plus/icons-vue'
 import { useDownloadFilesStore } from '@/store/modules/download-store.ts'
@@ -22,7 +23,7 @@ const emit = defineEmits<ScBaseUploadEmits>()
 
 const fileList = ref<ScUploadFileItem[]>([])
 const isUploading = ref(false)
-const errorMsg = ref('')
+const feedback = ref<UploadFeedback | null>(null)
 
 const visible = computed({
   get: () => props.modelValue,
@@ -39,33 +40,10 @@ const uploadSuccessMsg = computed(() => {
   return '文件导入成功！'
 })
 
-const accept = computed(() => {
-  const list = props.uploadConfig.accept ?? [
-    '.jpg',
-    '.jpeg',
-    '.png',
-    '.pdf',
-    '.doc',
-    '.docx',
-    '.xls',
-    '.xlsx'
-  ]
-  return list.join(',')
-})
-
-const acceptHint = computed(() => {
-  const list = props.uploadConfig.accept ?? [
-    '.jpg',
-    '.jpeg',
-    '.png',
-    '.pdf',
-    '.doc',
-    '.docx',
-    '.xls',
-    '.xlsx'
-  ]
-  return list.join(' ')
-})
+// 成功反馈驻留期间禁用确认按钮，防重复提交；文件列表变化时反馈会被清空，按钮自然恢复
+const confirmDisabled = computed(
+  () => !fileList.value.length || feedback.value?.type === 'success'
+)
 
 const formatFileSize = (size: number): string => {
   const units = ['B', 'KB', 'MB', 'GB']
@@ -98,13 +76,14 @@ const getExtColor = (name: string): string => {
   return colorMap[ext] ?? '#888780'
 }
 
+// ScUploadDragger emit 的 change 事件签名与 el-upload on-change 对齐，这里只需第一个参数
 const handleChange = (uploadFile: UploadFile) => {
   if (!uploadFile.raw) return
   if (!props.uploadConfig.multiple) {
     fileList.value = []
   }
   if (fileList.value.find(f => f.uid === uploadFile.uid)) return
-  errorMsg.value = ''
+  feedback.value = null
   fileList.value.push({
     uid: uploadFile.uid,
     file: uploadFile.raw,
@@ -116,13 +95,13 @@ const handleChange = (uploadFile: UploadFile) => {
 
 const handleRemove = (uid: number) => {
   fileList.value = fileList.value.filter(f => f.uid !== uid)
-  if (!fileList.value.length) errorMsg.value = ''
+  if (!fileList.value.length) feedback.value = null
 }
 
 const handleConfirm = async () => {
   if (!fileList.value.length || isUploading.value) return
   isUploading.value = true
-  errorMsg.value = ''
+  feedback.value = null
   fileList.value.forEach(f => {
     f.status = 'uploading'
   })
@@ -136,19 +115,26 @@ const handleConfirm = async () => {
           props.uploadExtraParams
         )
   try {
-    await doUpload()
+    const response = await doUpload()
     fileList.value.forEach(f => {
       f.status = 'success'
     })
-    ScMessage.success(uploadSuccessMsg.value)
-    emit('uploadSuccess')
-    visible.value = false
+    emit('uploadSuccess', response)
+
+    // 「存在即意图」：配置了 formatSuccessMessage 且返回非空则进入手动关闭模式
+    const successMessage = props.uploadConfig.formatSuccessMessage?.(response)
+    if (successMessage) {
+      feedback.value = { type: 'success', message: successMessage }
+    } else {
+      ScMessage.success(uploadSuccessMsg.value)
+      visible.value = false
+    }
   } catch (e: any) {
     const msg = e?.msg ?? e?.message ?? '上传失败，请重试'
     fileList.value.forEach(f => {
       f.status = 'error'
     })
-    errorMsg.value = msg
+    feedback.value = { type: 'error', message: msg }
   } finally {
     isUploading.value = false
   }
@@ -173,7 +159,7 @@ const handleTemplateDownload = async (item?: ScTemplateItem) => {
 const handleClosed = () => {
   fileList.value = []
   isUploading.value = false
-  errorMsg.value = ''
+  feedback.value = null
 }
 
 const STATUS_TAG_TYPE = {
@@ -189,6 +175,11 @@ const STATUS_LABEL = {
   success: '已完成',
   error: '上传失败'
 } as const
+
+const FEEDBACK_META = {
+  success: { icon: CircleCheckFilled, title: '上传成功' },
+  error: { icon: WarningFilled, title: '上传失败' }
+} as const
 </script>
 
 <template>
@@ -197,7 +188,7 @@ const STATUS_LABEL = {
     :title="dialogTitle"
     confirm-text="确认上传"
     :confirm-loading="isUploading"
-    :confirm-disabled="!fileList.length"
+    :confirm-disabled="confirmDisabled"
     @confirm="handleConfirm"
     @closed="handleClosed"
   >
@@ -222,24 +213,13 @@ const STATUS_LABEL = {
         下载模板
       </ScButton>
     </div>
-    <el-upload
-      ref="uploadRef"
-      :accept="accept"
+
+    <ScUploadDragger
+      :accept="uploadConfig.accept"
       :multiple="uploadConfig.multiple ?? false"
-      :auto-upload="false"
-      :show-file-list="false"
-      :on-change="handleChange"
-      drag
-      class="upload-dragger"
-    >
-      <div class="upload-dragger__inner">
-        <div class="upload-dragger__icon-wrap">
-          <el-icon class="upload-dragger__icon"><UploadFilled /></el-icon>
-        </div>
-        <p class="upload-dragger__text">拖拽文件到此处，或 <em>点击上传</em></p>
-        <span class="upload-dragger__hint">仅支持 {{ acceptHint }}格式</span>
-      </div>
-    </el-upload>
+      @change="handleChange"
+    />
+
     <transition-group
       v-if="fileList.length"
       name="file-list"
@@ -279,189 +259,22 @@ const STATUS_LABEL = {
       </li>
     </transition-group>
 
-    <div v-if="errorMsg" class="error-block">
-      <div class="error-block__title">
-        <el-icon><WarningFilled /></el-icon>
-        上传失败
+    <div
+      v-if="feedback"
+      class="feedback-block"
+      :class="`feedback-block--${feedback.type}`"
+    >
+      <div class="feedback-block__title">
+        <el-icon>
+          <component :is="FEEDBACK_META[feedback.type].icon" />
+        </el-icon>
+        {{ FEEDBACK_META[feedback.type].title }}
       </div>
-      <p class="error-block__msg">{{ errorMsg }}</p>
+      <p class="feedback-block__msg">{{ feedback.message }}</p>
     </div>
   </ScDialog>
 </template>
 
-<style scoped lang="scss">
-.template-bar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.upload-dragger {
-  width: 100%;
-
-  :deep(.el-upload),
-  :deep(.el-upload-dragger) {
-    width: 100%;
-  }
-
-  :deep(.el-upload-dragger) {
-    padding: 28px 0;
-    transition:
-      border-color 0.2s,
-      background-color 0.2s;
-
-    &:hover {
-      border-color: var(--el-color-primary);
-      background-color: var(--el-color-primary-light-9);
-    }
-  }
-
-  &__inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  &__icon-wrap {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background-color: var(--el-fill-color);
-    border: 1px solid var(--el-border-color-lighter);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 2px;
-  }
-
-  &__icon {
-    font-size: 24px;
-    color: var(--el-color-primary);
-  }
-
-  &__text {
-    font-size: 14px;
-    color: var(--el-text-color-regular);
-
-    em {
-      color: var(--el-color-primary);
-      font-style: normal;
-      font-weight: 500;
-    }
-  }
-
-  &__hint {
-    font-size: 12px;
-    color: var(--el-text-color-placeholder);
-    background-color: var(--el-fill-color-light);
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 20px;
-    padding: 2px 12px;
-  }
-}
-
-.file-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background-color: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color-lighter);
-
-  &__icon {
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    span {
-      font-size: 10px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.5px;
-    }
-  }
-
-  &__info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  &__name {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--el-text-color-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
-  &__delete {
-    flex-shrink: 0;
-  }
-}
-
-.error-block {
-  margin-top: 12px;
-  padding: 10px 14px;
-  border-radius: 6px;
-  background-color: var(--el-color-danger-light-9);
-  border: 1px solid var(--el-color-danger-light-5);
-
-  &__title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--el-color-danger);
-    margin-bottom: 4px;
-  }
-
-  &__msg {
-    font-size: 12px;
-    color: var(--el-color-danger);
-    white-space: pre-line;
-    line-height: 1.6;
-    opacity: 0.85;
-    margin: 0;
-  }
-}
-
-.file-list-enter-active,
-.file-list-leave-active {
-  transition: all 0.2s ease;
-}
-
-.file-list-enter-from,
-.file-list-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
+<style lang="scss" scoped>
+@use './scBaseUploadSytle';
 </style>

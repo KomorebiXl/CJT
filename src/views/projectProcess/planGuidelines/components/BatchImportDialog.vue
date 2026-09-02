@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { DictOption } from '@/types/system/dict'
-import type { UploadFile, UploadInstance } from 'element-plus'
+import type { UploadFile } from 'element-plus'
+import type { ScUploadDraggerInstance } from '@/components/ScUploadDragger/ScUploadDragger.ts'
 import {
   CircleCheck,
   Close,
   Document,
   InfoFilled,
   Tickets,
-  Upload,
-  UploadFilled
+  Upload
 } from '@element-plus/icons-vue'
 import { batchImportTestPlanAPI } from '@/api/projectProcess/planGuidelines-api.ts'
 import { getDictOptions } from '@/utils/dict.ts'
@@ -28,7 +28,7 @@ type FileItem = {
 
 const dictOptions = ref<DictOption[]>([])
 const fileItems = ref<FileItem[]>([])
-const uploadRef = useTemplateRef<UploadInstance>('uploadRef')
+const uploadRef = useTemplateRef<ScUploadDraggerInstance>('uploadRef')
 
 // 获取已被使用的字典值（包括自动匹配和手动选择的）
 const getUsedDictValues = (): string[] => {
@@ -205,24 +205,14 @@ const handleImport = async () => {
     @closed="handleClosed"
   >
     <div class="batch-import-body">
-      <el-upload
+      <ScUploadDragger
         ref="uploadRef"
-        drag
         multiple
-        accept=".xls,.xlsx"
-        :auto-upload="false"
-        :show-file-list="false"
-        :on-change="handleChange"
-        class="upload-area"
-      >
-        <div class="upload-inner">
-          <div class="upload-icon-wrap">
-            <el-icon class="upload-icon"><UploadFilled /></el-icon>
-          </div>
-          <div class="upload-text">将文件拖到此处，或<em>点击上传</em></div>
-          <div class="upload-hint">支持 Excel（.xlsx / .xls）格式文件</div>
-        </div>
-      </el-upload>
+        :accept="['.xls', '.xlsx']"
+        hint="支持 Excel（.xlsx / .xls）格式文件"
+        @change="handleChange"
+      />
+
       <transition name="list-fade">
         <div v-if="fileItems.length !== 0" class="file-section">
           <div class="file-section-header">
@@ -299,67 +289,6 @@ const handleImport = async () => {
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-/* ── 上传区域 ── */
-.upload-area {
-  :deep(.el-upload-dragger) {
-    border: 2px dashed var(--el-border-color);
-    border-radius: 10px;
-    background: var(--el-fill-color-lighter);
-    transition:
-      border-color 0.25s,
-      background 0.25s;
-    padding: 28px 20px;
-
-    &:hover {
-      border-color: var(--el-color-primary);
-      background: var(--el-color-primary-light-9);
-    }
-  }
-
-  :deep(.el-upload) {
-    width: 100%;
-  }
-}
-
-.upload-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.upload-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: var(--el-color-primary-light-8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-
-  .upload-icon {
-    font-size: 26px;
-    color: var(--el-color-primary);
-  }
-}
-
-.upload-text {
-  font-size: 14px;
-  color: var(--el-text-color-regular);
-
-  em {
-    color: var(--el-color-primary);
-    font-style: normal;
-    font-weight: 500;
-  }
-}
-
-.upload-hint {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
 }
 
 /* ── 文件区块 ── */
