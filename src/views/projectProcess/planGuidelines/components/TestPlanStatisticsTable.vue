@@ -30,13 +30,11 @@ const pct = (num: number, den: number) =>
 const transformToTableData = (list: PlanGuidelinesStatisticsData[]) => {
   columns.value = [
     { prop: 'rowLabel', label: '', align: 'center', width: 150 },
-    ...dictData.value.map(
-      (item): ScTableColumn => ({
-        prop: `feature_${item.value}`,
-        label: item.label,
-        align: 'center'
-      })
-    ),
+    ...dictData.value.map((item): ScTableColumn => ({
+      prop: `feature_${item.value}`,
+      label: item.label,
+      align: 'center'
+    })),
     { prop: 'total', label: '合计', align: 'center' }
   ]
 

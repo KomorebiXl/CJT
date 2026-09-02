@@ -1,32 +1,22 @@
 <script setup lang="ts">
 import { downloadPlanTemplateAPI } from '@/api/projectProcess/planGuidelines-api.ts'
-import { getProjectIdFromRoute } from '@/store/modules/router-store.ts'
 import { downloadFile } from '@/utils/file.ts'
 import { safeRequest } from '@/utils/safeRequest.ts'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import { ScMessage } from '@/utils/ElUtils'
 import { useVisible } from '@/hooks/useVisible.ts'
+import { StepGuide, type StepItems } from '../components'
 import BatchImportDialog from './components/BatchImportDialog.vue'
 import TestPlanStatisticsTable from './components/TestPlanStatisticsTable.vue'
-import { StepGuide, type StepItems } from '../components'
 
 const router = useRouter()
-const route = useRoute()
 const { visible: importVisible, setVisible } = useVisible()
 
-const ROUTE_REQUIREMENT_CONFIG = '/testRequirements/requirementSourceConfig'
-const ROUTE_NEW_SYSTEM = '/testRequirements/createSystemName'
-
-const handleRoutePage = (url: string) => {
-  router.push({
-    path: `/projectProcess${url}`,
-    query: {
-      projectId: getProjectIdFromRoute(route)
-    }
-  })
+const handleRoutePage = (name: string) => {
+  router.push({ name })
 }
 
-/** 模板文件名取项目编号与名称（读流程作用域项目详情缓存，避免逐页请求） */
+/** 模板文件名取项目编号与名称 */
 const handleBatchDownloadTemplate = async () => {
   const detail = await getProcessProjectDetail()
   if (!detail) return
@@ -35,10 +25,7 @@ const handleBatchDownloadTemplate = async () => {
     { message: '文件下载失败' }
   )
   if (err || !res) return
-  await downloadFile(
-    res,
-    `${detail.code}-${detail.name}-验收测评方案`
-  )
+  await downloadFile(res, `${detail.code}-${detail.name}-验收测评方案`)
   ScMessage.success('下载成功！')
 }
 
@@ -50,7 +37,7 @@ const steps: StepItems = [
     ],
     action: {
       text: '前往配置',
-      handler: () => handleRoutePage(ROUTE_REQUIREMENT_CONFIG)
+      handler: () => handleRoutePage('RequirementSourceConfig')
     }
   },
   {
@@ -60,7 +47,7 @@ const steps: StepItems = [
     ],
     action: {
       text: '前往新建',
-      handler: () => handleRoutePage(ROUTE_NEW_SYSTEM)
+      handler: () => handleRoutePage('CreateSystemName')
     }
   },
   {
