@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
-  checkGenerateTestlogAPI,
-  generateTestlogAPI
+  checkGenerateTestLogAPI,
+  generateTestLogAPI
 } from '@/api/projectProcess/initialTest-api.ts'
 import { safeRequest } from '@/utils/safeRequest.ts'
 import { getProjectIdFromRoute } from '@/store/modules/router-store'
@@ -74,7 +74,7 @@ const handleClose = () => {
 /** 打开弹窗时先检查，服务端返回 msg 时作为确认提示展示 */
 const handleGenerateCheck = async () => {
   const [err, res] = await safeRequest(
-    checkGenerateTestlogAPI(getProjectIdFromRoute(route)),
+    checkGenerateTestLogAPI(getProjectIdFromRoute(route)),
     { showError: false }
   )
   if (err || !res) return
@@ -86,7 +86,7 @@ const handleConfirm = async () => {
   startFakeProgress()
 
   const [err] = await safeRequest(
-    generateTestlogAPI({ flgFirst: props.flgFirst }),
+    generateTestLogAPI({ flgFirst: props.flgFirst }),
     { showError: false }
   )
 
