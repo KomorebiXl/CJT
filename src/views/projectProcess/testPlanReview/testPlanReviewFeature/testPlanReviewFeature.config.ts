@@ -17,18 +17,6 @@ export const USER_DOC_EXPORT_URL = '/asset/plan/export'
 /** 用户文档集导出文件名前缀 */
 export const TEST_PLAN_FILE_NAME = '首轮测试结果记录表'
 
-/** sub_property 字典按 feature 过滤白名单 */
-export const DICT_FILTER_MAP: Record<string, string[]> = {
-  '2': ['10', '20', '30', '40'],
-  '3': ['50', '60', '70'],
-  '4': ['80', '90', '100', '110'],
-  '5': ['120', '130', '140', '150', '160', '170'],
-  '6': ['180', '190', '200'],
-  '7': ['210', '220', '230', '240'],
-  '8': ['245'],
-  '9': ['250']
-}
-
 /** 特性方案页默认表格列 */
 const FEATURE_COLUMNS: TableColumns = [
   { label: '子特性', prop: 'subFeatureLabel' },

@@ -21,8 +21,8 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useIfUsePlanStealer } from '@/hooks/useProcessProjectFlags.ts'
+import { DICT_FILTER_MAP } from '@/views/projectProcess/constants.ts'
 import {
-  DICT_FILTER_MAP,
   FEATURE_CONFIG,
   FEATURE_IMPORT_URL,
   FEATURE_TEMPLATE_URL

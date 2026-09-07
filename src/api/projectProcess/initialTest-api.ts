@@ -1,5 +1,7 @@
 import request from '@/utils/request'
 import type {
+  InitialTestFeatureListResponse,
+  InitialTestFeatureSearchParams,
   InitialTestRebuildSerialParams,
   InitialTestRegressExportParams,
   InitialTestStatisticsData,
@@ -102,4 +104,51 @@ export const exportInitialTestResultReportAPI = (
     url: `${acceptanceResultBaseUrl}/resultExport`,
     method: 'GET',
     params
+  })
+
+/** 首轮测试特性页-常规导入（可靠性的 file/80 分流与性能的 250 字段由页面 uploadFn 构建 FormData） */
+export const importInitialTestFeatureAPI = (data: FormData) =>
+  request.post<BaseResponse>({
+    url: `${acceptanceResultBaseUrl}/importSoftware`,
+    data
+  })
+
+/** 首轮测试特性页列表 */
+export const getInitialTestFeatureListAPI = (
+  params: ListQuery<InitialTestFeatureSearchParams & { feature: string }>
+) =>
+  request.get<InitialTestFeatureListResponse>({
+    url: `${acceptanceResultBaseUrl}/softWare/list`,
+    params
+  })
+
+/** 首轮测试特性页-回归（未通过记录）导出（用户文档集经第二参覆盖 /regressExport 地址） */
+export const exportInitialTestFeatureRegressAPI = (
+  params: { feature: string },
+  url: string = `${acceptanceResultBaseUrl}/resultRegressExportSoftWare`
+) =>
+  request.download({
+    url,
+    method: 'GET',
+    params
+  })
+
+/** 首轮测试特性页-回归（全部记录）导出（携当前搜索条件；用户文档集经第二参覆盖 /export 地址） */
+export const exportInitialTestFeatureReportAPI = (
+  params: { feature: string } & Partial<InitialTestFeatureSearchParams>,
+  url: string = `${acceptanceResultBaseUrl}/resultExportSoftWare`
+) =>
+  request.download({
+    url,
+    method: 'GET',
+    params
+  })
+
+/** 重构当前特性序号 */
+export const rebuildInitialTestFeatureSerialAPI = (data: {
+  feature: string
+}) =>
+  request.post<BaseResponse>({
+    url: `${acceptanceResultBaseUrl}/rebuildSerial`,
+    data
   })

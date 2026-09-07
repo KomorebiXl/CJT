@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ArrowDown } from '@element-plus/icons-vue'
 import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
 import type { DynamicFileColumn } from '@/types/projectProcess/projectProcessCommon'
 import type {
@@ -16,7 +15,6 @@ import {
   rebuildInitialTestSystemDetailSerialAPI,
   updateInitialTestSystemDetailAPI
 } from '@/api/projectProcess/initialTest-api.ts'
-import { usePermission } from '@/components/ScBaseComponents/ScResourcePage/hooks/usePermission.ts'
 import FileReferenceInput from '@/components/FileReferenceInput/index.vue'
 import { downloadFile } from '@/utils/file.ts'
 import { safeRequest } from '@/utils/safeRequest.ts'
@@ -26,6 +24,8 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useIfUsePlanStealer } from '@/hooks/useProcessProjectFlags.ts'
+import { buildResultFormData } from '@/views/projectProcess/projectProcessUtils.ts'
+import { OperateButtonGroup } from '../../components'
 import {
   INITIAL_TEST_FN_DROPDOWN_ITEMS,
   INITIAL_TEST_FN_EXTRA_PARAMS,
@@ -50,8 +50,6 @@ const emit = defineEmits<{
 
 const { scConfirm } = useScConfirm()
 
-const { hasPermission } = usePermission()
-
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
 const ifUsePlanStealer = useIfUsePlanStealer()
@@ -61,61 +59,6 @@ const searchbarItems = reactive<
 >(INITIAL_TEST_FN_SEARCHBAR_ITEMS)
 
 const dynamicData = ref<DynamicFileColumn[]>([])
-
-const isPlainObject = (val: unknown): val is Record<string, any> =>
-  Object.prototype.toString.call(val) === '[object Object]'
-
-const isEmptyValue = (val: unknown) =>
-  val === null ||
-  val === undefined ||
-  (Array.isArray(val) && val.length === 0) ||
-  (isPlainObject(val) && Object.keys(val).length === 0)
-
-/**
- * objectToFormData 不等价，勿替换：
- * 空值整体跳过；File[] 同名重复追加；对象数组按 key[i].prop 展开且不回传
- * image（base64 仅用于回显）；其余值 String() 后追加
- */
-const buildResultFormData = (data: Record<string, any>): FormData => {
-  const formData = new FormData()
-  const appendValue = (key: string, value: unknown) => {
-    if (value instanceof File) {
-      formData.append(key, value)
-    } else {
-      formData.append(key, String(value))
-    }
-  }
-  Object.entries(data).forEach(([key, value]) => {
-    if (isEmptyValue(value)) return
-    if (value instanceof File) {
-      appendValue(key, value)
-      return
-    }
-    if (Array.isArray(value) && value.every(v => v instanceof File)) {
-      value.forEach(file => appendValue(key, file))
-      return
-    }
-    if (Array.isArray(value) && value.every(isPlainObject)) {
-      value.forEach((item, index) => {
-        Object.entries(item).forEach(([prop, propValue]) => {
-          if (prop === 'image') return
-          if (isEmptyValue(propValue)) return
-          appendValue(`${key}[${index}].${prop}`, propValue)
-        })
-      })
-      return
-    }
-    if (Array.isArray(value)) {
-      value.forEach(item => {
-        if (isEmptyValue(item)) return
-        appendValue(key, item)
-      })
-      return
-    }
-    appendValue(key, value)
-  })
-  return formData
-}
 
 const seedDynamicFields = () => {
   dynamicData.value.forEach(item => {
@@ -310,13 +253,7 @@ const handleExportAllReport = async () => {
   ScMessage.success('数据导出成功！')
 }
 
-/** 「数据导入导出操作」下拉菜单项 */
-const dropdownItems = computed(() =>
-  INITIAL_TEST_FN_DROPDOWN_ITEMS.filter(
-    item => !item.permission || hasPermission(item.permission)
-  )
-)
-
+/** 「数据导入导出操作」下拉与平铺按钮直传配置清单，权限过滤由 OperateButtonGroup 内置 */
 const handleDropdownCommand = (id: string) => {
   switch (id) {
     case 'import':
@@ -335,12 +272,6 @@ const handleDropdownCommand = (id: string) => {
       break
   }
 }
-
-const flatButtons = computed(() =>
-  INITIAL_TEST_FN_FLAT_BUTTONS.filter(
-    item => !item.permission || hasPermission(item.permission)
-  )
-)
 
 const handleFlatClick = (btnId: string) => {
   switch (btnId) {
@@ -369,31 +300,12 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
     @delete="handleDelete"
   >
     <template #operate-button-slot>
-      <div v-if="dropdownItems.length" class="btn-item">
-        <el-dropdown trigger="click" @command="handleDropdownCommand">
-          <ScButton type="warning">
-            数据导入导出操作
-            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-          </ScButton>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item
-                v-for="item in dropdownItems"
-                :key="item.id"
-                :command="item.id"
-              >
-                <el-icon><component :is="item.icon" /></el-icon>
-                {{ item.name }}
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-      <div v-for="btn in flatButtons" :key="btn.id" class="btn-item">
-        <ScButton :type="btn.type" :icon="btn.icon" @click="handleFlatClick(btn.id)">
-          {{ btn.name }}
-        </ScButton>
-      </div>
+      <OperateButtonGroup
+        :dropdown-items="INITIAL_TEST_FN_DROPDOWN_ITEMS"
+        :flat-buttons="INITIAL_TEST_FN_FLAT_BUTTONS"
+        @dropdown-command="handleDropdownCommand"
+        @flat-click="handleFlatClick"
+      />
     </template>
     <template #extra-operate-left>
       <el-tag>{{ props.systemName }}</el-tag>
