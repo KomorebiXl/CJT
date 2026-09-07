@@ -1,0 +1,33 @@
+// 指引页（StepGuide 步骤引导 + 统计透视表）共享布局样式：
+// planGuidelines / initialTestGuidelines / regressionTestGuidelines
+// 在各自 <style lang="scss" scoped> 中 @use 本文件引入（随页 scoped 编译，不泄漏其他页面）
+.page-card {
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 45, 61, 0.2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(31, 45, 61, 0.2);
+    border-radius: 6px;
+
+    &:hover {
+      background: rgba(31, 45, 61, 0.35);
+    }
+  }
+}
+
+.table-content {
+  flex: 1;
+  min-height: 320px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}

@@ -89,34 +89,5 @@ const steps: StepItems = [
 </template>
 
 <style lang="scss" scoped>
-.page-card {
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(31, 45, 61, 0.2) transparent;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(31, 45, 61, 0.2);
-    border-radius: 6px;
-
-    &:hover {
-      background: rgba(31, 45, 61, 0.35);
-    }
-  }
-}
-
-.table-content {
-  flex: 1;
-  min-height: 320px;
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-}
+@use '../../guideline-page.scss';
 </style>

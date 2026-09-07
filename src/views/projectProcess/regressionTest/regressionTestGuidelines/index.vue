@@ -5,31 +5,20 @@ import {
   GenerateTestLogDialog,
   type StepItems
 } from '../../components'
-import GenerateExecutionRecordDialog from './components/GenerateExecutionRecordDialog.vue'
-import InitialTestStatisticsTable from './components/InitialTestStatisticsTable.vue'
+import RegressionTestStatisticsTable from './components/RegressionTestStatisticsTable.vue'
 
 const router = useRouter()
 
-const { visible: recordVisible, setVisible: setRecordVisible } = useVisible()
 const { visible: selectVisible, setVisible: setSelectVisible } = useVisible()
 const { visible: testLogVisible, setVisible: setTestLogVisible } = useVisible()
 
 const steps: StepItems = [
   {
-    title: '生成执行记录表',
-    desc: ['导入完成后，生成方案执行记录表以供归档'],
-    permission: 'asset:plan:batch:export',
-    action: {
-      text: '生成执行记录表',
-      handler: () => setRecordVisible(true)
-    }
-  },
-  {
     title: '特性测试',
-    desc: ['选择指定的子特性进行查看'],
+    desc: ['选择子特性跳转'],
     permission: 'asset:security:featureNavigation',
     action: {
-      text: '跳转子特性页面',
+      text: '跳转',
       handler: () => setSelectVisible(true)
     }
   },
@@ -45,15 +34,15 @@ const steps: StepItems = [
 ]
 
 const subFeatureOptions: Array<{ label: string; value: string }> = [
-  { label: '功能性', value: 'InitialTestFunctionality' },
-  { label: '信息安全性', value: 'InfoSecurityInitialTest' },
-  { label: '兼容性', value: 'CompatibilityInitialTest' },
-  { label: '可靠性', value: 'ReliabilityInitialTest' },
-  { label: '易用性', value: 'EaseOfUseInitialTest' },
-  { label: '可移植性', value: 'PortabilityInitialTest' },
-  { label: '维护性', value: 'MaintainabilityInitialTest' },
-  { label: '用户文档集', value: 'UserDocumentationInitial' },
-  { label: '性能效率', value: 'PerformanceEfficiencyInitialTest' }
+  { label: '功能性', value: 'RegressionTestFunctionality' },
+  { label: '信息安全性', value: 'InfoSecurityRegressionTest' },
+  { label: '兼容性', value: 'CompatibilityRegressionTest' },
+  { label: '可靠性', value: 'ReliabilityRegressionTest' },
+  { label: '易用性', value: 'EaseOfUseRegressionTest' },
+  { label: '可移植性', value: 'PortabilityRegressionTest' },
+  { label: '维护性', value: 'MaintainabilityRegressionTest' },
+  { label: '用户文档集', value: 'UserDocumentationRegressionTest' },
+  { label: '性能效率', value: 'PerformanceEfficiencyRegressionTest' }
 ]
 
 const selected = ref<string>('')
@@ -64,13 +53,13 @@ const handleRoutePage = () => router.push({ name: `${selected.value}` })
 <template>
   <div class="page-card h-viewport">
     <StepGuide
-      title="首轮编制指引"
+      title="回归编制指引"
       subtitle="通过标准化流程完成数据的批量导入与记录生成"
       default-expanded
       :steps="steps"
     />
     <div class="table-content">
-      <InitialTestStatisticsTable />
+      <RegressionTestStatisticsTable />
     </div>
     <ScDialog
       v-model="selectVisible"
@@ -94,8 +83,7 @@ const handleRoutePage = () => router.push({ name: `${selected.value}` })
         </ScButton>
       </template>
     </ScDialog>
-    <GenerateExecutionRecordDialog v-model="recordVisible" />
-    <GenerateTestLogDialog v-model="testLogVisible" flg-first />
+    <GenerateTestLogDialog v-model="testLogVisible" :flg-first="false" />
   </div>
 </template>
 
