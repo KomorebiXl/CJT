@@ -1,10 +1,9 @@
 /**
- * 验收测评结果 FormData 构造器。
- * 两函数契约不同，勿互替、勿合并：
- * - buildResultFormData 提交
- * - convertToResultFormData 提交，
- *   回归测试模块落地后同此取用
+ * projectProcess 跨模块共享工具（验收测评结果域）：
+ * - buildResultFormData / convertToResultFormData：FormData 双构造器（契约不同，勿互替勿合并）
+ * - mergeDynamicAfterAnchor：动态文件列/表单项锚点合并
  */
+import type { DynamicFileColumn } from '@/types/projectProcess/projectProcessCommon'
 
 const isPlainObject = (val: unknown): val is Record<string, any> =>
   Object.prototype.toString.call(val) === '[object Object]'
@@ -106,4 +105,27 @@ export const convertToResultFormData = (
     appendToFormData(key, data[key], fileProps.includes(key))
   })
   return formData
+}
+
+/** 动态文件列/表单项插入锚点：插在首个命中项之后（三消费方共用同一锚点组） */
+const DYNAMIC_FIELD_ANCHORS = ['itemDescription', 'item']
+
+/**
+ * 将动态文件列/表单项合并进基础清单：插在首个命中的锚点项之后
+ * （沿源 utils/pageUtils 的 mergeDynamicAfterAnchor 语义）；
+ * 锚点全部不存在或动态清单为空时不插入；返回新数组，不改写入参
+ */
+export const mergeDynamicAfterAnchor = <T extends { prop?: string }>(
+  baseList: T[],
+  dynamicData: DynamicFileColumn[],
+  mapDynamicItem: (item: DynamicFileColumn) => T,
+  anchorProps: string[] = DYNAMIC_FIELD_ANCHORS
+): T[] => {
+  const list = [...baseList]
+  const anchorIndex = anchorProps
+    .map(prop => list.findIndex(item => item.prop === prop))
+    .find(index => index !== -1)
+  if (anchorIndex === undefined || !dynamicData.length) return list
+  list.splice(anchorIndex + 1, 0, ...dynamicData.map(mapDynamicItem))
+  return list
 }

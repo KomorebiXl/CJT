@@ -3,64 +3,62 @@ import { Back, Download, Refresh, UploadFilled } from '@element-plus/icons-vue'
 import type { PageButton } from '@/components/ScBaseComponents/ScResourcePage/types/operateConfig.ts'
 import { defineFormItems } from '@/utils/form.ts'
 import type {
-  InitialTestSystemDetailFormData,
-  InitialTestSystemDetailSearchParams
-} from '@/types/projectProcess/initialTest'
+  RegressionTestFnSubsystemFormData,
+  RegressionTestFnSubsystemSearchParams
+} from '@/types/projectProcess/regressionTest'
 
-/** 首轮测试功能性-Excel 导入地址 */
-export const INITIAL_TEST_FN_IMPORT_URL = '/asset/acceptance/result/import'
+/** 回归测试功能性-Excel 导入地址 */
+export const REGRESSION_TEST_FN_IMPORT_URL = '/asset/acceptance/result/import'
 
-/** 首轮测试功能性-导入模板下载地址 */
-export const INITIAL_TEST_FN_TEMPLATE_URL = '/asset/acceptance/result/template'
+/** 回归测试功能性-导入模板下载地址 */
+export const REGRESSION_TEST_FN_TEMPLATE_URL =
+  '/asset/acceptance/result/template'
 
-/** 首轮测试功能性-测试截图记录（.docx）上传地址 */
-export const INITIAL_TEST_FN_SCREENSHOT_UPLOAD_URL =
+/** 回归测试功能性-测试截图记录（.docx）上传地址 */
+export const REGRESSION_TEST_FN_SCREENSHOT_UPLOAD_URL =
   '/asset/acceptance/result/importScreenshot'
 
 /**
- * 首轮测试功能性-列表/导入/导出固定参数（subsystem 由页面按当前系统传入）；
+ * 回归测试功能性-列表/导入/导出固定参数（subsystem 由页面按当前系统传入）；
  * rebuildSerial 源契约不带 dataType，页面单独传参勿用本函数
  */
-export const createInitialTestFnExtraParams = (subsystem: string) => ({
+export const createRegressionTestFnExtraParams = (subsystem: string) => ({
   feature: '1',
   subFeature: '1',
-  dataType: '1',
+  dataType: '2',
   subsystem
 })
 
-/** 首轮测试功能性-系统详情搜索项 */
-export const INITIAL_TEST_FN_SEARCHBAR_ITEMS: SearchbarItems<InitialTestSystemDetailSearchParams> =
+/** 回归测试功能性-子系统搜索项 */
+export const REGRESSION_TEST_FN_SEARCHBAR_ITEMS: SearchbarItems<RegressionTestFnSubsystemSearchParams> =
   [
     { prop: 'serialNumber', type: 'input', placeholder: '请输入序号' },
     { prop: 'item', type: 'input', placeholder: '请输入测试项' }
   ]
 
-/** 首轮测试功能性-系统详情静态列 */
-export const INITIAL_TEST_FN_TABLE_COLUMNS: TableColumns = [
+/** 回归测试功能性-子系统静态列 */
+export const REGRESSION_TEST_FN_TABLE_COLUMNS: TableColumns = [
   { label: '序号', prop: 'serialNumber', minWidth: 200, fixed: 'left' },
   { label: '测试项', prop: 'item', width: 250, fixed: 'left' },
-  {
-    label: '测试项说明',
-    prop: 'itemDescription',
-    minWidth: 150,
-    showOverflowTooltip: true
-  },
+  { label: '测试项说明', prop: 'itemDescription', width: 180 },
   { label: '前提条件', prop: 'precondition', width: 110 },
   { label: '测试步骤', prop: 'step', width: 110 },
-  { label: '首轮测试结果', prop: 'firstResult', width: 180 },
+  { label: '首轮测试结果', prop: 'firstResult', width: 110 },
   { label: '首轮问题描述', prop: 'firstProblem', width: 110 },
   { label: '首次测试人员', prop: 'firstTester', width: 110 },
   { label: '首次测试时间', prop: 'firstTestTime', width: 110 },
   { label: '缺陷严重等级', prop: 'defectLevelLabel', width: 110 },
+  { label: '回归验证结果', prop: 'regressionResult', width: 110 },
+  { label: '回归验证问题描述', prop: 'regressionProblem', width: 110 },
+  { label: '回归测试人员', prop: 'regressionTester', width: 110 },
+  { label: '回归测试时间', prop: 'regressionTestTime', width: 110 },
   { label: '备注', prop: 'remark', width: 110 }
 ]
 
 /**
- * 首轮测试功能性-「数据导入导出操作」下拉菜单项（经用户定案收进下拉；顺序与
- * icon 沿源平铺布局，触发按钮渲染于 ScResourcePage #operate-button-slot 最前，
- * command 分发在页面侧）
+ * 回归测试功能性-「数据导入导出操作」下拉菜单项
  */
-export const INITIAL_TEST_FN_DROPDOWN_ITEMS: Array<{
+export const REGRESSION_TEST_FN_DROPDOWN_ITEMS: Array<{
   id: string
   name: string
   icon: Component
@@ -68,7 +66,7 @@ export const INITIAL_TEST_FN_DROPDOWN_ITEMS: Array<{
 }> = [
   {
     id: 'import',
-    name: '首轮（测试完成记录）导入',
+    name: '回归（测试完成记录）导入',
     icon: UploadFilled,
     permission: 'acceptance:result:function:import'
   },
@@ -92,8 +90,10 @@ export const INITIAL_TEST_FN_DROPDOWN_ITEMS: Array<{
   }
 ]
 
-/** 首轮测试功能性-平铺操作按钮（渲染于下拉之后，页面侧直接分发点击；id 必填供分发） */
-export const INITIAL_TEST_FN_FLAT_BUTTONS: Array<PageButton & { id: string }> = [
+/** 回归测试功能性-平铺操作按钮（渲染于下拉之后，页面侧直接分发点击；id 必填供分发） */
+export const REGRESSION_TEST_FN_FLAT_BUTTONS: Array<
+  PageButton & { id: string }
+> = [
   {
     id: 'refreshNum',
     name: '重构序号',
@@ -104,9 +104,9 @@ export const INITIAL_TEST_FN_FLAT_BUTTONS: Array<PageButton & { id: string }> = 
   { id: 'back', name: '返回', type: 'info', icon: Back }
 ]
 
-/** 首轮测试功能性-系统详情表单初始值 */
-export const createInitialTestSystemDetailFormData =
-  (): InitialTestSystemDetailFormData => ({
+/** 回归测试功能性-子系统表单初始值 */
+export const createRegressionTestFnSubsystemFormData =
+  (): RegressionTestFnSubsystemFormData => ({
     serialNumber: '',
     item: '',
     itemDescription: '',
@@ -115,6 +115,7 @@ export const createInitialTestSystemDetailFormData =
     subsystem: '',
     feature: '1',
     subFeature: '1',
+    dataType: '2',
     relatedItem: '',
     precondition: '',
     step: '',
@@ -129,24 +130,29 @@ export const createInitialTestSystemDetailFormData =
     regressionTestTime: '',
     env: '',
     firstScreenshot: '',
-    firstScreenshotFiles: []
+    firstScreenshotFiles: [],
+    regressionScreenshot: '',
+    regressionScreenshotFiles: []
   })
 
-/** 首轮测试功能性-系统详情静态表单项（动态文件字段运行时插入） */
-export const INITIAL_TEST_FN_FORM_ITEMS =
-  defineFormItems<InitialTestSystemDetailFormData>([
+/**
+ * 回归测试功能性-子系统静态表单项（动态文件字段运行时插入）；
+ * 序号/测试项照源可编辑（区别于首轮功能性恒禁用）
+ */
+export const REGRESSION_TEST_FN_FORM_ITEMS =
+  defineFormItems<RegressionTestFnSubsystemFormData>([
     {
       label: '序号',
       prop: 'serialNumber',
       type: 'input',
-      componentProps: { disabled: true, placeholder: '请输入序号' },
+      componentProps: { placeholder: '请输入序号' },
       rules: [{ required: true, message: '未填写序号', trigger: 'blur' }]
     },
     {
       label: '测试项',
       prop: 'item',
       type: 'input',
-      componentProps: { disabled: true, placeholder: '请输入测试项' },
+      componentProps: { placeholder: '请输入测试项' },
       rules: [{ required: true, message: '未填写测试项', trigger: 'blur' }]
     },
     {
@@ -278,6 +284,7 @@ export const INITIAL_TEST_FN_FORM_ITEMS =
       type: 'input',
       componentProps: {
         type: 'textarea',
+        rows: 5,
         placeholder: '请输入测试项说明'
       },
       colSpan: 2
@@ -297,6 +304,12 @@ export const INITIAL_TEST_FN_FORM_ITEMS =
       label: '首轮测试截图',
       prop: 'firstScreenshot',
       customSlot: 'firstScreenshot',
+      colSpan: 2
+    },
+    {
+      label: '回归测试截图',
+      prop: 'regressionScreenshot',
+      customSlot: 'regressionScreenshot',
       colSpan: 2
     }
   ])

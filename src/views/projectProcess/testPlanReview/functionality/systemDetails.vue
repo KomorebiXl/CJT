@@ -22,6 +22,7 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useIfUsePlanStealer } from '@/hooks/useProcessProjectFlags.ts'
+import { mergeDynamicAfterAnchor } from '@/views/projectProcess/projectProcessUtils.ts'
 import {
   FUNCTIONALITY_EXPORT_URL,
   FUNCTIONALITY_IMPORT_EXTRA_PARAMS,
@@ -62,18 +63,10 @@ const columns = computed<TableColumns>(() => {
   ]
   if (ifUsePlanStealer.value)
     list = list.filter(col => col.prop !== 'itemDescription')
-  const dynamicCols = dynamicData.value.map(item => ({
+  return mergeDynamicAfterAnchor(list, dynamicData.value, item => ({
     label: item.name,
     prop: item.field
   }))
-  if (dynamicCols.length) {
-    const anchorIndex = ['itemDescription', 'item']
-      .map(prop => list.findIndex(col => col.prop === prop))
-      .find(index => index !== -1)
-    if (anchorIndex !== undefined)
-      list.splice(anchorIndex + 1, 0, ...dynamicCols)
-  }
-  return list
 })
 
 const pageConfig: PageConfig<SystemDetailResult> = {
@@ -207,24 +200,12 @@ const formItems = computed<ScBaseFormItem[]>(() => {
   if (ifUsePlanStealer.value) {
     list = list.filter(item => item.prop !== 'itemDescription')
   }
-  const dynamicItems = dynamicData.value.map(
-    item =>
-      ({
-        label: item.name,
-        prop: item.field,
-        type: 'input',
-        colSpan: 12
-      }) as ScBaseFormItem
-  )
-  if (dynamicItems.length) {
-    const anchorIndex = ['itemDescription', 'item']
-      .map(prop => list.findIndex(item => item.prop === prop))
-      .find(index => index !== -1)
-    if (anchorIndex !== undefined) {
-      list.splice(anchorIndex + 1, 0, ...dynamicItems)
-    }
-  }
-  return list
+  return mergeDynamicAfterAnchor(list, dynamicData.value, item => ({
+    label: item.name,
+    prop: item.field,
+    type: 'input',
+    colSpan: 12
+  }))
 })
 
 const { visible, formData, confirmLoading, open, handleConfirm, dialogTitle } =
