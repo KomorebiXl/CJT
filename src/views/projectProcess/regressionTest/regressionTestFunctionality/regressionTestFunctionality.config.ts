@@ -40,7 +40,12 @@ export const REGRESSION_TEST_FN_SEARCHBAR_ITEMS: SearchbarItems<RegressionTestFn
 export const REGRESSION_TEST_FN_TABLE_COLUMNS: TableColumns = [
   { label: '序号', prop: 'serialNumber', minWidth: 200, fixed: 'left' },
   { label: '测试项', prop: 'item', width: 250, fixed: 'left' },
-  { label: '测试项说明', prop: 'itemDescription', width: 180 },
+  {
+    label: '测试项说明',
+    prop: 'itemDescription',
+    width: 180,
+    showOverflowTooltip: true
+  },
   { label: '前提条件', prop: 'precondition', width: 110 },
   { label: '测试步骤', prop: 'step', width: 110 },
   { label: '首轮测试结果', prop: 'firstResult', width: 110 },

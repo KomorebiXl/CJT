@@ -2,8 +2,14 @@
  * projectProcess 跨模块共享工具（验收测评结果域）：
  * - buildResultFormData / convertToResultFormData：FormData 双构造器（契约不同，勿互替勿合并）
  * - mergeDynamicAfterAnchor：动态文件列/表单项锚点合并
+ * - xxxFormItemsFrom：特性页表单变体工厂（注入各自默认工厂，首轮/回归共用）
  */
+import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
 import type { DynamicFileColumn } from '@/types/projectProcess/projectProcessCommon'
+import {
+  PROCESS_SCREENSHOT_ITEM,
+  TIME_ANALYSIS_ITEM
+} from '@/views/projectProcess/constants.ts'
 
 const isPlainObject = (val: unknown): val is Record<string, any> =>
   Object.prototype.toString.call(val) === '[object Object]'
@@ -129,3 +135,26 @@ export const mergeDynamicAfterAnchor = <T extends { prop?: string }>(
   list.splice(anchorIndex + 1, 0, ...dynamicData.map(mapDynamicItem))
   return list
 }
+
+/**
+ * 用户文档集表单项变体工厂（默认表单去掉测试截图 firstScreenshot）；
+ * 传入首轮/回归各自的 createDefaultFormItems，返回可直接挂 FeaturePageConfig.createFormItems 的工厂
+ */
+export const userDocFormItemsFrom = (
+  createDefaultFormItems: () => Array<ScBaseFormItem>
+) => () =>
+  createDefaultFormItems().filter(item => item.prop !== 'firstScreenshot')
+
+/** 可靠性表单项变体工厂（默认表单后追加过程截图） */
+export const reliabilityFormItemsFrom = (
+  createDefaultFormItems: () => Array<ScBaseFormItem>
+) => () => [...createDefaultFormItems(), PROCESS_SCREENSHOT_ITEM]
+
+/** 性能效率表单项变体工厂（用户文档集变体基础上追加过程截图与时间特性分析表） */
+export const performanceFormItemsFrom = (
+  createDefaultFormItems: () => Array<ScBaseFormItem>
+) => () => [
+  ...userDocFormItemsFrom(createDefaultFormItems)(),
+  PROCESS_SCREENSHOT_ITEM,
+  TIME_ANALYSIS_ITEM
+]

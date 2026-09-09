@@ -1,7 +1,7 @@
 import { Refresh } from '@element-plus/icons-vue'
 import type { PageButton } from '@/components/ScBaseComponents/ScResourcePage/types/operateConfig.ts'
 import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
-import type { InitialTestFeatureFormData } from '@/types/projectProcess/initialTest'
+import type { RegressionTestFeatureFormData } from '@/types/projectProcess/regressionTest'
 import { defineFormItems } from '@/utils/form.ts'
 import { USER_DOC_COLUMNS } from '@/views/projectProcess/constants.ts'
 import {
@@ -10,27 +10,23 @@ import {
   userDocFormItemsFrom
 } from '@/views/projectProcess/projectProcessUtils.ts'
 
-/** 首轮测试特性页-常规导入地址 */
+/** 回归测试特性页-常规导入地址 */
 export const FEATURE_IMPORT_URL = '/asset/acceptance/result/importSoftware'
 
-/** 首轮测试特性页-测试截图记录上传地址 */
+/** 回归测试特性页-测试截图记录上传地址 */
 export const FEATURE_SCREENSHOT_UPLOAD_URL =
   '/asset/acceptance/result/importScreenshot'
 
-/** 首轮测试特性页-回归（全部记录）导出地址 */
+/** 回归测试特性页-回归（全部记录）导出地址 */
 export const FEATURE_EXPORT_URL =
   '/asset/acceptance/result/resultExportSoftWare'
 
-/** 首轮测试特性页-回归（未通过记录）导出地址 */
+/** 回归测试特性页-回归（未通过记录）导出地址 */
 export const FEATURE_REGRESS_EXPORT_URL =
   '/asset/acceptance/result/resultRegressExportSoftWare'
 
 /** 用户文档集-回归（全部记录）导出地址 */
-export const USER_DOC_EXPORT_URL = '/asset/acceptance/result/export'
-
-/** 用户文档集-回归（未通过记录）导出地址 */
-export const USER_DOC_REGRESS_EXPORT_URL =
-  '/asset/acceptance/result/regressExport'
+export const USER_DOC_EXPORT_URL = '/asset/plan/export'
 
 /** 特性页默认表格列 */
 const FEATURE_COLUMNS: TableColumns = [
@@ -50,13 +46,17 @@ const FEATURE_COLUMNS: TableColumns = [
   { label: '首次测试人员', prop: 'firstTester', minWidth: 150 },
   { label: '首次测试时间', prop: 'firstTestTime', minWidth: 150 },
   { label: '缺陷严重等级', prop: 'defectLevelLabel', minWidth: 150 },
+  { label: '回归验证结果', prop: 'regressionResult', minWidth: 150 },
+  { label: '回归验证问题描述', prop: 'regressionProblem', minWidth: 150 },
+  { label: '回归测试人员', prop: 'regressionTester', minWidth: 150 },
+  { label: '回归测试时间', prop: 'regressionTestTime', minWidth: 150 },
   { label: '测试环境', prop: 'envLabel', minWidth: 150 },
   { label: '备注', prop: 'remark', width: 100 }
 ]
 
 /** 特性页默认表单项工厂（每次返回全新数组，页面 computed 持有后安全注入选项） */
 const createDefaultFormItems = () =>
-  defineFormItems<InitialTestFeatureFormData>([
+  defineFormItems<RegressionTestFeatureFormData>([
     {
       label: '子特性',
       prop: 'subFeature',
@@ -128,6 +128,38 @@ const createDefaultFormItems = () =>
       }
     },
     {
+      label: '回归验证结果',
+      prop: 'regressionResult',
+      type: 'select',
+      componentProps: {
+        dictField: 'first_test_result',
+        placeholder: '请选择回归验证结果'
+      }
+    },
+    {
+      label: '回归验证问题描述',
+      prop: 'regressionProblem',
+      type: 'input',
+      componentProps: { placeholder: '请输入回归验证问题描述' }
+    },
+    {
+      label: '回归测试人员',
+      prop: 'regressionTester',
+      type: 'input',
+      componentProps: { placeholder: '请输入回归测试人员' }
+    },
+    {
+      label: '回归测试时间',
+      prop: 'regressionTestTime',
+      type: 'date',
+      componentProps: {
+        type: 'date',
+        format: 'YYYY-MM-DD',
+        valueFormat: 'YYYY-MM-DD',
+        placeholder: '请选择回归测试时间'
+      }
+    },
+    {
       label: '测试环境',
       prop: 'env',
       type: 'select',
@@ -135,17 +167,6 @@ const createDefaultFormItems = () =>
         dictField: 'test_environment',
         placeholder: '请选择测试环境'
       }
-    },
-    {
-      label: '测试项说明',
-      prop: 'itemDescription',
-      type: 'input',
-      componentProps: {
-        type: 'textarea',
-        rows: 5,
-        placeholder: '请输入测试项说明'
-      },
-      colSpan: 2
     },
     {
       label: '前提条件',
@@ -177,6 +198,17 @@ const createDefaultFormItems = () =>
         type: 'textarea',
         rows: 5,
         placeholder: '请输入首轮问题描述'
+      },
+      colSpan: 2
+    },
+    {
+      label: '测试项说明',
+      prop: 'itemDescription',
+      type: 'input',
+      componentProps: {
+        type: 'textarea',
+        rows: 5,
+        placeholder: '请输入测试项说明'
       },
       colSpan: 2
     },
@@ -238,9 +270,15 @@ const createDefaultFormItems = () =>
       colSpan: 2
     },
     {
-      label: '测试截图',
+      label: '首轮测试截图',
       prop: 'firstScreenshot',
       customSlot: 'firstScreenshot',
+      colSpan: 2
+    },
+    {
+      label: '回归测试截图',
+      prop: 'regressionScreenshot',
+      customSlot: 'regressionScreenshot',
       colSpan: 2
     }
   ])
@@ -275,18 +313,18 @@ export interface FeaturePageConfig {
   regressExportUrl: string
   /** 未通过记录导出权限码 */
   regressExportPermission: string
-  /** 导出文件名工厂（仅用户文档集，两项导出同名） */
+  /** 导出文件名工厂（仅用户文档集） */
   buildExportFileName?: (projectCode: string) => string
-  /** 是否展示「导入首轮测试截图记录」入口 */
+  /** 是否展示「导入回归测试截图记录」入口 */
   showScreenshotImport: boolean
   /** 常规导入变体配置 */
   importConfig: FeatureImportConfig
-  /** 强制隐藏「测试项说明」 */
+  /** 强制隐藏「测试项说明」列 */
   hideDescription: boolean
 }
 
 /** 特性页平铺操作按钮 */
-export const INITIAL_TEST_FEATURE_FLAT_BUTTONS: Array<
+export const REGRESSION_TEST_FEATURE_FLAT_BUTTONS: Array<
   PageButton & { id: string }
 > = [
   {
@@ -299,17 +337,23 @@ export const INITIAL_TEST_FEATURE_FLAT_BUTTONS: Array<
 ]
 
 /** 特性页表单初始值 */
-export const createInitialTestFeatureFormData =
-  (): InitialTestFeatureFormData => ({
+export const createRegressionTestFeatureFormData =
+  (): RegressionTestFeatureFormData => ({
     subFeature: '',
     serialNumber: '',
     item: '',
+    subsystem: '',
+    feature: '',
     enable: '0',
     relatedItem: '',
     firstResult: '',
     firstTester: '',
     firstTestTime: '',
     defectLevel: '',
+    regressionResult: '',
+    regressionProblem: '',
+    regressionTester: '',
+    regressionTestTime: '',
     env: '',
     itemDescription: '',
     precondition: '',
@@ -323,6 +367,8 @@ export const createInitialTestFeatureFormData =
     resultDetail: '',
     firstScreenshot: '',
     firstScreenshotFiles: [],
+    regressionScreenshot: '',
+    regressionScreenshotFiles: [],
     processScreenshot: '',
     files: [],
     caseTableType: '',
@@ -333,7 +379,7 @@ const createDefaultFeatureConfig = (name: string): FeaturePageConfig => ({
   name,
   columns: FEATURE_COLUMNS,
   createFormItems: createDefaultFormItems,
-  fileProps: ['firstScreenshotFiles'],
+  fileProps: ['firstScreenshotFiles', 'regressionScreenshotFiles'],
   exportUrl: FEATURE_EXPORT_URL,
   exportPermission: 'acceptance:result:softWare:all:export',
   regressExportUrl: FEATURE_REGRESS_EXPORT_URL,
@@ -349,7 +395,7 @@ export const FEATURE_CONFIG: Record<FeatureKey, FeaturePageConfig> = {
   '4': {
     ...createDefaultFeatureConfig('可靠性'),
     createFormItems: reliabilityFormItemsFrom(createDefaultFormItems),
-    fileProps: ['firstScreenshotFiles', 'files'],
+    fileProps: ['firstScreenshotFiles', 'regressionScreenshotFiles', 'files'],
     importConfig: {
       accept: ['.xls', '.xlsx', '.docx'],
       multiple: true,
@@ -368,11 +414,12 @@ export const FEATURE_CONFIG: Record<FeatureKey, FeaturePageConfig> = {
     name: '用户文档集',
     columns: USER_DOC_COLUMNS,
     createFormItems: userDocFormItemsFrom(createDefaultFormItems),
-    fileProps: [],
+    fileProps: ['regressionScreenshotFiles'],
     exportUrl: USER_DOC_EXPORT_URL,
-    exportPermission: 'acceptance:result:export',
-    regressExportUrl: USER_DOC_REGRESS_EXPORT_URL,
-    regressExportPermission: 'acceptance:result:regress:export',
+    // 源仅覆盖全部导出地址与文件名，导出权限与未通过导出仍走默认（区别于首轮用户文档集双覆盖）
+    exportPermission: 'acceptance:result:softWare:all:export',
+    regressExportUrl: FEATURE_REGRESS_EXPORT_URL,
+    regressExportPermission: 'acceptance:result:softWare:regress:export',
     buildExportFileName: projectCode => `用户文档集-${projectCode}-回归`,
     showScreenshotImport: false,
     importConfig: { accept: ['.xls', '.xlsx'], multiple: false },
@@ -381,10 +428,14 @@ export const FEATURE_CONFIG: Record<FeatureKey, FeaturePageConfig> = {
   '9': {
     ...createDefaultFeatureConfig('性能效率'),
     createFormItems: performanceFormItemsFrom(createDefaultFormItems),
-    fileProps: ['files', 'assetAcceptanceTimeAnalysisList'],
+    fileProps: [
+      'regressionScreenshotFiles',
+      'files',
+      'assetAcceptanceTimeAnalysisList'
+    ],
     showScreenshotImport: false,
     importConfig: {
-      accept: ['.docx'],
+      accept: ['.doc', '.docx'],
       multiple: false,
       // 性能效率导入以 250 为文件字段名
       fileField: () => '250'

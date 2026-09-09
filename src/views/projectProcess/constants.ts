@@ -1,3 +1,5 @@
+import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
+
 /**
  * projectProcess 跨模块共享常量
  */
@@ -16,4 +18,42 @@ export const DICT_FILTER_MAP: Record<string, string[]> = {
   '7': ['210', '220', '230', '240'],
   '8': ['245'],
   '9': ['250']
+}
+
+/**
+ * 用户文档集特性页覆盖列（照源 userDoc 入口 customTableColumn，首轮/回归特性页共用；
+ * enable 列按原值 0/1 展示——源声明 slot:'enable' 但基础页无插槽实现，属源原样行为）。
+ */
+export const USER_DOC_COLUMNS: TableColumns = [
+  { label: '序号', prop: 'serialNumber' },
+  { label: '子特性', prop: 'subFeatureLabel', minWidth: 150 },
+  { label: '核查项', prop: 'item' },
+  { label: '是否删除测试项', prop: 'enable', width: 150 },
+  { label: '核查内容说明', prop: 'itemDescription' },
+  { label: '首轮测试结果', prop: 'firstResult' },
+  { label: '首轮问题描述', prop: 'firstProblem' },
+  { label: '缺陷严重等级', prop: 'defectLevelLabel' },
+  { label: '首次测试人员', prop: 'firstTester', width: 110 },
+  { label: '首次测试时间', prop: 'firstTestTime', width: 110 },
+  { label: '备注', prop: 'remark' }
+]
+
+/**
+ * 特性页-过程截图表单项（可靠性在默认表单后追加；性能效率同时替代首轮测试截图）。
+ */
+export const PROCESS_SCREENSHOT_ITEM: ScBaseFormItem = {
+  label: '过程截图',
+  prop: 'processScreenshot',
+  customSlot: 'processScreenshot',
+  colSpan: 2
+}
+
+/**
+ * 特性页-时间特性分析表单项（性能效率专用）。
+ */
+export const TIME_ANALYSIS_ITEM: ScBaseFormItem = {
+  label: '时间特性分析',
+  prop: 'caseTableType',
+  customSlot: 'caseTableType',
+  colSpan: 2
 }
