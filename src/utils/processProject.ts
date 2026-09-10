@@ -50,6 +50,19 @@ export const warmProcessProjectDetail = (projectId: string) => {
   fetchProjectDetail(projectId)
 }
 
+/**
+ * 强制刷新流程作用域的项目详情缓存（页面保存项目属性后调用）：
+ * 重新拉取并覆写缓存；拉取失败时清掉缓存键，让下一次读取走读穿透重新拉取，避免服务端已新、缓存长期残留旧快照
+ */
+export const refreshProcessProjectDetail =
+  async (): Promise<ProjectManagementData | null> => {
+    const projectId = sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
+    if (!projectId) return null
+    const detail = await fetchProjectDetail(projectId)
+    if (!detail) sessionStorage.remove(PROCESS_PROJECT_DETAIL_KEY)
+    return detail
+  }
+
 /** 退出项目流程作用域时清理缓存 */
 export const clearProcessProjectDetail = () => {
   sessionStorage.remove(PROCESS_PROJECT_DETAIL_KEY)

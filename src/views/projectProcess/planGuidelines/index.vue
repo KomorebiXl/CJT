@@ -89,5 +89,5 @@ const steps: StepItems = [
 </template>
 
 <style lang="scss" scoped>
-@use '../../guideline-page.scss';
+@use '@/views/projectProcess/projectProcess.scss';
 </style>

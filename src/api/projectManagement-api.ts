@@ -5,7 +5,7 @@ import type {
   ProjectManagementSearchParams
 } from '@/types/projectManagement'
 
-const subjectBaseUrl = '/background/subject'
+export const subjectBaseUrl = '/background/subject'
 
 export const getProjectManagementList = (
   params: PaginationParams & ProjectManagementSearchParams
