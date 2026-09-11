@@ -22,6 +22,8 @@ export interface TableConfig<TRow = Record<string, any>> {
   rowClassName?: string | ((data: { row: TRow; rowIndex: number }) => string)
   /** 是否显示多选框 */
   showSelection?: boolean
+  /** 多选时是否在数据刷新后保留选中项（转发 ScTable，依赖 row-key） */
+  reserveSelection?: boolean
   /** 是否显示序号 */
   showIndex?: boolean
 }

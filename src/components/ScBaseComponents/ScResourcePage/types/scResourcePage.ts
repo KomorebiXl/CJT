@@ -55,4 +55,6 @@ export interface ScResourcePageInstance<TRow = any> {
   resetSearch: () => Promise<void>
   getSelectedRows: () => TRow[]
   clearSelection: () => void
+  /** 按行对象勾选/取消勾选（转发 ScTable，配合 reserveSelection 恢复选中） */
+  toggleRowSelection: (row: TRow, selected: boolean) => void
 }

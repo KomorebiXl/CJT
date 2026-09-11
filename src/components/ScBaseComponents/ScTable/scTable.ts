@@ -34,6 +34,8 @@ export type ScTableProps = {
 
   // 功能列
   showSelection?: boolean
+  /** 多选时是否在数据刷新后保留选中项（依赖 row-key，默认 id） */
+  reserveSelection?: boolean
   showIndex?: boolean
   showAction?: boolean
   actionWidth?: number | string

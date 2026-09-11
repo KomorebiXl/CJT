@@ -129,6 +129,11 @@ const clearSelection = () => {
   selectedRows.value = []
 }
 
+// 按行对象勾选/取消勾选（转发 ScTable，配合 reserveSelection 恢复选中）
+const toggleRowSelection = (row: Record<string, any>, selected: boolean) => {
+  tableRef.value?.toggleRowSelection(row, selected)
+}
+
 // 转换带前缀的插槽名
 const transformSlotName = (slotName: string | number): string => {
   const name = String(slotName)
@@ -156,7 +161,8 @@ defineExpose<ScResourcePageInstance>({
     await fetchTableData()
   },
   getSelectedRows,
-  clearSelection
+  clearSelection,
+  toggleRowSelection
 })
 </script>
 
@@ -243,6 +249,7 @@ defineExpose<ScResourcePageInstance>({
         :show-action="showActionColumn"
         :show-pagination="props.pageConfig.tableConfig.showPagination"
         :show-selection="props.pageConfig.tableConfig.showSelection"
+        :reserve-selection="props.pageConfig.tableConfig.reserveSelection"
         :show-index="props.pageConfig.tableConfig.showIndex"
         @selection-change="handleSelectionChange"
         @page-change="handlePageChange"

@@ -16,6 +16,7 @@ const props = withDefaults(defineProps<ScTableProps>(), {
   border: true,
   stripe: false,
   showSelection: false,
+  reserveSelection: false,
   showIndex: false,
   showAction: true,
   actionWidth: 150,
@@ -160,6 +161,7 @@ defineExpose<ScTableInstance>({
           width="50"
           fixed="left"
           align="center"
+          :reserve-selection="reserveSelection"
         />
         <!-- 序号列 -->
         <el-table-column
