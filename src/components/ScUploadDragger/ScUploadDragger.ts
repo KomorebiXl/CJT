@@ -6,6 +6,8 @@ export interface ScUploadDraggerProps {
   multiple?: boolean
   /** 自定义提示文案；缺省时基于 accept 自动生成「仅支持 xxx 格式」 */
   hint?: string
+  /** 文件类型不合法时的提示文案；缺省时基于 accept 自动生成「仅支持 xxx 格式的文件」 */
+  invalidMessage?: string
 }
 
 export interface ScUploadDraggerEmits {

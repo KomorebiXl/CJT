@@ -6,6 +6,7 @@ import type {
   ScUploadDraggerProps
 } from './ScUploadDragger.ts'
 import { UploadFilled } from '@element-plus/icons-vue'
+import { ScMessage } from '@/utils/ElUtils'
 
 const DEFAULT_ACCEPT = [
   '.jpg',
@@ -32,7 +33,23 @@ const hintText = computed(() => {
   return `仅支持 ${acceptList.value.join(' ')} 格式`
 })
 
+// accept 只作用于文件选择弹窗，拖拽上传不经过它；在 change 里按扩展名复检，
+// 不合法的文件移除并提示、不向外抛 change，选择与拖拽两条路径同等受限
+const isExtensionAccepted = (name: string) => {
+  const extension = name.split('.').pop()?.toLowerCase() ?? ''
+  return acceptList.value.some(
+    ext => ext.toLowerCase().replace(/^\./, '') === extension
+  )
+}
+
 const handleChange = (file: UploadFile, fileList: UploadFile[]) => {
+  if (!isExtensionAccepted(file.name)) {
+    ScMessage.error(
+      props.invalidMessage ?? `仅支持 ${acceptList.value.join(' / ')} 格式的文件`
+    )
+    uploadRef.value?.handleRemove(file)
+    return
+  }
   emit('change', file, fileList)
 }
 
