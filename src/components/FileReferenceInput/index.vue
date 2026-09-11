@@ -356,7 +356,7 @@ const handleInsertFile = (formattedName: string) => {
     </div>
 
     <div ref="insertToolbarRef" class="editor-toolbar">
-      <ScButton size="small" @click="handleOpenInsertPanel">
+      <ScButton size="small" @click.stop="handleOpenInsertPanel">
         <el-icon><Picture /></el-icon>
         插入图片引用
       </ScButton>
