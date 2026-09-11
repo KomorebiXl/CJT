@@ -43,10 +43,10 @@ const tableColumns = reactive<TableColumns>([
   }
 ])
 
-const currentCategory = ref<{ id: string } | null>(null)
+const currentTestEnvironment = ref<{ id: string } | null>(null)
 
 const openDetails = (row: TestEnvironmentData) => {
-  currentCategory.value = { id: row.id }
+  currentTestEnvironment.value = { id: row.id }
 }
 
 const topologyEnvId = ref('')
@@ -213,7 +213,7 @@ const topologyDialogConfig = computed<DialogFormConfig>(() => ({
 
 <template>
   <div class="page-card">
-    <div v-show="!currentCategory" class="page-level">
+    <div v-show="!currentTestEnvironment" class="page-level">
       <ScResourcePage
         ref="scResourcePageRef"
         :page-config="pageConfig"
@@ -251,9 +251,9 @@ const topologyDialogConfig = computed<DialogFormConfig>(() => ({
       </ScDialogForm>
     </div>
     <TestEnvironmentDetails
-      v-if="currentCategory"
-      :category-id="currentCategory.id"
-      @back="currentCategory = null"
+      v-if="currentTestEnvironment"
+      :test-env-id="currentTestEnvironment.id"
+      @back="currentTestEnvironment = null"
     />
   </div>
 </template>

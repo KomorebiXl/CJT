@@ -21,7 +21,7 @@ import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 
-const props = defineProps<{ categoryId: string }>()
+const props = defineProps<{ testEnvId: string }>()
 
 const emit = defineEmits<{ (e: 'back'): void }>()
 
@@ -96,7 +96,7 @@ const pageConfig = computed<PageConfig<TestEnvironmentDetailsData>>(() => ({
     }
   },
   fetchData: getTestEnvironmentDetailsAPI,
-  pageExtraParams: { categoryId: props.categoryId }
+  pageExtraParams: { categoryId: props.testEnvId }
 }))
 
 /** 导入模板下载地址 */
@@ -113,7 +113,7 @@ const { open: importOpen } = useUploadDialog({
     showTemplateDownload: true
   },
   title: '测试环境导入',
-  extraParams: { categoryId: props.categoryId },
+  extraParams: { categoryId: props.testEnvId },
   onSuccess: () => scResourcePageRef.value?.refresh()
 })
 
@@ -163,7 +163,7 @@ const dialogFormData = reactive<TestEnvironmentDetailsFormData>({
   name: '',
   system: '',
   riskSubjectEnvSoftwareList: [createEmptyEnvSoftware()],
-  categoryId: props.categoryId
+  categoryId: props.testEnvId
 })
 
 const formItems = defineFormItems<TestEnvironmentDetailsFormData>([
