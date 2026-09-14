@@ -2,7 +2,11 @@ import type { Router, RouteLocationNormalized } from 'vue-router'
 import { getToken } from './auth'
 import { useUserStore } from '@/store/modules/user-store.ts'
 import { ElMessage } from 'element-plus'
-import { isRelogin } from './request/handler/errorHandler'
+import {
+  hasBusinessErrorHandler,
+  isRelogin,
+  setConfirmReloginAction
+} from './request/handler/errorHandler'
 import {
   PROJECT_PROCESS_PREFIX,
   getProjectIdFromRoute,
@@ -30,6 +34,15 @@ const isProjectProcessRoute = (route: Pick<RouteLocationNormalized, 'fullPath' |
 }
 
 export const beforeEach = (router: Router) => {
+  // 401 弹窗「重新登录」的动作在路由层注册（登出后带 redirect 跳登录页），
+  // errorHandler 所在的请求层不反向依赖 router，避免循环引用
+  setConfirmReloginAction(async () => {
+    await useUserStore().handleLogout()
+    await router.push({
+      path: '/login',
+      query: { redirect: router.currentRoute.value.fullPath }
+    })
+  })
   router.beforeEach(async (to, _from, next) => {
     const scopeStore = useScopeStore()
     const { enterProjectProcessScope, leaveProjectProcessScope, switchProjectProcessScope } =
@@ -64,11 +77,19 @@ export const beforeEach = (router: Router) => {
           next({ ...to, replace: true })
         } catch (error) {
           await useUserStore().handleLogout()
-          ElMessage({
-            message: String(error),
-            type: 'error',
-            plain: true
-          })
+          // 拦截器对业务错误 reject 的是 { code, msg } 裸对象：BUSINESS_CODE 已登记
+          // 的业务码已在拦截器统一弹过提示，守卫只兜底其余错误，避免同一错误弹两次
+          const bizCode = (error as { code?: number })?.code
+          if (!bizCode || !hasBusinessErrorHandler(bizCode)) {
+            ElMessage({
+              message:
+                (error as { msg?: string })?.msg ??
+                (error instanceof Error ? error.message : null) ??
+                '页面初始化失败',
+              type: 'error',
+              plain: true
+            })
+          }
           next({ path: '/' })
         }
       } else {
