@@ -54,7 +54,7 @@ const loadDetail = async () => {
     loading.value = false
   }
 }
-const goBack = () => router.push('/system-tools/code-generation')
+const goBack = () => router.push({ name: 'CodeGeneration' })
 const handleSubmit = async () => {
   const [basicValid, optionsValid] = await Promise.all([
     basicFormRef.value?.validate(),
