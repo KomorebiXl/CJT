@@ -57,17 +57,6 @@ const handleMenuOpen = (index: string) => {
     })
   })
 }
-
-const router = useRouter()
-
-const handleSelect = (index: string) => {
-  if (index.startsWith('http')) return
-  const [path, queryStr] = index.split('?')
-  const query = queryStr
-    ? Object.fromEntries(new URLSearchParams(queryStr))
-    : undefined
-  router.push({ path, query })
-}
 </script>
 
 <template>
@@ -92,7 +81,6 @@ const handleSelect = (index: string) => {
         unique-opened
         class="sidebar-menu"
         @open="handleMenuOpen"
-        @select="handleSelect"
       >
         <!-- prettier-ignore -->
         <SidebarMenuItem

@@ -100,12 +100,19 @@ const leafIndexWithQuery = computed(() =>
         <el-icon class="external-icon"><TopRight /></el-icon>
       </template>
     </el-menu-item>
-    <el-menu-item v-else-if="isSingleLeaf" :index="leafIndexWithQuery">
-      <MenuIcon :icon="getMeta(leafRoute)?.icon" />
-      <template #title>
-        <MenuTitle :title="leafRoute.meta?.title as string" />
-      </template>
-    </el-menu-item>
+    <!-- 外包 router-link 渲染真实 <a href>，Ctrl/中键新开标签页走浏览器原生行为 -->
+    <router-link
+      v-else-if="isSingleLeaf"
+      :to="leafIndexWithQuery"
+      class="menu-leaf-link"
+    >
+      <el-menu-item :index="leafIndexWithQuery">
+        <MenuIcon :icon="getMeta(leafRoute)?.icon" />
+        <template #title>
+          <MenuTitle :title="leafRoute.meta?.title as string" />
+        </template>
+      </el-menu-item>
+    </router-link>
     <el-sub-menu v-else :index="currentFullPath">
       <template #title>
         <el-icon v-if="item.meta?.icon">
@@ -130,5 +137,11 @@ const leafIndexWithQuery = computed(() =>
   margin-left: 4px;
   vertical-align: middle;
   opacity: 0.6;
+}
+
+/* 锚点只提供新标签页语义，不能带来任何视觉变化 */
+.menu-leaf-link {
+  display: block;
+  text-decoration: none;
 }
 </style>
