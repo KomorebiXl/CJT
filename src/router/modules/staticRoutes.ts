@@ -162,5 +162,22 @@ export const staticRoutes: Array<ScRouteRecordRaw> = [
         meta: { title: '委托测试合同生成记录' }
       }
     ]
+  },
+  {
+    // 个人信息页：Header 用户下拉进入；子路由 meta 不带 hidden，
+    // 否则 TabsBar.addView 不加标签（tabs-store.addView 判 meta.hidden）
+    path: '/profile',
+    name: 'profile',
+    component: Layout,
+    hidden: true,
+    meta: { title: '个人信息' },
+    children: [
+      {
+        path: '',
+        name: 'UserInfo',
+        component: () => import('@/views/userInfo/index.vue'),
+        meta: { title: '个人信息' }
+      }
+    ]
   }
 ]

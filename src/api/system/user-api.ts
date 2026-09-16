@@ -5,6 +5,8 @@ import type {
   UserDetailData,
   UserDetailDataByUserId,
   UserFormData,
+  UserProfileResult,
+  UserProfileUpdateParams,
   UserSearchParams
 } from '@/types/system/user'
 import request from '@/utils/request'
@@ -76,3 +78,33 @@ export const resetUserPasswordAPI = (userId: number, password: string) => {
     data
   })
 }
+
+export const getUserProfileAPI = () =>
+  request.get<UserProfileResult>({ url: `${userBaseUrl}/profile` })
+
+export const updateUserProfileAPI = (data: UserProfileUpdateParams) =>
+  request.put<BaseResponse>({ url: `${userBaseUrl}/profile`, data })
+
+export const updateUserPwdAPI = (oldPassword: string, newPassword: string) => {
+  // 生成随机对称密钥、IV
+  const { symmetricKey, iv } = generateRandomSymmetricKey()
+  // 使用公钥对对称密钥进行非对称加密
+  const encryptedSymmetricKey = encryptWithSm2(symmetricKey)
+  // 使用对称密钥对旧/新密码进行加密，经 query 参数提交
+  const params = {
+    oldPassword: encryptWithSM4(oldPassword, symmetricKey, iv),
+    newPassword: encryptWithSM4(newPassword, symmetricKey, iv),
+    symmetricKey: encryptedSymmetricKey,
+    iv
+  }
+  return request.put<BaseResponse>({
+    url: `${userBaseUrl}/profile/updatePwd`,
+    params
+  })
+}
+
+export const uploadAvatarAPI = (data: FormData) =>
+  request.post<BaseResponse & { imgUrl: string }>({
+    url: `${userBaseUrl}/profile/avatar`,
+    data
+  })
