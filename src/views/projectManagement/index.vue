@@ -27,6 +27,10 @@ import {
 } from './config'
 
 const router = useRouter()
+const route = useRoute()
+
+const isArchived = route.query?.isArchived
+
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
 const operateSubject = (row: ProjectManagementData) => {
@@ -183,7 +187,10 @@ const pageConfig: ScResourcePageConfig<ProjectManagementData> = {
     defaultButtonsConfig: { add: { permission: 'background:subject:add' } }
   },
   tableConfig,
-  fetchData: getProjectManagementList
+  fetchData: getProjectManagementList,
+  pageExtraParams: {
+    projectStatus: isArchived
+  }
 }
 </script>
 
