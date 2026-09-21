@@ -11,12 +11,23 @@ import {
   getCreateSystemNameDetailAPI,
   updateCreateSystemNameAPI
 } from '@/api/projectProcess/createSystemName-api.ts'
+import {
+  exportInitialTestRegressReportAPI,
+  exportInitialTestResultReportAPI
+} from '@/api/projectProcess/initialTest-api.ts'
+import { downloadFile } from '@/utils/file.ts'
+import { safeRequest } from '@/utils/safeRequest.ts'
+import { ScMessage } from '@/utils/ElUtils'
 import { defineFormItems } from '@/utils/form.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
 import { disableSubtreeById } from '@/utils/tree.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import SystemDetails from './systemDetails.vue'
+import {
+  REGRESSION_TEST_FN_TREE_EXPORT_BUTTONS,
+  REGRESSION_TEST_FN_TREE_EXPORT_PARAMS
+} from './regressionTestFunctionality.config'
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
@@ -47,7 +58,10 @@ const fetchData = async (params: ListQuery<CreateSystemNameSearchParams>) => {
 
 const pageConfig: PageConfig<CreateSystemNameData> = {
   searchConfig: { searchbarItems },
-  operateConfig: { defaultButtons: [] },
+  operateConfig: {
+    defaultButtons: [],
+    customButtons: REGRESSION_TEST_FN_TREE_EXPORT_BUTTONS
+  },
   tableConfig: {
     tableColumns,
     defaultButtonsConfig: {
@@ -80,6 +94,41 @@ const { handleDelete } = useDeleteAction<CreateSystemNameData>(
     onSuccess: () => scResourcePageRef.value?.refresh()
   }
 )
+
+/** 回归（未通过记录）导出（树页为全项目维度，不带 subsystem） */
+const handleExportFailedReport = async () => {
+  const [err, res] = await safeRequest(
+    exportInitialTestRegressReportAPI(REGRESSION_TEST_FN_TREE_EXPORT_PARAMS),
+    { showError: false }
+  )
+  if (err || !res) return
+  await downloadFile(res)
+  ScMessage.success('数据导出成功！')
+}
+
+/** 回归（全部记录）导出 */
+const handleExportAllReport = async () => {
+  const [err, res] = await safeRequest(
+    exportInitialTestResultReportAPI(REGRESSION_TEST_FN_TREE_EXPORT_PARAMS),
+    { showError: false }
+  )
+  if (err || !res) return
+  await downloadFile(res)
+  ScMessage.success('数据导出成功！')
+}
+
+const handleOperateClick = (btnId: string | undefined) => {
+  switch (btnId) {
+    case 'failedExport':
+      handleExportFailedReport()
+      break
+    case 'allExport':
+      handleExportAllReport()
+      break
+    default:
+      break
+  }
+}
 
 const dialogFormData = reactive<CreateSystemNameFormData>({
   name: '',
@@ -141,6 +190,7 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
         :page-config="pageConfig"
         @edit="open"
         @delete="handleDelete"
+        @operate-click="handleOperateClick"
       />
       <ScDialogForm
         v-model="visible"

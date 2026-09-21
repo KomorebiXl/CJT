@@ -29,6 +29,36 @@ export const createRegressionTestFnExtraParams = (subsystem: string) => ({
   subsystem
 })
 
+/** 回归测试功能性-树页导出固定参数（全项目维度，不带 subsystem） */
+export const REGRESSION_TEST_FN_TREE_EXPORT_PARAMS = {
+  feature: '1',
+  subFeature: '1',
+  dataType: '2'
+}
+
+/**
+ * 回归测试功能性-树页操作栏导出按钮（源 2026-09-11 新增）；
+ * 权限码照源外层 softWare 系（与内层下拉 function 系及后端接口注解不同，照抄勿改）
+ */
+export const REGRESSION_TEST_FN_TREE_EXPORT_BUTTONS: Array<
+  PageButton & { id: string }
+> = [
+  {
+    id: 'failedExport',
+    name: '回归（未通过记录）导出',
+    type: 'danger',
+    icon: Download,
+    permission: 'acceptance:result:softWare:regress:export'
+  },
+  {
+    id: 'allExport',
+    name: '回归（全部记录）导出',
+    type: 'danger',
+    icon: Download,
+    permission: 'acceptance:result:softWare:all:export'
+  }
+]
+
 /** 回归测试功能性-子系统搜索项 */
 export const REGRESSION_TEST_FN_SEARCHBAR_ITEMS: SearchbarItems<RegressionTestFnSubsystemSearchParams> =
   [

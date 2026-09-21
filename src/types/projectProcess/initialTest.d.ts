@@ -97,11 +97,11 @@ export type InitialTestRebuildSerialParams = {
   subsystem: string
 }
 
-/** 首轮测试功能性-回归（未通过记录）导出参数 */
+/** 首轮测试功能性-回归（未通过记录）导出参数（树页为全项目维度，不传 subsystem） */
 export type InitialTestRegressExportParams = {
   feature: string
   subFeature: string
-  subsystem: string
+  subsystem?: string
   dataType: string
 }
 
