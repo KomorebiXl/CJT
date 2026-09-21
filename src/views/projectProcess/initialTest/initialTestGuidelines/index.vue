@@ -64,7 +64,7 @@ const handleRoutePage = () => router.push({ name: `${selected.value}` })
 <template>
   <div class="page-card h-viewport">
     <StepGuide
-      title="首轮编制指引"
+      title="首轮测试指引"
       subtitle="通过标准化流程完成数据的批量导入与记录生成"
       default-expanded
       :steps="steps"

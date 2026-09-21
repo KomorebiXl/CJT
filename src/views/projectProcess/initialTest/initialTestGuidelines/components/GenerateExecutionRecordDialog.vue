@@ -11,7 +11,7 @@ defineOptions({ name: 'GenerateExecutionRecordDialog' })
 const visible = defineModel<boolean>({ required: true })
 
 /** 确认按钮读秒时长（秒），倒计时结束前禁止生成 */
-const COUNTDOWN_SECONDS = 2
+const COUNTDOWN_SECONDS = 20
 const countdown = ref(COUNTDOWN_SECONDS)
 
 type Stage = 'confirm' | 'loading' | 'done'
