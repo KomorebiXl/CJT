@@ -230,6 +230,7 @@ const setPrecautionsContent = (templateType: string, projectName: string) => {
   switch (templateType) {
     case '10-4':
       formData.precautions ||= TC_PRECAUTIONS_CONTENT
+      formData.assessContent ||= getAssessDefaultContent(projectName)
       break
     default:
       formData.precautions ||= PRECAUTIONS_DEFAULT_CONTENT
