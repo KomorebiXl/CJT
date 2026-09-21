@@ -21,12 +21,14 @@ import { useUploadDialog } from '@/hooks/useUploadDialog.ts'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import SystemDetails from './systemDetails.vue'
 import {
+  FUNCTIONALITY_EXPORT_PERMISSION,
   FUNCTIONALITY_EXPORT_URL,
   FUNCTIONALITY_IMPORT_EXTRA_PARAMS,
   FUNCTIONALITY_IMPORT_URL,
   FUNCTIONALITY_STAT_COLUMNS,
   FUNCTIONALITY_TEMPLATE_URL
 } from './functionality.config'
+import { safeRequest } from '@/utils/safeRequest.ts'
 
 const { scConfirm } = useScConfirm()
 
@@ -55,7 +57,7 @@ const pageConfig: PageConfig<CreateSystemNameData> = {
     defaultButtonsConfig: {
       add: { permission: 'asset:subsystem:add' },
       import: { permission: 'asset:plan:function:import' },
-      export: { permission: 'asset:plan:function:export' }
+      export: { permission: FUNCTIONALITY_EXPORT_PERMISSION }
     }
   },
   tableConfig: {
@@ -86,17 +88,16 @@ const pageConfig: PageConfig<CreateSystemNameData> = {
 const exportConfig: ExportConfig = {
   exportUrl: FUNCTIONALITY_EXPORT_URL,
   beforeExport: async () => {
-    try {
-      await scConfirm({
+    const [err, _] = await safeRequest(
+      scConfirm({
         title: '提示',
         message: '生成执行记录表将清空原有的记录表数据，是否继续？',
         confirmText: '确定',
         cancelText: '取消'
-      })
-      return true
-    } catch {
-      return false
-    }
+      }),
+      { showError: false }
+    )
+    return !err
   }
 }
 
@@ -114,7 +115,7 @@ const { open: importOpen } = useUploadDialog({
     requestMethod: 'GET',
     showTemplateDownload: true
   },
-  title: '功能性导入',
+  title: '功能性',
   extraParams: { ...FUNCTIONALITY_IMPORT_EXTRA_PARAMS },
   onSuccess: () => scResourcePageRef.value?.refresh()
 })

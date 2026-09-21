@@ -24,6 +24,7 @@ import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useIfUsePlanStealer } from '@/hooks/useProcessProjectFlags.ts'
 import { mergeDynamicAfterAnchor } from '@/views/projectProcess/projectProcessUtils.ts'
 import {
+  FUNCTIONALITY_EXPORT_PERMISSION,
   FUNCTIONALITY_EXPORT_URL,
   FUNCTIONALITY_IMPORT_EXTRA_PARAMS,
   FUNCTIONALITY_IMPORT_URL,
@@ -75,7 +76,7 @@ const pageConfig: PageConfig<SystemDetailResult> = {
     defaultButtons: ['add', 'import', 'export'],
     defaultButtonsConfig: {
       add: { permission: 'asset:plan:add' },
-      export: { permission: 'asset:plan:function:export' }
+      export: { permission: FUNCTIONALITY_EXPORT_PERMISSION }
     },
     customButtons: [{ id: 'back', name: '返回', type: 'info', icon: Back }]
   },

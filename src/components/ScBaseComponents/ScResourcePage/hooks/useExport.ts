@@ -20,7 +20,7 @@ export const useExport = (
     try {
       if (beforeExport) {
         const canExport = await beforeExport()
-        if (canExport === false) {
+        if (!canExport) {
           ElMessage.info('已取消导出')
           afterExport?.(false)
           return

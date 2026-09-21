@@ -7,6 +7,9 @@ export const FUNCTIONALITY_TEMPLATE_URL = '/asset/plan/template'
 /** 功能性树页导出地址 */
 export const FUNCTIONALITY_EXPORT_URL = '/asset/plan/resultExport'
 
+/** 导出按钮权限码（后端 @PreAuthorize 与源项目即此拼写，funtion 非笔误勿改） */
+export const FUNCTIONALITY_EXPORT_PERMISSION = 'asset:plan:funtion:export'
+
 /** 功能性导入/模板下载附加参数 */
 export const FUNCTIONALITY_IMPORT_EXTRA_PARAMS = {
   feature: '1',
