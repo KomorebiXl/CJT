@@ -6,6 +6,7 @@ import { useProjectProcessScope } from '@/hooks/useProjectProcessScope'
 import {
   Expand,
   Fold,
+  FolderOpened,
   FullScreen,
   ScaleToOriginal,
   SwitchButton,
@@ -80,6 +81,17 @@ const handleAvatarError = (e: Event) => {
           <Fold v-else />
         </el-icon>
       </button>
+      <!-- 流程模式项目标签：展示「编号-名称」，与右侧关闭按钮呼应；数据由流程详情缓存回填 -->
+      <div
+        v-if="scopeStore.isProcessCurrent && scopeStore.processProject"
+        class="process-project"
+        :title="`${scopeStore.processProject.code}-${scopeStore.processProject.name}`"
+      >
+        <el-icon :size="14"><FolderOpened /></el-icon>
+        <span class="process-project-name">
+          {{ scopeStore.processProject.code }}-{{ scopeStore.processProject.name }}
+        </span>
+      </div>
       <el-breadcrumb separator="›" class="header-breadcrumb">
         <el-breadcrumb-item
           v-for="(crumb, index) in breadcrumbs"
@@ -172,6 +184,25 @@ const handleAvatarError = (e: Event) => {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+}
+.process-project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 340px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background-color: var(--tab-active-bg);
+  color: var(--tab-active-color);
+  font-size: 13px;
+  user-select: none;
+}
+.process-project-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .header-breadcrumb {
   font-size: 13px;

@@ -27,6 +27,18 @@ export const useScopeStore = defineStore('scope', () => {
   /** 当前是否处于项目流程作用域（进入时置 true，退出时置 false） */
   const isProcessCurrent = ref(false)
 
+  /**
+   * 当前项目流程的项目标识（编号+名称）：进入/切换作用域时由项目详情缓存回填，
+   * 退出清空；Header 流程项目标签展示用
+   */
+  const processProject = ref<{ code: string; name: string } | null>(null)
+
+  const setProcessProject = (
+    project: { code: string; name: string } | null
+  ) => {
+    processProject.value = project
+  }
+
   /** 快照当前常规上下文（进入项目流程作用域前调用） */
   const snapshot = (fromPath: string): PermissionContext => {
     const userStore = useUserStore()
@@ -56,14 +68,17 @@ export const useScopeStore = defineStore('scope', () => {
   const reset = () => {
     contexts.value = []
     isProcessCurrent.value = false
+    processProject.value = null
   }
 
   return {
     contexts,
     isProcessCurrent,
+    processProject,
     snapshot,
     pushContext,
     popContext,
+    setProcessProject,
     reset
   }
 })
