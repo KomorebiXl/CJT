@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { TopRight } from '@element-plus/icons-vue'
 import type { ScRouteMeta, ScRouteRecordRaw } from 'vue-router'
-import MenuIcon from './MenuIcon.vue'
+import MenuIcon from '@/components/MenuIcon/index.vue'
 import MenuTitle from './MenuTitle.vue'
 import { appendQuery } from '@/utils/routeQuery.ts'
 
@@ -62,15 +61,6 @@ const openExternalLink = () => {
   window.open(externalUrl.value, '_blank', 'noopener,noreferrer')
 }
 
-const resolveIcon = (iconName: string) => {
-  if (!iconName) return null
-  const pascalCase = iconName
-    .split('-')
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-    .join('')
-  return (ElementPlusIconsVue as Record<string, any>)[pascalCase] ?? null
-}
-
 const currentFullPath = computed(() =>
   resolvePath(props.item.path, props.basePath)
 )
@@ -115,9 +105,7 @@ const leafIndexWithQuery = computed(() =>
     </router-link>
     <el-sub-menu v-else :index="currentFullPath">
       <template #title>
-        <el-icon v-if="item.meta?.icon">
-          <component :is="resolveIcon(item.meta.icon as string)" />
-        </el-icon>
+        <MenuIcon :icon="getMeta(item)?.icon" />
         <MenuTitle :title="item.meta?.title as string" />
       </template>
       <!-- prettier-ignore -->

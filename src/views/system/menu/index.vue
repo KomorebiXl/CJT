@@ -12,7 +12,7 @@ import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { listToTree } from '@/utils/tree.ts'
 import { findFormItem } from '@/utils/formItemUtils.ts'
-import SvgIcon from '@/components/SvgIcon/index.vue'
+import MenuIcon from '@/components/MenuIcon/index.vue'
 import type { ScDialogFormInstance } from '@/components/ScDialogForm'
 import MenuCopyDialog from './components/MenuCopyDialog.vue'
 import {
@@ -189,7 +189,7 @@ const handleAddMenu = (row: MenuData) => {
       @delete="handleDeleteMenu"
     >
       <template #column-icon="{ row }">
-        <SvgIcon v-if="row.icon" :name="row.icon" size="1.2em" />
+        <MenuIcon v-if="row.icon" :icon="row.icon" size="1.2em" class="table-icon" />
       </template>
       <template #column-menuName="{ row }">
         <span class="menu-name-cell">
@@ -233,5 +233,10 @@ const handleAddMenu = (row: MenuData) => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* MenuIcon 的 .menu-icon 自带 8px 右距是给侧边栏文字留的，表格单元格里清掉 */
+.table-icon.menu-icon {
+  margin-right: 0;
 }
 </style>
