@@ -1,0 +1,50 @@
+server {
+    listen 80;
+    server_name _;
+
+    # 优先直接返回构建期生成的 .gz（>50KB 资源），其余响应动态压缩
+    gzip on;
+    gzip_comp_level 5;
+    gzip_types text/plain text/css application/json application/javascript application/xml image/svg+xml;
+    gzip_static on;
+
+    # 上传附件接口
+    client_max_body_size 100m;
+
+    # 302 跳转发相对路径，避免端口映射非 80 时 Location 丢失宿主机端口
+    absolute_redirect off;
+
+    # 根路径便捷跳转（hash 路由实际入口在 /risk_assess_web/）
+    location = / {
+        return 302 /risk_assess_web/;
+    }
+
+    # 前端静态资源：与现网一致的子路径部署（vite base=/risk_assess_web/）
+    location /risk_assess_web/ {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /risk_assess_web/index.html;
+    }
+
+    # 带指纹的静态资源长缓存（锚定前端前缀，避免误伤后端接口）
+    location ~* ^/risk_assess_web/.*\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?)$ {
+        root /usr/share/nginx/html;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # 后端接口：剥本层 /ras-prod-api 前缀后拼到 BACKEND_ORIGIN 之后：
+    #   BACKEND_ORIGIN=http://192.168.1.235/ras-prod-api -> 转发 /ras-prod-api/xxx
+    #   BACKEND_ORIGIN=http://192.168.1.71:8081          -> 转发 /xxx
+    location /ras-prod-api/ {
+        proxy_pass ${BACKEND_ORIGIN}/;
+        # 不覆盖 Host：默认随 $proxy_host 发送网关自身主机名，
+        # 235 网关按 Host 分流 server 块，透传浏览器侧 Host 会被错误路由（实测 403）
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

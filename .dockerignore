@@ -1,0 +1,21 @@
+# 版本库与本地工具链
+.git
+.husky
+.codex
+.agents
+.zcode
+.claude
+.idea
+.vscode
+
+# 依赖与构建产物（镜像内自行安装/构建）
+node_modules
+risk_assess_web
+
+# 与镜像构建无关的本地内容
+doc
+script
+*.md
+Dockerfile
+docker-compose.yml
+.dockerignore

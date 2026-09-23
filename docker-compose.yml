@@ -1,0 +1,17 @@
+# 测试部署：
+#   构建并启动  docker compose up -d --build
+#   访问入口    http://<宿主机>:8088/risk_assess_web/（根路径自动 302 跳转）
+#   切换后端    改下方 BACKEND_ORIGIN 后 docker compose up -d，无需重新构建
+services:
+  cjt-web:
+    build: .
+    image: cjt-web:test
+    container_name: cjt-web
+    ports:
+      - '8088:80'
+    environment:
+      # 后端完整基地址：网关带前缀，裸后端不带
+      # 现网网关（默认）：http://192.168.1.235/ras-prod-api
+      # 迁移测试裸后端（71 服务器，后续可能停用）：http://192.168.1.71:8081
+      BACKEND_ORIGIN: http://192.168.1.235/ras-prod-api
+    restart: unless-stopped
