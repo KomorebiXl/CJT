@@ -25,6 +25,11 @@ import { PROCESS_PROJECT_ID_KEY } from '@/constant/globalVariables'
 const getProcessProjectId = () =>
   sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY) ?? ''
 
+const route = useRoute()
+
+/** 语言设置按入口显隐：路径参数 language=0 时隐藏按钮、Tag 与弹窗，缺省显示 */
+const showLanguageSetting = route.query.language !== '0'
+
 const searchbarItems = reactive<SearchbarItems<TestPlanSearchParams>>([
   { label: '测试方案名称', prop: 'name', type: 'input' }
 ])
@@ -123,12 +128,16 @@ const pageConfig: PageConfig<TestPlanData> = {
         type: 'primary',
         onClick: () => handleGeneratePlan()
       },
-      {
-        name: '语言设置',
-        onClick: () => {
-          setLanguageVisible(true)
-        }
-      }
+      ...(showLanguageSetting
+        ? [
+            {
+              name: '语言设置',
+              onClick: () => {
+                setLanguageVisible(true)
+              }
+            }
+          ]
+        : [])
     ]
   },
   tableConfig: {
@@ -177,12 +186,13 @@ onMounted(async () => {
       @delete="handleDelete"
     >
       <template #extra-operate-left>
-        <el-tag v-if="languageTagText" type="info">
+        <el-tag v-if="showLanguageSetting && languageTagText" type="info">
           {{ languageTagText }}
         </el-tag>
       </template>
     </ScResourcePage>
     <ScDialog
+      v-if="showLanguageSetting"
       v-model="languageVisible"
       title="语言类型设置"
       autoHeight
