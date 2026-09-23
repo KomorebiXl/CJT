@@ -118,6 +118,7 @@ const handleMenuOpen = (index: string) => {
 .sidebar-logo {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   height: 60px;
   padding: 0 18px;
