@@ -5,8 +5,7 @@ import type {
   TestCaseFnSystemData,
   TestCaseFnSystemSearchParams
 } from '@/types/projectProcess/testCases'
-import { downloadAiTestCaseAPI, getTestCaseFnSystemListAPI } from '@/api/projectProcess/testCases-api'
-import { downloadFile } from '@/utils/file'
+import { getTestCaseFnSystemListAPI } from '@/api/projectProcess/testCases-api'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import SystemDetails from './systemDetails.vue'
@@ -56,18 +55,7 @@ const handleGenerateTestCases = async () => {
     ElMessage.error(error instanceof Error ? error.message : '生成任务失败')
     return
   }
-  ElMessage.success('AI 测试用例生成完成')
-  try {
-    await scConfirm({ message: '生成完成，是否下载测试用例文档？', confirmText: '下载' })
-  } catch {
-    return
-  }
-  const response = await downloadAiTestCaseAPI({
-    subjectId: String(detail.id),
-    feature: '1',
-    subFeature: '1'
-  })
-  await downloadFile(response, `测试用例-${detail.code}.docx`)
+  ElMessage.success('AI 测试用例生成完成，可进入子系统查看或下载用例文档')
 }
 
 const pageConfig: PageConfig<TestCaseFnSystemData> = {
