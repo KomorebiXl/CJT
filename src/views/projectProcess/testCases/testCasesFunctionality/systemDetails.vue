@@ -168,9 +168,10 @@ const handleDownloadWord = async () => {
   const response = await downloadAiTestCaseAPI({
     subjectId: String(detail.id),
     feature: '1',
-    subFeature: '1'
+    subFeature: '1',
+    subsystem: props.systemId
   })
-  await downloadFile(response, `测试用例-${detail.code}.docx`)
+  await downloadFile(response, `测试用例-${detail.code}-${props.systemName}.docx`)
 }
 
 const handleFlatClick = async (btnId: string) => {

@@ -153,9 +153,10 @@ export type TestCaseAiTaskProgress = {
   endTime?: string | null
 }
 
-/** AI 用例 Word 下载参数 */
+/** AI 用例 Word 下载参数（subsystem 空=全项目合并文档，传值=仅该子系统） */
 export type TestCaseAiDownloadParams = {
   subjectId: string
   feature: string
   subFeature: string
+  subsystem?: string
 }
