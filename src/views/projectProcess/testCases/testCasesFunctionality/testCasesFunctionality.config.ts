@@ -17,7 +17,7 @@ export const TEST_CASE_FN_SEARCHBAR_ITEMS: SearchbarItems<TestCaseFnItemSearchPa
     { prop: 'item', type: 'input', placeholder: '请输入测试项' }
   ]
 
-/** 测试用例功能性-测试项静态列（行展开列置末位：EP 树形箭头固定渲染在首列，展开列抢占首列会挤掉树形结构） */
+/** 测试用例功能性-测试项静态列（AI 扩写改弹窗展示：行展开列与 EP 树形展开语义冲突，破坏树形渲染） */
 export const TEST_CASE_FN_TABLE_COLUMNS: TableColumns = [
   { label: '序号', prop: 'serialNumber', minWidth: 200, fixed: 'left' },
   { label: '测试项', prop: 'item', width: 250, fixed: 'left' },
@@ -39,15 +39,7 @@ export const TEST_CASE_FN_TABLE_COLUMNS: TableColumns = [
   // { label: '回归验证问题描述', prop: 'regressionProblem', width: 110 },
   { label: '回归测试人员', prop: 'regressionTester', width: 110 },
   { label: '回归测试时间', prop: 'regressionTestTime', width: 110 },
-  { label: '备注', prop: 'remark', width: 110 },
-  {
-    label: 'AI 扩写',
-    prop: 'aiExpand',
-    type: 'expand',
-    slot: 'aiExpand',
-    width: 70,
-    fixed: 'right'
-  }
+  { label: '备注', prop: 'remark', width: 110 }
 ]
 
 /** 测试用例功能性-平铺操作按钮（页面侧直接分发点击；id 必填供分发） */

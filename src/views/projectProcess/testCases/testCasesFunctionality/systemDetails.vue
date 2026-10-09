@@ -1,4 +1,4 @@
-<!--测试用例功能性-子系统测试项（只读视图 + AI 扩写展示/重新生成）-->
+<!--测试用例功能性-子系统测试项（只读视图 + AI 扩写弹窗展示/重新生成）-->
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { RefreshRight } from '@element-plus/icons-vue'
@@ -59,6 +59,39 @@ const columns = computed<TableColumns>(() => {
   }))
 })
 
+// ---- AI 扩写弹窗（行展开列与 EP 树形展开语义冲突，改弹窗展示） ----
+const aiDialogVisible = ref(false)
+const aiDialogRow = ref<TestCaseFnItemResult | null>(null)
+const regenerating = ref(false)
+
+const openAiDialog = (row: TestCaseFnItemResult) => {
+  aiDialogRow.value = row
+  aiDialogVisible.value = true
+}
+
+const regenerateOne = async () => {
+  const row = aiDialogRow.value
+  if (!row) return
+  regenerating.value = true
+  try {
+    const { data } = await regenerateAiTestCaseAPI({ resultIds: [row.id] })
+    const item = data?.[0]
+    if (!item || item.status === 3) {
+      ElMessage.error(item?.message || '重新生成失败')
+      return
+    }
+    if (item.status === 2) {
+      ElMessage.warning('AI 调用失败，已按原文回填')
+    } else {
+      ElMessage.success('重新生成完成')
+    }
+    aiDialogVisible.value = false
+    await scResourcePageRef.value?.refresh()
+  } finally {
+    regenerating.value = false
+  }
+}
+
 const pageConfig: PageConfig<TestCaseFnItemResult> = {
   searchConfig: { searchbarItems },
   operateConfig: {
@@ -70,10 +103,16 @@ const pageConfig: PageConfig<TestCaseFnItemResult> = {
     },
     showDefaultButtons: false,
     showPagination: false,
-    rowClassName: ({ row }) =>
-      [row.enable === 0 ? 'row-deleted' : '', row.titleFlag === '1' ? 'row-title' : '']
-        .filter(Boolean)
-        .join(' ')
+    customActionButtons: [
+      {
+        name: 'AI 扩写',
+        type: 'primary',
+        text: true,
+        show: row => row.titleFlag !== '1',
+        onClick: openAiDialog
+      }
+    ],
+    rowClassName: ({ row }) => (row.enable === 0 ? 'row-deleted' : '')
   },
   fetchData: async params => {
     const { data } = await getTestCaseFnItemListAPI({
@@ -87,29 +126,6 @@ const pageConfig: PageConfig<TestCaseFnItemResult> = {
     }
   },
   treeConfig: { children: 'child', rowKey: 'id', showExpandButton: true }
-}
-
-// ---- 单项重新生成（展开区按钮） ----
-const regeneratingRows = reactive(new Set<string>())
-
-const regenerateOne = async (row: TestCaseFnItemResult) => {
-  regeneratingRows.add(row.id)
-  try {
-    const { data } = await regenerateAiTestCaseAPI({ resultIds: [row.id] })
-    const item = data?.[0]
-    if (!item || item.status === 3) {
-      ElMessage.error(item?.message || '重新生成失败')
-      return
-    }
-    if (item.status === 2) {
-      ElMessage.warning('AI 调用失败，已按原文回填')
-    } else {
-      ElMessage.success('重新生成完成')
-    }
-    await scResourcePageRef.value?.refresh()
-  } finally {
-    regeneratingRows.delete(row.id)
-  }
 }
 
 // ---- 平铺按钮分发 ----
@@ -175,54 +191,64 @@ const handleFlatClick = async (btnId: string) => {
     <template #extra-operate-left>
       <el-tag>{{ props.systemName }}</el-tag>
     </template>
-    <template #aiExpand="{ row }">
-      <div v-if="row.titleFlag !== '1'" class="ai-expand">
-        <template v-if="row.aiExpansion">
-          <el-descriptions :column="2" border size="small" class="ai-expand-desc">
-            <el-descriptions-item label="依据（与产品说明书的追踪关系）" :span="2">
-              {{ row.aiExpansion.basis || '--' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="需求描述" :span="2">
-              {{ row.aiExpansion.requirementDesc || '--' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="前提条件（初始化）" :span="2">
-              <span class="pre-wrap">{{ row.aiExpansion.precondition || '--' }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="步骤" :span="2">
-              <span class="pre-wrap">{{ row.aiExpansion.step || '--' }}</span>
-            </el-descriptions-item>
-            <el-descriptions-item label="优先级别">
-              {{ row.aiExpansion.priority || '--' }}
-            </el-descriptions-item>
-          </el-descriptions>
-          <el-table
-            v-if="row.aiExpansion.dataRows?.length"
-            :data="row.aiExpansion.dataRows"
-            border
-            size="small"
-            class="ai-expand-rows"
-          >
-            <el-table-column prop="no" label="编号" width="70" align="center" />
-            <el-table-column prop="input" label="输入" min-width="180" />
-            <el-table-column prop="expected" label="预期结果" min-width="220" />
-          </el-table>
-          <div v-else class="ai-expand-hint">无测试数据行（AI 降级或未生成数据）</div>
-        </template>
-        <div v-else class="ai-expand-hint">暂无 AI 扩写内容</div>
-        <el-button
-          type="primary"
-          size="small"
-          plain
-          :icon="RefreshRight"
-          :loading="regeneratingRows.has(row.id)"
-          class="ai-expand-btn"
-          @click="regenerateOne(row as TestCaseFnItemResult)"
-        >
-          重新生成
-        </el-button>
-      </div>
-    </template>
   </ScResourcePage>
+
+  <el-dialog
+    v-model="aiDialogVisible"
+    :title="`AI 扩写内容 — ${aiDialogRow?.serialNumber ?? ''} ${aiDialogRow?.item ?? ''}`"
+    width="860px"
+    top="8vh"
+    destroy-on-close
+  >
+    <template v-if="aiDialogRow">
+      <template v-if="aiDialogRow.aiExpansion">
+        <el-descriptions :column="2" border size="small" class="ai-dialog-desc">
+          <el-descriptions-item label="依据（与产品说明书的追踪关系）" :span="2">
+            {{ aiDialogRow.aiExpansion.basis || '--' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="需求描述" :span="2">
+            {{ aiDialogRow.aiExpansion.requirementDesc || '--' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="前提条件（初始化）" :span="2">
+            <span class="pre-wrap">{{ aiDialogRow.aiExpansion.precondition || '--' }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="步骤" :span="2">
+            <span class="pre-wrap">{{ aiDialogRow.aiExpansion.step || '--' }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="优先级别">
+            {{ aiDialogRow.aiExpansion.priority || '--' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="用例名称">
+            {{ aiDialogRow.item || '--' }}
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-table
+          v-if="aiDialogRow.aiExpansion.dataRows?.length"
+          :data="aiDialogRow.aiExpansion.dataRows"
+          border
+          size="small"
+          class="ai-dialog-rows"
+        >
+          <el-table-column prop="no" label="编号" width="70" align="center" />
+          <el-table-column prop="input" label="输入" min-width="180" />
+          <el-table-column prop="expected" label="预期结果" min-width="220" />
+        </el-table>
+        <div v-else class="ai-dialog-hint">无测试数据行（AI 降级或未生成数据）</div>
+      </template>
+      <div v-else class="ai-dialog-hint">暂无 AI 扩写内容，可点击下方按钮生成</div>
+    </template>
+    <template #footer>
+      <el-button
+        type="primary"
+        :icon="RefreshRight"
+        :loading="regenerating"
+        @click="regenerateOne"
+      >
+        重新生成
+      </el-button>
+      <el-button @click="aiDialogVisible = false">关 闭</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped lang="scss">
@@ -234,35 +260,21 @@ const handleFlatClick = async (btnId: string) => {
   }
 }
 
-:deep(.row-title) {
-  .el-table__expand-icon {
-    display: none;
-  }
+.ai-dialog-desc {
+  margin-bottom: 12px;
 }
 
-.ai-expand {
-  padding: 8px 12px;
+.ai-dialog-rows {
+  margin-bottom: 6px;
+}
 
-  .ai-expand-desc {
-    margin-bottom: 10px;
-  }
+.ai-dialog-hint {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  padding: 8px 0 12px;
+}
 
-  .ai-expand-rows {
-    margin-bottom: 10px;
-  }
-
-  .ai-expand-hint {
-    color: var(--el-text-color-secondary);
-    font-size: 13px;
-    margin-bottom: 10px;
-  }
-
-  .ai-expand-btn {
-    margin-top: 2px;
-  }
-
-  .pre-wrap {
-    white-space: pre-wrap;
-  }
+.pre-wrap {
+  white-space: pre-wrap;
 }
 </style>
