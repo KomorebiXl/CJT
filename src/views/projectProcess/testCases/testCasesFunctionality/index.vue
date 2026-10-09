@@ -5,7 +5,8 @@ import type {
   TestCaseFnSystemData,
   TestCaseFnSystemSearchParams
 } from '@/types/projectProcess/testCases'
-import { getTestCaseFnSystemListAPI } from '@/api/projectProcess/testCases-api'
+import { downloadAiTestCaseAPI, getTestCaseFnSystemListAPI } from '@/api/projectProcess/testCases-api'
+import { downloadFile } from '@/utils/file'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import SystemDetails from './systemDetails.vue'
@@ -35,7 +36,9 @@ const fetchData = (params: ListQuery<TestCaseFnSystemSearchParams>) =>
 const handleGenerateTestCases = async () => {
   try {
     await scConfirm({
-      message: '将对本项目全部子系统生成 AI 测试用例（已有结果的项自动跳过），确认执行？'
+      message:
+        '将对本项目全部子系统生成 AI 测试用例（已有结果的项自动跳过），确认执行？',
+      confirmText: '确认生成'
     })
   } catch {
     return
@@ -58,6 +61,21 @@ const handleGenerateTestCases = async () => {
   ElMessage.success('AI 测试用例生成完成，可进入子系统查看或下载用例文档')
 }
 
+/** 外层「下载测试用例」：全项目所有子系统整合为一个 Word 文档 */
+const handleDownloadTestCases = async () => {
+  const detail = await getProcessProjectDetail()
+  if (!detail?.id) {
+    ElMessage.error('未获取到项目信息')
+    return
+  }
+  const response = await downloadAiTestCaseAPI({
+    subjectId: String(detail.id),
+    feature: '1',
+    subFeature: '1'
+  })
+  await downloadFile(response, `测试用例-${detail.code}.docx`)
+}
+
 const pageConfig: PageConfig<TestCaseFnSystemData> = {
   searchConfig: { searchbarItems },
   operateConfig: {
@@ -68,6 +86,12 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
         name: '生成测试用例',
         type: 'primary',
         onClick: () => handleGenerateTestCases()
+      },
+      {
+        id: 'downloadTestCases',
+        name: '下载测试用例',
+        type: 'success',
+        onClick: () => handleDownloadTestCases()
       }
     ]
   },
