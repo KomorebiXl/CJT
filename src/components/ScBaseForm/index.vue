@@ -11,7 +11,8 @@ import {
   ScDateRangePicker,
   ScTreeSelect,
   ScTree,
-  ScCascader
+  ScCascader,
+  ScInputNumber
 } from '../ScBaseFormItems'
 import { ArrowUp } from '@element-plus/icons-vue'
 import type { ScBaseFormItem } from '@/components/ScBaseForm/types/formItem.ts'
@@ -44,6 +45,7 @@ const formRules = computed<FormRules>(() => {
 // 组件映射表
 const componentMap = {
   input: ScInput,
+  inputNumber: ScInputNumber,
   select: ScSelect,
   date: ScDatePicker,
   dateRange: ScDateRangePicker,
@@ -135,7 +137,7 @@ const resolveLabel = (item: ScBaseFormItem) => {
     : item.label
 }
 
-const INPUT_LIKE_TYPES = ['input'] as const
+const INPUT_LIKE_TYPES = ['input', 'inputNumber'] as const
 const SELECT_LIKE_TYPES = [
   'select',
   'date',

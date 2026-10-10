@@ -32,7 +32,9 @@ const PROMPT_PLACEHOLDER_TIP =
 const tableColumns = reactive<TableColumns>([
   { label: '技能编码', prop: 'skillCode', minWidth: 160 },
   { label: '技能名称', prop: 'name', minWidth: 140 },
-  { label: '指定模型', prop: 'model', width: 120 },
+  { label: '采样温度', prop: 'temperature', width: 90 },
+  { label: 'top_p', prop: 'topP', width: 80 },
+  { label: '最大tokens', prop: 'maxTokens', width: 100 },
   { label: '状态', prop: 'enable', slot: 'enable', width: 80 },
   {
     label: '提示词模板',
@@ -72,8 +74,9 @@ const dialogFormData = reactive<SkillsManagementFormData>({
   skillCode: '',
   name: '',
   promptTemplate: '',
-  model: '',
-  paramsJson: '',
+  temperature: null,
+  topP: null,
+  maxTokens: null,
   enable: 1,
   remark: ''
 })
@@ -105,21 +108,37 @@ const formItems = defineFormItems<SkillsManagementFormData>([
     colSpan: 2
   },
   {
-    label: '指定模型',
-    prop: 'model',
-    type: 'input',
-    componentProps: { placeholder: '留空使用系统配置模型' }
+    label: '采样温度',
+    prop: 'temperature',
+    type: 'inputNumber',
+    componentProps: {
+      min: 0,
+      max: 2,
+      step: 0.1,
+      placeholder: '留空=1.0；越高越发散'
+    }
   },
   {
-    label: '附加参数',
-    prop: 'paramsJson',
-    type: 'input',
+    label: 'top_p',
+    prop: 'topP',
+    type: 'inputNumber',
     componentProps: {
-      type: 'textarea',
-      rows: 2,
-      placeholder: 'JSON，如 {"temperature":0.5}，可留空'
-    },
-    colSpan: 2
+      min: 0,
+      max: 1,
+      step: 0.1,
+      placeholder: '留空=1.0；一般不动'
+    }
+  },
+  {
+    label: '最大tokens',
+    prop: 'maxTokens',
+    type: 'inputNumber',
+    componentProps: {
+      min: 1,
+      max: 8192,
+      step: 256,
+      placeholder: '留空=4096；过小截断'
+    }
   },
   {
     label: '状态',

@@ -5,6 +5,7 @@ import ScDateRangePicker from './ScDateRangePicker'
 import ScRadio from './ScRadio'
 import ScCheckbox from './ScCheckbox'
 import ScSwitch from './ScSwitch'
+import ScInputNumber from './ScInputNumber'
 import ScTreeSelect from './ScTreeSelect'
 import ScTree from './ScTree'
 import ScCascader from './ScCascader'
@@ -17,6 +18,7 @@ export {
   ScRadio,
   ScCheckbox,
   ScSwitch,
+  ScInputNumber,
   ScTreeSelect,
   ScTree,
   ScCascader

@@ -14,10 +14,12 @@ export type SkillsManagementData = {
   name: string
   /** 提示词模板（占位符：${item}/${precondition}/${step}/${subjectName}/${subsystemName}） */
   promptTemplate: string
-  /** 指定模型（空=用系统配置） */
-  model: string
-  /** 附加参数JSON */
-  paramsJson: string
+  /** 采样温度（0-2，空=用 DeepSeek 端默认） */
+  temperature: number | null
+  /** 核采样 top_p（0-1，空=用 DeepSeek 端默认） */
+  topP: number | null
+  /** 最大输出 tokens（1-8192，空=用 DeepSeek 端默认） */
+  maxTokens: number | null
   /** 启用标志（1启用 0停用） */
   enable: number
   /** 备注 */
@@ -31,8 +33,9 @@ export type SkillsManagementFormData = {
   skillCode: string
   name: string
   promptTemplate: string
-  model?: string
-  paramsJson?: string
+  temperature?: number | null
+  topP?: number | null
+  maxTokens?: number | null
   enable: number
   remark?: string
 }
