@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AiTaskFloatCard: typeof import('./components/AiTaskFloatCard/index.vue')['default']
     ClampText: typeof import('./components/DynamicFormList/ClampText.vue')['default']
     ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
     DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
@@ -108,6 +109,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const AiTaskFloatCard: typeof import('./components/AiTaskFloatCard/index.vue')['default']
   const ClampText: typeof import('./components/DynamicFormList/ClampText.vue')['default']
   const ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
   const DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']

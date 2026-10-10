@@ -1,4 +1,4 @@
-<!--测试用例功能性-子系统测试项（只读视图 + AI 扩写弹窗展示/重新生成）-->
+<!--测试用例功能性-子系统测试项-->
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { RefreshRight } from '@element-plus/icons-vue'
@@ -16,14 +16,17 @@ import { downloadFile } from '@/utils/file'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { useIfUsePlanStealer } from '@/hooks/useProcessProjectFlags.ts'
+import { usePermission } from '@/components/ScBaseComponents/ScResourcePage/hooks/usePermission.ts'
 import { mergeDynamicAfterAnchor } from '@/views/projectProcess/projectProcessUtils.ts'
 import { OperateButtonGroup } from '../../components'
-import { runAiTestCaseTask } from './aiTask'
+import { useAiTaskStore } from '@/store/modules/ai-task-store'
 import {
   TEST_CASE_FN_FLAT_BUTTONS,
   TEST_CASE_FN_SEARCHBAR_ITEMS,
+  TEST_CASE_FN_SCOPE,
   TEST_CASE_FN_TABLE_COLUMNS,
-  createTestCaseFnExtraParams
+  createTestCaseFnExtraParams,
+  createTestCaseFnTaskMeta
 } from './testCasesFunctionality.config'
 
 const props = defineProps<{
@@ -37,6 +40,8 @@ const emit = defineEmits<{
 
 const { scConfirm } = useScConfirm()
 const ifUsePlanStealer = useIfUsePlanStealer()
+const { hasPermission } = usePermission()
+const aiTaskStore = useAiTaskStore()
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
@@ -59,7 +64,6 @@ const columns = computed<TableColumns>(() => {
   }))
 })
 
-// ---- AI 扩写弹窗（行展开列与 EP 树形展开语义冲突，改弹窗展示） ----
 const aiDialogVisible = ref(false)
 const aiDialogRow = ref<TestCaseFnItemResult | null>(null)
 const regenerating = ref(false)
@@ -138,10 +142,12 @@ const getSubjectScope = async () => {
   return detail
 }
 
+/** 里层「重新生成」：覆盖当前子系统全部扩写，进度在右下角卡片展示，不锁屏 */
 const handleRegenerateAll = async () => {
   try {
     await scConfirm({
-      message: `将重新生成「${props.systemName}」下全部测试项的 AI 扩写内容（覆盖已有结果），确认执行？`
+      message: `将重新生成「${props.systemName}」下全部测试项的 AI 扩写内容（覆盖已有结果），确认执行？`,
+      confirmText: '确认生成'
     })
   } catch {
     return
@@ -149,30 +155,76 @@ const handleRegenerateAll = async () => {
   const detail = await getSubjectScope()
   if (!detail) return
   try {
-    await runAiTestCaseTask({
-      ...createTestCaseFnExtraParams(props.systemId),
-      subjectId: String(detail.id),
-      mode: 'overwrite'
-    })
-    ElMessage.success('重新生成完成')
+    await aiTaskStore.start(
+      {
+        subjectId: String(detail.id),
+        ...TEST_CASE_FN_SCOPE,
+        subsystem: props.systemId,
+        mode: 'overwrite'
+      },
+      createTestCaseFnTaskMeta(detail, {
+        id: props.systemId,
+        name: props.systemName
+      })
+    )
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '重新生成失败')
-    return
+    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
   }
-  await scResourcePageRef.value?.refresh()
 }
 
+const downloading = ref(false)
 const handleDownloadWord = async () => {
+  if (downloading.value) return
   const detail = await getSubjectScope()
   if (!detail) return
-  const response = await downloadAiTestCaseAPI({
-    subjectId: String(detail.id),
-    feature: '1',
-    subFeature: '1',
-    subsystem: props.systemId
-  })
-  await downloadFile(response, `测试用例-${detail.code}-${props.systemName}.docx`)
+  downloading.value = true
+  try {
+    const response = await downloadAiTestCaseAPI({
+      subjectId: String(detail.id),
+      ...TEST_CASE_FN_SCOPE,
+      subsystem: props.systemId
+    })
+    await downloadFile(
+      response,
+      `测试用例-${detail.code}-${props.systemName}.docx`
+    )
+  } catch {
+    ElMessage.error('用例文档下载失败，请稍后重试')
+  } finally {
+    downloading.value = false
+  }
 }
+
+// 平铺按钮随任务状态更新：进行中禁用「重新生成」并显示进度，下载中防重复点击
+const flatButtons = computed(() =>
+  TEST_CASE_FN_FLAT_BUTTONS.map(btn => {
+    if (btn.id === 'regenerateAll' && aiTaskStore.isRunning) {
+      const p = aiTaskStore.progress
+      return {
+        ...btn,
+        name: `生成中 ${p?.processed ?? 0}/${p?.total ?? 0}`,
+        disabled: true
+      }
+    }
+    if (btn.id === 'downloadWord' && downloading.value) {
+      return { ...btn, disabled: true }
+    }
+    return btn
+  })
+)
+
+// 任务结束后刷新列表（不在进行中逐次刷新：避免树形展开状态被反复重置）
+watch(
+  () => aiTaskStore.finishSeq,
+  () => scResourcePageRef.value?.refresh()
+)
+
+// 进入子系统时接上本项目进行中的任务（来源不明时按全项目范围恢复）
+onMounted(async () => {
+  const detail = await getProcessProjectDetail()
+  if (detail?.id)
+    aiTaskStore.resume(String(detail.id), createTestCaseFnTaskMeta(detail))
+})
 
 const handleFlatClick = async (btnId: string) => {
   if (btnId === 'back') emit('back')
@@ -185,7 +237,7 @@ const handleFlatClick = async (btnId: string) => {
   <ScResourcePage ref="scResourcePageRef" :page-config="pageConfig">
     <template #operate-button-slot>
       <OperateButtonGroup
-        :flat-buttons="TEST_CASE_FN_FLAT_BUTTONS"
+        :flat-buttons="flatButtons"
         @flat-click="handleFlatClick"
       />
     </template>
@@ -204,17 +256,24 @@ const handleFlatClick = async (btnId: string) => {
     <template v-if="aiDialogRow">
       <template v-if="aiDialogRow.aiExpansion">
         <el-descriptions :column="2" border size="small" class="ai-dialog-desc">
-          <el-descriptions-item label="依据（与产品说明书的追踪关系）" :span="2">
+          <el-descriptions-item
+            label="依据（与产品说明书的追踪关系）"
+            :span="2"
+          >
             {{ aiDialogRow.aiExpansion.basis || '--' }}
           </el-descriptions-item>
           <el-descriptions-item label="需求描述" :span="2">
             {{ aiDialogRow.aiExpansion.requirementDesc || '--' }}
           </el-descriptions-item>
           <el-descriptions-item label="前提条件（初始化）" :span="2">
-            <span class="pre-wrap">{{ aiDialogRow.aiExpansion.precondition || '--' }}</span>
+            <span class="pre-wrap">{{
+              aiDialogRow.aiExpansion.precondition || '--'
+            }}</span>
           </el-descriptions-item>
           <el-descriptions-item label="步骤" :span="2">
-            <span class="pre-wrap">{{ aiDialogRow.aiExpansion.step || '--' }}</span>
+            <span class="pre-wrap">{{
+              aiDialogRow.aiExpansion.step || '--'
+            }}</span>
           </el-descriptions-item>
           <el-descriptions-item label="优先级别">
             {{ aiDialogRow.aiExpansion.priority || '--' }}
@@ -234,12 +293,17 @@ const handleFlatClick = async (btnId: string) => {
           <el-table-column prop="input" label="输入" min-width="180" />
           <el-table-column prop="expected" label="预期结果" min-width="220" />
         </el-table>
-        <div v-else class="ai-dialog-hint">无测试数据行（AI 降级或未生成数据）</div>
+        <div v-else class="ai-dialog-hint">
+          无测试数据行（AI 降级或未生成数据）
+        </div>
       </template>
-      <div v-else class="ai-dialog-hint">暂无 AI 扩写内容，可点击下方按钮生成</div>
+      <div v-else class="ai-dialog-hint">
+        暂无 AI 扩写内容，可点击下方按钮生成
+      </div>
     </template>
     <template #footer>
       <el-button
+        v-if="hasPermission('acceptance:result:aiTestCase:regenerate')"
         type="primary"
         :icon="RefreshRight"
         :loading="regenerating"
