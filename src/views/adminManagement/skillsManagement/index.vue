@@ -34,7 +34,12 @@ const tableColumns = reactive<TableColumns>([
   { label: '技能名称', prop: 'name', minWidth: 140 },
   { label: '指定模型', prop: 'model', width: 120 },
   { label: '状态', prop: 'enable', slot: 'enable', width: 80 },
-  { label: '提示词模板', prop: 'promptTemplate', minWidth: 220, showOverflowTooltip: true },
+  {
+    label: '提示词模板',
+    prop: 'promptTemplate',
+    minWidth: 220,
+    showOverflowTooltip: true
+  },
   { label: '备注', prop: 'remark', minWidth: 120, showOverflowTooltip: true },
   { label: '更新时间', prop: 'updateTime', width: 160 }
 ])
@@ -91,8 +96,13 @@ const formItems = defineFormItems<SkillsManagementFormData>([
     label: '提示词模板',
     prop: 'promptTemplate',
     type: 'input',
-    componentProps: { type: 'textarea', rows: 10, placeholder: PROMPT_PLACEHOLDER_TIP },
-    rules: [{ required: true, message: '未填写提示词模板', trigger: 'blur' }]
+    componentProps: {
+      type: 'textarea',
+      rows: 10,
+      placeholder: PROMPT_PLACEHOLDER_TIP
+    },
+    rules: [{ required: true, message: '未填写提示词模板', trigger: 'blur' }],
+    colSpan: 2
   },
   {
     label: '指定模型',
@@ -104,7 +114,12 @@ const formItems = defineFormItems<SkillsManagementFormData>([
     label: '附加参数',
     prop: 'paramsJson',
     type: 'input',
-    componentProps: { type: 'textarea', rows: 2, placeholder: 'JSON，如 {"temperature":0.5}，可留空' }
+    componentProps: {
+      type: 'textarea',
+      rows: 2,
+      placeholder: 'JSON，如 {"temperature":0.5}，可留空'
+    },
+    colSpan: 2
   },
   {
     label: '状态',
@@ -122,13 +137,15 @@ const formItems = defineFormItems<SkillsManagementFormData>([
     label: '备注',
     prop: 'remark',
     type: 'input',
-    componentProps: { type: 'textarea', rows: 2 }
+    componentProps: { type: 'textarea', rows: 2 },
+    colSpan: 2
   }
 ])
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
-const handlePageClick = (row: SkillsManagementData | undefined = undefined) => open(row)
+const handlePageClick = (row: SkillsManagementData | undefined = undefined) =>
+  open(row)
 
 /** 恢复出厂默认模板（改坏了的退路） */
 const handleResetTemplate = async (row: SkillsManagementData) => {
