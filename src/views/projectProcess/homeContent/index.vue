@@ -88,25 +88,29 @@ const baseFormItems = defineFormItems<HomeContentForm>([
     label: '建设单位',
     prop: 'constructionDept',
     type: 'input',
-    rules: [{ required: true, message: '建设单位不能为空', trigger: 'blur' }]
+    rules: [{ required: true, message: '建设单位不能为空', trigger: 'blur' }],
+    hide: data => data.reportType === '10-2'
   },
   {
     label: '施工单位',
     prop: 'contractorName',
     type: 'input',
-    rules: [{ required: true, message: '施工单位不能为空', trigger: 'blur' }]
+    rules: [{ required: true, message: '施工单位不能为空', trigger: 'blur' }],
+    hide: data => data.reportType === '10-2'
   },
   {
     label: '设计单位',
     prop: 'designUnit',
     type: 'input',
-    rules: [{ required: true, message: '设计单位不能为空', trigger: 'blur' }]
+    rules: [{ required: true, message: '设计单位不能为空', trigger: 'blur' }],
+    hide: data => data.reportType === '10-2'
   },
   {
     label: '监理单位',
     prop: 'supervisionUnit',
     type: 'input',
-    rules: [{ required: true, message: '监理单位不能为空', trigger: 'blur' }]
+    rules: [{ required: true, message: '监理单位不能为空', trigger: 'blur' }],
+    hide: data => data.reportType === '10-2'
   },
   {
     label: '测试地址',
