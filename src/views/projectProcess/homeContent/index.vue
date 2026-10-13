@@ -240,7 +240,7 @@ const setPrecautionsContent = (templateType: string, projectName: string) => {
       formData.precautions ||= PRECAUTIONS_DEFAULT_CONTENT
       formData.testCategory ||= '验收测试'
       formData.assessContent ||= getAssessDefaultContent(projectName)
-      formData.reportName = '测 试 报 告'
+      formData.reportName ||= '测 试 报 告'
   }
 }
 
