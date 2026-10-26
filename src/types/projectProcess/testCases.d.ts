@@ -33,6 +33,8 @@ export type TestCaseFnItemResult = {
   serialNumber: string
   /** 测试项 */
   item: string
+  /** 子节点（树形列表 child 字段） */
+  child?: Array<TestCaseFnItemResult>
   /** 测试项说明 */
   itemDescription: string
   /** 是否删除测试项（行样式标记：0 时置灰；列表实际返回数值） */
@@ -134,7 +136,8 @@ export type TestCaseAiRegenerateItem = {
 export type TestCaseAiGenerateParams = {
   subjectId: string
   feature: string
-  subFeature: string
+  /** 子特性码（功能性固定 1；六特性不传=整特性范围） */
+  subFeature?: string
   subsystem?: string
   mode?: 'increment' | 'overwrite'
 }
@@ -153,10 +156,11 @@ export type TestCaseAiTaskProgress = {
   endTime?: string | null
 }
 
-/** AI 用例 Word 下载参数（subsystem 空=全项目合并文档，传值=仅该子系统） */
+/** AI 用例 Word 下载参数（subsystem 空=全项目合并文档，传值=仅该子系统；subFeature 空=整特性，六特性用） */
 export type TestCaseAiDownloadParams = {
   subjectId: string
   feature: string
-  subFeature: string
+  /** 子特性码（功能性固定 1；六特性不传=整特性导出） */
+  subFeature?: string
   subsystem?: string
 }

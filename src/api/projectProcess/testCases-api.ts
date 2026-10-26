@@ -24,13 +24,13 @@ export const getTestCaseFnSystemListAPI = createListAPI<
   TestCaseFnSystemData
 >(`${testCaseSubsystemBaseUrl}/list`)
 
-/** 测试用例功能性-测试项列表 */
+/** 测试用例-测试项列表（功能性传 subFeature+subsystem；六特性仅 feature，整特性平铺数据） */
 export const getTestCaseFnItemListAPI = (
   params: ListQuery<
     TestCaseFnItemSearchParams & {
       feature: string
-      subFeature: string
-      subsystem: string
+      subFeature?: string
+      subsystem?: string
       dataType: string
     }
   >
