@@ -4,8 +4,9 @@ import { getUserProfileAPI } from '@/api/system/user-api.ts'
 import UserAvatar from './components/userAvatar.vue'
 import UserInfo from './components/userInfo.vue'
 import ResetPwd from './components/resetPwd.vue'
+import AiConfig from './components/aiConfig.vue'
 
-const activeTab = ref<'info' | 'pwd'>('info')
+const activeTab = ref<'info' | 'pwd' | 'ai'>('info')
 const user = ref<UserProfileData>({} as UserProfileData)
 const roleGroup = ref('')
 const postGroup = ref('')
@@ -81,10 +82,20 @@ getUser()
           >
             修改密码
           </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'ai'"
+            :class="{ active: activeTab === 'ai' }"
+            @click="activeTab = 'ai'"
+          >
+            AI 服务
+          </button>
         </div>
         <div class="panel-body">
           <UserInfo v-show="activeTab === 'info'" :user="user" />
           <ResetPwd v-show="activeTab === 'pwd'" />
+          <AiConfig v-if="activeTab === 'ai'" />
         </div>
       </div>
     </div>

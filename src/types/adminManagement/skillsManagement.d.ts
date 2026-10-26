@@ -1,15 +1,15 @@
 /** 技能管理-搜索参数 */
 export type SkillsManagementSearchParams = {
-  /** 技能编码 */
-  skillCode?: string
+  /** 触发点（字典 ai_trigger_point） */
+  triggerPoint?: string
   /** 技能名称 */
   name?: string
 }
 
 /** 技能管理-行数据（ai_skill） */
 export type SkillsManagementData = {
-  /** 技能编码（如 test_case_expand） */
-  skillCode: string
+  /** 触发点（字典 ai_trigger_point 的值；值为代码契约照抄勿改） */
+  triggerPoint: string
   /** 技能名称 */
   name: string
   /** 提示词模板（占位符：${item}/${precondition}/${step}/${subjectName}/${subsystemName}） */
@@ -30,7 +30,7 @@ export type SkillsManagementData = {
 
 /** 技能管理-表单数据 */
 export type SkillsManagementFormData = {
-  skillCode: string
+  triggerPoint: string
   name: string
   promptTemplate: string
   temperature?: number | null

@@ -14,6 +14,7 @@ import {
   updateSkillsManagementAPI
 } from '@/api/adminManagement/skillsManagement-api.ts'
 import { defineFormItems } from '@/utils/form.ts'
+import { getDictOptions } from '@/utils/dict.ts'
 import { useDialogForm } from '@/hooks/useDialogForm.ts'
 import { useDeleteAction } from '@/hooks/useDeleteAction.ts'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
@@ -21,7 +22,12 @@ import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 const { scConfirm } = useScConfirm()
 
 const searchbarItems = reactive<SearchbarItems<SkillsManagementSearchParams>>([
-  { label: '技能编码', prop: 'skillCode', type: 'input' },
+  {
+    label: '触发点',
+    prop: 'triggerPoint',
+    type: 'select',
+    dictField: 'ai_trigger_point'
+  },
   { label: '技能名称', prop: 'name', type: 'input' }
 ])
 
@@ -30,7 +36,7 @@ const PROMPT_PLACEHOLDER_TIP =
   '模板须包含占位符 ${item}、${precondition}、${step}（可选 ${subjectName}、${subsystemName}），生成时以真实数据替换'
 
 const tableColumns = reactive<TableColumns>([
-  { label: '技能编码', prop: 'skillCode', minWidth: 160 },
+  { label: '触发点', prop: 'triggerPoint', slot: 'triggerPoint', width: 120 },
   { label: '技能名称', prop: 'name', minWidth: 140 },
   { label: '采样温度', prop: 'temperature', width: 90 },
   { label: 'top_p', prop: 'topP', width: 80 },
@@ -71,7 +77,7 @@ const pageConfig: PageConfig<SkillsManagementData> = {
 }
 
 const dialogFormData = reactive<SkillsManagementFormData>({
-  skillCode: '',
+  triggerPoint: '',
   name: '',
   promptTemplate: '',
   temperature: null,
@@ -83,11 +89,14 @@ const dialogFormData = reactive<SkillsManagementFormData>({
 
 const formItems = defineFormItems<SkillsManagementFormData>([
   {
-    label: '技能编码',
-    prop: 'skillCode',
-    type: 'input',
-    componentProps: { placeholder: '如 test_case_expand' },
-    rules: [{ required: true, message: '未填写技能编码', trigger: 'blur' }]
+    label: '触发点',
+    prop: 'triggerPoint',
+    type: 'select',
+    componentProps: {
+      dictField: 'ai_trigger_point',
+      placeholder: '选择技能挂在哪个 AI 功能上'
+    },
+    rules: [{ required: true, message: '未选择触发点', trigger: 'change' }]
   },
   {
     label: '技能名称',
@@ -163,6 +172,16 @@ const formItems = defineFormItems<SkillsManagementFormData>([
 
 const scResourcePageRef = useTemplateRef<PageInstance>('scResourcePageRef')
 
+/** 触发点字典值 → 标签（表格列展示用；字典缺失时回显原值） */
+const triggerPointMap = ref<Record<string, string>>({})
+getDictOptions('ai_trigger_point').then(options => {
+  triggerPointMap.value = options.reduce(
+    (acc, item) => ({ ...acc, [String(item.value)]: item.label }),
+    {} as Record<string, string>
+  )
+})
+const triggerPointLabel = (value: string) => triggerPointMap.value[value] ?? value
+
 const handlePageClick = (row: SkillsManagementData | undefined = undefined) =>
   open(row)
 
@@ -213,6 +232,9 @@ const pageDialogConfig = computed<DialogFormConfig>(() => ({
       @edit="handlePageClick"
       @delete="handleDelete"
     >
+      <template #column-triggerPoint="{ row }">
+        {{ triggerPointLabel(row.triggerPoint) }}
+      </template>
       <template #column-enable="{ row }">
         <el-tag :type="row.enable === 1 ? 'success' : 'info'">
           {{ row.enable === 1 ? '启用' : '停用' }}
