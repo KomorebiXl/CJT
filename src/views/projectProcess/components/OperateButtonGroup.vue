@@ -77,6 +77,7 @@ const handleCommand = (id: string | number | object) => {
     <ScButton
       :type="btn.type"
       :icon="btn.icon"
+      :disabled="btn.disabled"
       @click="emit('flatClick', btn.id)"
     >
       {{ btn.name }}

@@ -1,0 +1,166 @@
+<!--测试用例-功能性-->
+<script setup lang="ts">
+import { ElMessage } from 'element-plus'
+import type {
+  TestCaseFnSystemData,
+  TestCaseFnSystemSearchParams
+} from '@/types/projectProcess/testCases'
+import { downloadAiTestCaseAPI, getTestCaseFnSystemListAPI } from '@/api/projectProcess/testCases-api'
+import { downloadFile } from '@/utils/file'
+import { getProcessProjectDetail } from '@/utils/processProject'
+import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
+import { useAiTaskStore } from '@/store/modules/ai-task-store'
+import SystemDetails from './systemDetails.vue'
+import { TEST_CASE_FN_SCOPE, createTestCaseFnTaskMeta } from './testCasesFunctionality.config'
+
+const { scConfirm } = useScConfirm()
+const aiTaskStore = useAiTaskStore()
+
+const searchbarItems = reactive<SearchbarItems<TestCaseFnSystemSearchParams>>([
+  { prop: 'name', type: 'input', placeholder: '请输入名称' }
+])
+
+const tableColumns = reactive<TableColumns>([
+  { label: '名称', prop: 'name', align: 'left' },
+  { label: '未完成数量', prop: 'unfinishedTotal', width: 110 }
+])
+
+const currentSystem = ref<{ id: string; name: string } | null>(null)
+
+const openSystem = (row: TestCaseFnSystemData) => {
+  currentSystem.value = { id: row.id, name: row.name }
+}
+
+const fetchData = (params: ListQuery<TestCaseFnSystemSearchParams>) =>
+  getTestCaseFnSystemListAPI(params)
+
+/** 外层「生成测试用例」：全子系统增量生成（已生成的跳过） */
+const handleGenerateTestCases = async () => {
+  try {
+    await scConfirm({
+      message:
+        '将对本项目全部子系统生成 AI 测试用例（已有结果的项自动跳过），确认执行？',
+      confirmText: '确认生成'
+    })
+  } catch {
+    return
+  }
+  const detail = await getProcessProjectDetail()
+  if (!detail?.id) {
+    ElMessage.error('未获取到项目信息')
+    return
+  }
+  try {
+    await aiTaskStore.start(
+      { subjectId: String(detail.id), ...TEST_CASE_FN_SCOPE },
+      createTestCaseFnTaskMeta(detail)
+    )
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
+  }
+}
+
+/** 外层「下载测试用例」：全项目所有子系统整合为一个 Word 文档 */
+const downloading = ref(false)
+const handleDownloadTestCases = async () => {
+  if (downloading.value) return
+  const detail = await getProcessProjectDetail()
+  if (!detail?.id) {
+    ElMessage.error('未获取到项目信息')
+    return
+  }
+  downloading.value = true
+  try {
+    const response = await downloadAiTestCaseAPI({
+      subjectId: String(detail.id),
+      ...TEST_CASE_FN_SCOPE
+    })
+    await downloadFile(response, `测试用例-${detail.code}.docx`)
+  } catch {
+    ElMessage.error('用例文档下载失败，请稍后重试')
+  } finally {
+    downloading.value = false
+  }
+}
+
+// 进入页面时接上本项目进行中的任务（刷新/换设备/他人发起均可恢复进度卡片）
+onMounted(async () => {
+  const detail = await getProcessProjectDetail()
+  if (detail?.id) aiTaskStore.resume(String(detail.id), createTestCaseFnTaskMeta(detail))
+})
+
+const pageConfig: PageConfig<TestCaseFnSystemData> = {
+  searchConfig: { searchbarItems },
+  operateConfig: {
+    defaultButtons: [],
+    customButtons: [
+      {
+        id: 'generateTestCases',
+        // getter：随任务进度实时更新按钮文案与禁用态
+        get name() {
+          const p = aiTaskStore.progress
+          return aiTaskStore.isRunning
+            ? `生成中 ${p?.processed ?? 0}/${p?.total ?? 0}`
+            : '生成测试用例'
+        },
+        get disabled() {
+          return aiTaskStore.isRunning
+        },
+        type: 'primary',
+        permission: 'acceptance:result:aiTestCase:generate',
+        onClick: () => handleGenerateTestCases()
+      },
+      {
+        id: 'downloadTestCases',
+        name: '下载测试用例',
+        get disabled() {
+          return downloading.value
+        },
+        type: 'success',
+        permission: 'acceptance:result:aiTestCase:download',
+        onClick: () => handleDownloadTestCases()
+      }
+    ]
+  },
+  tableConfig: {
+    tableColumns,
+    showDefaultButtons: false,
+    customActionButtons: [
+      {
+        name: '操作',
+        type: 'primary',
+        text: true,
+        permission: 'asset:security:operate',
+        show: row => !!row.child && row.child.length === 0,
+        onClick: openSystem
+      }
+    ],
+    showPagination: false
+  },
+  fetchData,
+  treeConfig: { children: 'child', rowKey: 'id', showExpandButton: true }
+}
+</script>
+
+<template>
+  <div class="page-card">
+    <div v-show="!currentSystem" class="page-level">
+      <ScResourcePage :page-config="pageConfig" />
+    </div>
+    <SystemDetails
+      v-if="currentSystem"
+      :system-id="currentSystem.id"
+      :system-name="currentSystem.name"
+      @back="currentSystem = null"
+    />
+  </div>
+</template>
+
+<style scoped lang="scss">
+.page-level {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+</style>

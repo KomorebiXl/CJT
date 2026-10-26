@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
 import TabsBar from './components/TabsBar.vue'
 import AppMain from './components/AppMain.vue'
+import AiTaskFloatCard from '@/components/AiTaskFloatCard/index.vue'
 
 const layoutStore = useLayoutStore()
 </script>
@@ -16,6 +17,7 @@ const layoutStore = useLayoutStore()
       <TabsBar />
       <AppMain />
     </div>
+    <AiTaskFloatCard />
   </div>
 </template>
 

@@ -3,6 +3,7 @@ import type {
   ScFormCheckboxProps,
   ScFormDateProps,
   ScFormDateRangeProps,
+  ScFormInputNumberProps,
   ScFormInputProps,
   ScFormRadioProps,
   ScFormSelectProps,
@@ -29,6 +30,11 @@ interface ScBaseFormItemBase {
 export interface ScBaseFormInputItem extends ScBaseFormItemBase {
   type: 'input'
   componentProps?: ScFormInputProps
+}
+
+export interface ScBaseFormInputNumberItem extends ScBaseFormItemBase {
+  type: 'inputNumber'
+  componentProps?: ScFormInputNumberProps
 }
 
 export interface ScBaseFormSelectItem extends ScBaseFormItemBase {
@@ -83,6 +89,7 @@ export interface ScBaseFormCascaderItem extends ScBaseFormItemBase {
 
 export type ScBaseFormItem =
   | ScBaseFormInputItem
+  | ScBaseFormInputNumberItem
   | ScBaseFormSelectItem
   | ScBaseFormDateItem
   | ScBaseFormDateRangeItem

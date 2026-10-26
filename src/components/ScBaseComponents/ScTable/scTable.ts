@@ -3,6 +3,8 @@ type TableData = string | number | boolean | null
 export type ScTableColumn = {
   prop: string
   label: string
+  /** el-table-column 原生类型（如 'expand' 行展开列）；普通数据列不传 */
+  type?: string
   width?: string | number
   minWidth?: string | number
   fixed?: 'left' | 'right'

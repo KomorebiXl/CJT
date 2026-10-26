@@ -56,7 +56,7 @@ const tableColumns = reactive<TableColumns>([
 
 const router = useRouter()
 const handleClose = () => {
-  router.push('/system/dict')
+  router.push('/systemManagement/dict')
 }
 
 const pageConfig: PageConfig<DictData> = {

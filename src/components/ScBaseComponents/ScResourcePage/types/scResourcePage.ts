@@ -46,6 +46,8 @@ export interface ScResourcePageEmits<TRow = any> {
   /** 自定义按钮点击，传出按钮 id */
   operateClick: [btnId: string | undefined]
   'selection-change': [selection: TRow[]]
+  /** 单选高亮行变化（点击行触发，highlight-current-row 默认开启） */
+  'current-change': [currentRow: TRow | null, oldRow: TRow | null]
 }
 
 // 组件实例
@@ -57,4 +59,6 @@ export interface ScResourcePageInstance<TRow = any> {
   clearSelection: () => void
   /** 按行对象勾选/取消勾选（转发 ScTable，配合 reserveSelection 恢复选中） */
   toggleRowSelection: (row: TRow, selected: boolean) => void
+  /** 设置/取消单选高亮行（转发 ScTable，配合 current-change 使用） */
+  setCurrentRow: (row: TRow | undefined) => void
 }

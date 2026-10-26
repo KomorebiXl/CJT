@@ -134,6 +134,11 @@ const toggleRowSelection = (row: Record<string, any>, selected: boolean) => {
   tableRef.value?.toggleRowSelection(row, selected)
 }
 
+// 设置/取消单选高亮行（转发 ScTable，配合 current-change 使用）
+const setCurrentRow = (row: Record<string, any> | undefined) => {
+  tableRef.value?.setCurrentRow(row)
+}
+
 // 转换带前缀的插槽名
 const transformSlotName = (slotName: string | number): string => {
   const name = String(slotName)
@@ -162,7 +167,8 @@ defineExpose<ScResourcePageInstance>({
   },
   getSelectedRows,
   clearSelection,
-  toggleRowSelection
+  toggleRowSelection,
+  setCurrentRow
 })
 </script>
 
@@ -252,6 +258,7 @@ defineExpose<ScResourcePageInstance>({
         :reserve-selection="props.pageConfig.tableConfig.reserveSelection"
         :show-index="props.pageConfig.tableConfig.showIndex"
         @selection-change="handleSelectionChange"
+        @current-change="(currentRow, oldRow) => emit('current-change', currentRow, oldRow)"
         @page-change="handlePageChange"
       >
         <template #action="{ row }">

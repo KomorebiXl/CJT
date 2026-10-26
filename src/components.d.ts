@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AiTaskFloatCard: typeof import('./components/AiTaskFloatCard/index.vue')['default']
     ClampText: typeof import('./components/DynamicFormList/ClampText.vue')['default']
     ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
     DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
@@ -27,6 +28,8 @@ declare module 'vue' {
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
     ElCheckboxGroup: typeof import('element-plus/es')['ElCheckboxGroup']
     ElCol: typeof import('element-plus/es')['ElCol']
+    ElCollapse: typeof import('element-plus/es')['ElCollapse']
+    ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
     ElCollapseTransition: typeof import('element-plus/es')['ElCollapseTransition']
     ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
     ElDescriptions: typeof import('element-plus/es')['ElDescriptions']
@@ -42,6 +45,7 @@ declare module 'vue' {
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElImageViewer: typeof import('element-plus/es')['ElImageViewer']
     ElInput: typeof import('element-plus/es')['ElInput']
+    ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElOption: typeof import('element-plus/es')['ElOption']
@@ -88,6 +92,7 @@ declare module 'vue' {
     ScDialogForm: typeof import('./components/ScDialogForm/index.vue')['default']
     ScIconPicker: typeof import('./components/ScIconPicker/index.vue')['default']
     ScInput: typeof import('./components/ScBaseFormItems/ScInput/index.vue')['default']
+    ScInputNumber: typeof import('./components/ScBaseFormItems/ScInputNumber/index.vue')['default']
     ScLinkText: typeof import('./components/ScLinkText/index.vue')['default']
     ScRadio: typeof import('./components/ScBaseFormItems/ScRadio/index.vue')['default']
     ScResourcePage: typeof import('./components/ScBaseComponents/ScResourcePage/index.vue')['default']
@@ -108,6 +113,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const AiTaskFloatCard: typeof import('./components/AiTaskFloatCard/index.vue')['default']
   const ClampText: typeof import('./components/DynamicFormList/ClampText.vue')['default']
   const ContextMenu: typeof import('./components/FileReferenceInput/components/ContextMenu.vue')['default']
   const DynamicFormList: typeof import('./components/DynamicFormList/index.vue')['default']
@@ -123,6 +129,8 @@ declare global {
   const ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
   const ElCheckboxGroup: typeof import('element-plus/es')['ElCheckboxGroup']
   const ElCol: typeof import('element-plus/es')['ElCol']
+  const ElCollapse: typeof import('element-plus/es')['ElCollapse']
+  const ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
   const ElCollapseTransition: typeof import('element-plus/es')['ElCollapseTransition']
   const ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
   const ElDescriptions: typeof import('element-plus/es')['ElDescriptions']
@@ -138,6 +146,7 @@ declare global {
   const ElIcon: typeof import('element-plus/es')['ElIcon']
   const ElImageViewer: typeof import('element-plus/es')['ElImageViewer']
   const ElInput: typeof import('element-plus/es')['ElInput']
+  const ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
   const ElMenu: typeof import('element-plus/es')['ElMenu']
   const ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
   const ElOption: typeof import('element-plus/es')['ElOption']
@@ -184,6 +193,7 @@ declare global {
   const ScDialogForm: typeof import('./components/ScDialogForm/index.vue')['default']
   const ScIconPicker: typeof import('./components/ScIconPicker/index.vue')['default']
   const ScInput: typeof import('./components/ScBaseFormItems/ScInput/index.vue')['default']
+  const ScInputNumber: typeof import('./components/ScBaseFormItems/ScInputNumber/index.vue')['default']
   const ScLinkText: typeof import('./components/ScLinkText/index.vue')['default']
   const ScRadio: typeof import('./components/ScBaseFormItems/ScRadio/index.vue')['default']
   const ScResourcePage: typeof import('./components/ScBaseComponents/ScResourcePage/index.vue')['default']

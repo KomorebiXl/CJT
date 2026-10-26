@@ -22,6 +22,7 @@ const columnMinWidth = computed(() => {
 
 <template>
   <el-table-column
+    :type="columnItem.type"
     :prop="columnItem.prop"
     :label="columnItem.label"
     :width="columnItem.width"

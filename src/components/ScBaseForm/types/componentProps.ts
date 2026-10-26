@@ -38,6 +38,20 @@ export interface ScFormInputProps {
   rows?: number
 }
 
+export interface ScFormInputNumberProps {
+  placeholder?: string
+  min?: number
+  max?: number
+  step?: number
+  /** 小数位精度（如 2） */
+  precision?: number
+  /** 仅允许输入 step 的整数倍 */
+  stepStrictly?: boolean
+  /** 显示左右增减按钮 */
+  controls?: boolean
+  disabled?: boolean
+}
+
 export interface ScFormSelectProps {
   options?: Array<ScSelectOption> | Array<DictOption>
   dictField?: string
