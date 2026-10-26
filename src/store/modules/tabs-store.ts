@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import type { RouteLocationNormalized } from 'vue-router'
+import type { RouteLocationNormalized, RouteRecordNormalized } from 'vue-router'
+import { useScopeStore } from '@/store/modules/scope-store'
 
 export interface TabView {
   name: string
@@ -14,8 +15,34 @@ export const useTabsStore = defineStore('tabs', () => {
     visitedViews.value.filter(v => v.meta?.keepAlive).map(v => v.name)
   )
 
+  /**
+   * 启动时播种固定标签：visitedViews 是内存态，刷新后 route watch 只回填当前页，
+   * affix 标签若不从路由表主动播种会消失（如首页）
+   */
+  function initAffixTabs(routes: RouteRecordNormalized[]) {
+    routes
+      .filter(r => r.meta?.affix && !r.meta?.hidden)
+      .forEach(r => {
+        if (visitedViews.value.some(v => v.path === r.path)) return
+        visitedViews.value.push({
+          name: r.name as string,
+          path: r.path,
+          meta: r.meta
+        })
+      })
+  }
+
   function addView(route: RouteLocationNormalized) {
     if (route.meta?.hidden) return
+    // 项目流程作用域：固定标签之外只保留当前页，导航即替换、不再追加
+    if (useScopeStore().isProcessCurrent) {
+      const affixViews = visitedViews.value.filter(v => v.meta?.affix)
+      visitedViews.value = [
+        ...affixViews,
+        { name: route.name as string, path: route.path, meta: route.meta }
+      ]
+      return
+    }
     const exists = visitedViews.value.some(v => v.path === route.path)
     if (!exists) {
       visitedViews.value.push({ name: route.name as string, path: route.path, meta: route.meta })
@@ -55,6 +82,7 @@ export const useTabsStore = defineStore('tabs', () => {
   return {
     visitedViews,
     cachedViews,
+    initAffixTabs,
     addView,
     delView,
     delOtherViews,

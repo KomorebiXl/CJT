@@ -17,6 +17,9 @@ const router = useRouter()
 const route = useRoute()
 const tabsStore = useTabsStore()
 
+// 播种须在 watch 注册前：immediate watch 先回填当前页，晚于它播种会把固定标签排到当前页右侧
+tabsStore.initAffixTabs(router.getRoutes())
+
 // ---- 监听路由，自动添加 tab ----
 watch(
   () => route.path,
