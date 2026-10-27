@@ -86,15 +86,21 @@ class SCRequest {
         responseType: 'blob'
       })
     }
+    // 调用方声明 JSON 头即走 axios 默认 JSON 序列化（后端 @RequestBody 契约），否则统一表单编码
+    const isJson = String(headers?.['Content-Type'] ?? '').includes('json')
     return this.request<any>({
       ...rest,
       method,
       data: params,
-      headers: {
-        ...headers,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      transformRequest: [data => new URLSearchParams(data).toString()],
+      ...(isJson
+        ? { headers }
+        : {
+            headers: {
+              ...headers,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            transformRequest: [data => new URLSearchParams(data).toString()]
+          }),
       responseType: 'blob'
     })
   }

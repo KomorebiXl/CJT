@@ -20,12 +20,13 @@ export const getInitialTestStatisticsAPI = () =>
     url: `${acceptanceResultBaseUrl}/count`
   })
 
-/** 生成并下载执行记录表 */
+/** 生成并下载执行记录表（后端 @RequestBody 契约，声明 JSON 头走 download 的 JSON 编码分支） */
 export const exportExecutionRecordAPI = () =>
   request.download({
     url: `${planBaseUrl}/resultBatchExportSoftWare`,
     method: 'POST',
-    params: {}
+    params: {},
+    headers: { 'Content-Type': 'application/json' }
   })
 
 /** 生成测试日志前检查 */
