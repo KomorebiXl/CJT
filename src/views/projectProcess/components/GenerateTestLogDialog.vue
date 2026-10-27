@@ -71,14 +71,17 @@ const handleClose = () => {
   visible.value = false
 }
 
-/** 打开弹窗时先检查，服务端返回 msg 时作为确认提示展示 */
+/** 无未完成特性时后端走无参 success()，msg 为框架默认文案，不作为确认提示展示 */
+const DEFAULT_MSG = '操作成功'
+
+/** 打开弹窗时先检查，服务端返回特性未完成清单时作为确认提示展示 */
 const handleGenerateCheck = async () => {
   const [err, res] = await safeRequest(
     checkGenerateTestLogAPI(getProjectIdFromRoute(route)),
     { showError: false }
   )
   if (err || !res) return
-  errMsg.value = res.msg
+  errMsg.value = res.msg && res.msg !== DEFAULT_MSG ? res.msg : undefined
 }
 
 const handleConfirm = async () => {
