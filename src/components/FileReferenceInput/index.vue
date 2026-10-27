@@ -401,6 +401,7 @@ const handleInsertFile = (formattedName: string) => {
     />
     <el-image-viewer
       v-if="previewVisible"
+      teleported
       :url-list="[previewUrl]"
       @close="previewVisible = false"
     />
