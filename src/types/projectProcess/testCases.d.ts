@@ -73,6 +73,10 @@ export type TestCaseFnItemResult = {
   regressionTester: string
   /** 回归测试时间 */
   regressionTestTime: string
+  /** 首次结论（通过/不通过） */
+  firstConclusion: string
+  /** 回归结论（通过/不通过） */
+  regressionConclusion: string
   /** 测试环境 */
   env: string
   /** 首轮测试截图文本 */
@@ -101,10 +105,10 @@ export type TestCaseAiDataRow = {
   expected: string
 }
 
-/** AI 扩写结果（复杂版测试用例结构） */
-export type TestCaseAiExpansion = {
-  /** 依据（与产品说明书的追踪关系） */
-  basis: string
+/** AI 扩写-单条用例（问题6 功能点拆分：一个测试项按功能点出多条用例） */
+export type TestCaseAiCase = {
+  /** 用例名称（取自功能点名称；空回落测试项名称） */
+  caseName: string
   /** 需求描述 */
   requirementDesc: string
   /** 前提条件（初始化） */
@@ -115,6 +119,24 @@ export type TestCaseAiExpansion = {
   priority: string
   /** 测试数据行 */
   dataRows: Array<TestCaseAiDataRow>
+}
+
+/** AI 扩写结果（复杂版测试用例结构；cases 为新结构，顶层单用例字段系旧数据兼容） */
+export type TestCaseAiExpansion = {
+  /** 依据（与产品说明书的追踪关系） */
+  basis: string
+  /** 需求描述（旧单用例结构） */
+  requirementDesc: string
+  /** 前提条件（初始化）（旧单用例结构） */
+  precondition: string
+  /** 步骤（旧单用例结构） */
+  step: string
+  /** 优先级别（高/中/低）（旧单用例结构） */
+  priority: string
+  /** 测试数据行（旧单用例结构） */
+  dataRows: Array<TestCaseAiDataRow>
+  /** 按功能点拆分的用例列表（新结构；旧数据为空） */
+  cases?: Array<TestCaseAiCase>
 }
 
 /** AI 扩写-重新生成参数（单项/小批量 ≤10，同步接口） */
@@ -156,10 +178,11 @@ export type TestCaseAiTaskProgress = {
   endTime?: string | null
 }
 
-/** AI 用例 Word 下载参数（subsystem 空=全项目合并文档，传值=仅该子系统；subFeature 空=整特性，六特性用） */
+/** AI 用例 Word 下载参数（feature 空=全部特性合并一个文档；subsystem 空=范围内全部子系统；subFeature 空=按子特性分组渲染） */
 export type TestCaseAiDownloadParams = {
   subjectId: string
-  feature: string
+  /** 特性码（空=全部特性 1-7 合并文档） */
+  feature?: string
   /** 子特性码（功能性固定 1；六特性不传=整特性导出） */
   subFeature?: string
   subsystem?: string

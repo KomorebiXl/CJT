@@ -60,7 +60,7 @@ const handleGenerateTestCases = async () => {
   }
 }
 
-/** 外层「下载测试用例」：全项目所有子系统整合为一个 Word 文档 */
+/** 外层「下载测试用例」：功能性全子系统整合为一个 Word 文档 */
 const downloading = ref(false)
 const handleDownloadTestCases = async () => {
   if (downloading.value) return
@@ -80,6 +80,26 @@ const handleDownloadTestCases = async () => {
     ElMessage.error('用例文档下载失败，请稍后重试')
   } finally {
     downloading.value = false
+  }
+}
+
+/** 外层「下载全部用例」（问题2）：全部特性（1-7）合并为一个 Word 文档，单特性下载入口保留 */
+const downloadingAll = ref(false)
+const handleDownloadAllTestCases = async () => {
+  if (downloadingAll.value) return
+  const detail = await getProcessProjectDetail()
+  if (!detail?.id) {
+    ElMessage.error('未获取到项目信息')
+    return
+  }
+  downloadingAll.value = true
+  try {
+    const response = await downloadAiTestCaseAPI({ subjectId: String(detail.id) })
+    await downloadFile(response, `测试用例-${detail.code}.docx`)
+  } catch {
+    ElMessage.error('用例文档下载失败，请稍后重试')
+  } finally {
+    downloadingAll.value = false
   }
 }
 
@@ -112,13 +132,23 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
       },
       {
         id: 'downloadTestCases',
-        name: '下载测试用例',
+        name: '下载功能性用例',
         get disabled() {
           return downloading.value
         },
         type: 'success',
         permission: 'acceptance:result:aiTestCase:download',
         onClick: () => handleDownloadTestCases()
+      },
+      {
+        id: 'downloadAllTestCases',
+        name: '下载全部用例',
+        get disabled() {
+          return downloadingAll.value
+        },
+        type: 'success',
+        permission: 'acceptance:result:aiTestCase:download',
+        onClick: () => handleDownloadAllTestCases()
       }
     ]
   },

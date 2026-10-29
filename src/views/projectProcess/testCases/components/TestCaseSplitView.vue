@@ -5,7 +5,10 @@ import { ElMessage } from 'element-plus'
 import type { TreeInstance } from 'element-plus'
 import { Back, RefreshRight, Search } from '@element-plus/icons-vue'
 import type { ScTableColumn } from '@/components/ScBaseComponents'
-import type { TestCaseFnItemResult } from '@/types/projectProcess/testCases'
+import type {
+  TestCaseAiCase,
+  TestCaseFnItemResult
+} from '@/types/projectProcess/testCases'
 import {
   downloadAiTestCaseAPI,
   getTestCaseFnItemListAPI,
@@ -166,12 +169,22 @@ const handleNodeClick = (data: TestCaseFnItemResult) => {
 }
 
 // ---- 右栏详情 ----
-const dataRows = computed(() => currentRow.value?.aiExpansion?.dataRows ?? [])
-
-// ---- 摘要行 + 折叠详情 ----
-const priority = computed(() =>
-  (currentRow.value?.aiExpansion?.priority || '').trim()
-)
+/** 有效用例列表（问题6 功能点拆分）：新结构 cases 优先；旧数据/无扩写包装为单条（原文回落） */
+const effectiveCases = computed<Array<TestCaseAiCase>>(() => {
+  const row = currentRow.value
+  const ai = row?.aiExpansion
+  if (ai?.cases?.length) return ai.cases
+  return [
+    {
+      caseName: '',
+      requirementDesc: ai?.requirementDesc ?? '',
+      precondition: ai?.precondition ?? row?.precondition ?? '',
+      step: ai?.step ?? row?.step ?? '',
+      priority: ai?.priority ?? '',
+      dataRows: ai?.dataRows ?? []
+    }
+  ]
+})
 
 const PRIORITY_TAG_TYPES: Record<string, 'danger' | 'warning' | 'info'> = {
   高: 'danger',
@@ -179,9 +192,12 @@ const PRIORITY_TAG_TYPES: Record<string, 'danger' | 'warning' | 'info'> = {
   低: 'info'
 }
 
-const priorityTagType = computed(
-  () => PRIORITY_TAG_TYPES[priority.value] ?? 'info'
-)
+const priorityTagType = (priority?: string) =>
+  PRIORITY_TAG_TYPES[(priority || '').trim()] ?? 'info'
+
+/** 用例块标题：功能点名称，旧数据/未命名回落测试项名称 */
+const caseBlockTitle = (item: TestCaseAiCase) =>
+  item.caseName?.trim() || currentRow.value?.item || '未命名用例'
 
 /** 折叠区展开状态；切换节点自动收起（避免上一篇长内容干扰阅读） */
 const detailExpanded = ref<string[]>([])
@@ -206,8 +222,8 @@ getDictOptions('sub_property')
   .catch(() => {})
 
 /**
- * 折叠区字段：前提条件/测试步骤优先取 AI 扩写版（更详细），
- * 无扩写时回落原表人工录入值；依据/需求描述仅 AI 扩写有；
+ * 折叠区共享字段：依据/测试项说明/首次与回归结果结论（问题7 对照展示）；
+ * 前提条件/测试步骤/需求描述系用例级字段，随功能点用例块展示（见 effectiveCases）；
  * 子特性仅六特性有值（功能性 subFeature=1 为占位码不显示）；
  * 动态文件字段运行时存在于行数据上，类型未声明——同动态列方案
  */
@@ -222,10 +238,11 @@ const detailFields = computed(() => {
     })
   }
   fields.push(
-    { label: '前提条件', value: dash(ai?.precondition || row?.precondition) },
-    { label: '测试步骤', value: dash(ai?.step || row?.step) },
     { label: '依据（与产品说明书的追踪关系）', value: dash(ai?.basis) },
-    { label: '需求描述', value: dash(ai?.requirementDesc) },
+    { label: '首次测试结果', value: dash(row?.firstResult) },
+    { label: '首次结论', value: dash(row?.firstConclusion) },
+    { label: '回归验证结果', value: dash(row?.regressionResult) },
+    { label: '回归结论', value: dash(row?.regressionConclusion) },
     { label: '测试项说明', value: dash(row?.itemDescription) },
     { label: '备注', value: dash(row?.remark) }
   )
@@ -247,9 +264,7 @@ const panelTitle = computed(() =>
 const emptyDescription = computed(() => {
   if (!currentRow.value) return '请在左侧选择测试项'
   if (!isLeafRow(currentRow.value)) return '当前为分类行，请选择具体测试项'
-  if (!currentRow.value.aiExpansion)
-    return '暂无 AI 扩写内容，可点击右上角按钮生成'
-  return '暂无测试数据行（AI 降级或未生成数据）'
+  return '暂无 AI 扩写内容，可点击右上角按钮生成'
 })
 
 /** 当前选中行可生成（叶子行且有权限） */
@@ -292,6 +307,28 @@ const getSubjectScope = async () => {
     return null
   }
   return detail
+}
+
+/** 「生成测试用例」：当前范围增量生成（已有结果的项自动跳过，问题1 六特性一键生成入口） */
+const handleGenerateAll = async () => {
+  try {
+    await scConfirm({
+      message: `将对「${scopeName.value}」生成 AI 测试用例（已有结果的项自动跳过），确认执行？`,
+      confirmText: '确认生成'
+    })
+  } catch {
+    return
+  }
+  const detail = await getSubjectScope()
+  if (!detail) return
+  try {
+    await aiTaskStore.start(
+      { subjectId: String(detail.id), ...scopeParams.value, mode: 'increment' },
+      makeTaskMeta(detail, scopeName.value)
+    )
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
+  }
 }
 
 /** 「重新生成」：覆盖当前范围全部扩写，进度在右下角卡片展示，不锁屏 */
@@ -342,6 +379,12 @@ const FLAT_BUTTONS = computed(() => {
   }
   list.push(
     {
+      id: 'generateAll',
+      name: '生成测试用例',
+      type: 'primary',
+      permission: 'acceptance:result:aiTestCase:generate'
+    },
+    {
       id: 'regenerateAll',
       name: '重新生成',
       type: 'warning',
@@ -357,10 +400,13 @@ const FLAT_BUTTONS = computed(() => {
   return list
 })
 
-// 平铺按钮随任务状态更新：进行中禁用「重新生成」并显示进度，下载中防重复点击
+// 平铺按钮随任务状态更新：进行中禁用「生成/重新生成」并显示进度，下载中防重复点击
 const flatButtons = computed(() =>
   FLAT_BUTTONS.value.map(btn => {
-    if (btn.id === 'regenerateAll' && aiTaskStore.isRunning) {
+    if (
+      (btn.id === 'generateAll' || btn.id === 'regenerateAll') &&
+      aiTaskStore.isRunning
+    ) {
       const p = aiTaskStore.progress
       return {
         ...btn,
@@ -390,6 +436,7 @@ onMounted(async () => {
 
 const handleFlatClick = async (btnId: string) => {
   if (btnId === 'back') emit('back')
+  if (btnId === 'generateAll') await handleGenerateAll()
   if (btnId === 'regenerateAll') await handleRegenerateAll()
   if (btnId === 'downloadWord') await handleDownloadWord()
 }
@@ -456,13 +503,6 @@ const handleFlatClick = async (btnId: string) => {
         <template v-if="showDetail">
           <div class="summary-bar">
             <div class="s-item">
-              <span class="s-label">优先级</span>
-              <el-tag v-if="priority" :type="priorityTagType" size="small">
-                {{ priority }}
-              </el-tag>
-              <span v-else class="s-value">--</span>
-            </div>
-            <div class="s-item">
               <span class="s-label">首次测试</span>
               <span class="s-value">
                 {{ currentRow!.firstTester || '--' }}
@@ -500,17 +540,59 @@ const handleFlatClick = async (btnId: string) => {
           </div>
         </template>
         <div class="panel-body">
-          <ScTable
-            :data="dataRows"
-            :table-columns="AI_DATA_COLUMNS"
-            size="small"
-            :show-action="false"
-            :show-pagination="false"
-          >
-            <template #empty>
-              <el-empty :image-size="100" :description="emptyDescription" />
-            </template>
-          </ScTable>
+          <template v-if="showDetail">
+            <div
+              v-for="(item, index) in effectiveCases"
+              :key="index"
+              class="case-block"
+            >
+              <div class="case-header">
+                <span class="case-title" :title="caseBlockTitle(item)">
+                  {{ caseBlockTitle(item) }}
+                </span>
+                <el-tag
+                  v-if="(item.priority || '').trim()"
+                  :type="priorityTagType(item.priority)"
+                  size="small"
+                >
+                  {{ item.priority }}
+                </el-tag>
+              </div>
+              <el-descriptions
+                :column="1"
+                border
+                size="small"
+                class="case-desc"
+              >
+                <el-descriptions-item label="需求描述">
+                  {{ item.requirementDesc || '--' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="前提条件">
+                  {{ item.precondition || '--' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="测试步骤">
+                  {{ item.step || '--' }}
+                </el-descriptions-item>
+              </el-descriptions>
+              <div class="case-table">
+                <ScTable
+                  :data="item.dataRows"
+                  :table-columns="AI_DATA_COLUMNS"
+                  size="small"
+                  :show-action="false"
+                  :show-pagination="false"
+                >
+                  <template #empty>
+                    <el-empty
+                      :image-size="80"
+                      description="暂无测试数据行（AI 降级或未生成数据）"
+                    />
+                  </template>
+                </ScTable>
+              </div>
+            </div>
+          </template>
+          <el-empty v-else :image-size="100" :description="emptyDescription" />
         </div>
       </div>
     </div>
@@ -689,6 +771,39 @@ const handleFlatClick = async (btnId: string) => {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px;
+    overflow-y: auto;
+
+    .case-block {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .case-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .case-title {
+      flex: 1;
+      min-width: 0;
+      font-weight: 600;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    // AI 扩写文本含换行，默认 normal 会丢行
+    .case-desc :deep(.el-descriptions__content) {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
   }
 }
 </style>
