@@ -1,6 +1,7 @@
 import { ElMessage } from 'element-plus'
 import {
   downloadAiTestCaseAPI,
+  extractFunctionPointsAPI,
   generateAiTestCaseAPI,
   getAiTestCaseProgressAPI
 } from '@/api/projectProcess/testCases-api'
@@ -109,12 +110,23 @@ export const useAiTaskStore = defineStore(
       pollTimer = window.setTimeout(poll, POLL_INTERVAL)
     }
 
-    /** 提交生成任务；提交失败抛出，由调用方提示 */
-    const start = async (params: TestCaseAiGenerateParams, taskMeta: AiTaskMeta) => {
+    /**
+     * 提交任务（kind：generate 用例生成 / extract 功能点提取）；提交失败抛出，由调用方提示
+     */
+    const start = async (
+      params: TestCaseAiGenerateParams,
+      taskMeta: AiTaskMeta,
+      kind: 'generate' | 'extract' = 'generate'
+    ) => {
       if (isRunning.value) {
-        throw new Error('已有 AI 生成任务进行中，请等待完成')
+        throw new Error(
+          kind === 'extract' ? '已有 AI 任务进行中，请等待完成' : '已有 AI 生成任务进行中，请等待完成'
+        )
       }
-      const { data } = await generateAiTestCaseAPI(params)
+      const { data } =
+        kind === 'extract'
+          ? await extractFunctionPointsAPI(params)
+          : await generateAiTestCaseAPI(params)
       if (data.status === 'failed') {
         throw new Error(data.message || '任务启动失败')
       }
@@ -132,6 +144,8 @@ export const useAiTaskStore = defineStore(
     /**
      * 恢复轮询：页面进入或刷新后调用。
      * 传 subjectId 时以后端为准探测该项目是否有进行中的任务（可接上别处发起的任务）。
+     * 后端无进行中任务时，清理本会话残留的 running 快照（轮询失联/后端重启遗留），
+     * 避免 isRunning 永久卡真导致生成/提取按钮一直禁用。
      */
     const resume = async (subjectId?: string, fallbackMeta?: AiTaskMeta) => {
       if (pollTimer !== undefined) return
@@ -139,7 +153,14 @@ export const useAiTaskStore = defineStore(
       if (!targetId) return
       try {
         const { data } = await getAiTestCaseProgressAPI(targetId)
-        if (data.status !== 'running') return
+        if (data.status !== 'running') {
+          if (progress.value?.status === 'running') {
+            stopPolling()
+            progress.value = null
+            lostConnection.value = false
+          }
+          return
+        }
         if (!meta.value || meta.value.subjectId !== targetId) {
           if (!fallbackMeta) return
           meta.value = fallbackMeta

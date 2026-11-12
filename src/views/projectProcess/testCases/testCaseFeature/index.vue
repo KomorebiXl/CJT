@@ -1,4 +1,4 @@
-<!--测试用例-六特性共享页（?feature=2..7 query 驱动，复用左树右详情骨架）-->
+<!--测试用例-六个特性共享页（?feature=2..7 query 驱动，复用左树右详情骨架）-->
 <script setup lang="ts">
 import TestCaseSplitView from '../components/TestCaseSplitView.vue'
 import { TEST_CASE_FEATURE_NAME_MAP } from './testCaseFeature.config'

@@ -22,16 +22,20 @@ const hasProblem = computed(
   () => (progress.value?.failed ?? 0) > 0 || (progress.value?.degraded ?? 0) > 0
 )
 
+/** 任务类型（generate 用例生成 / extract 功能点提取；后端快照携带） */
+const isExtract = computed(() => progress.value?.taskType === 'extract')
+
 const title = computed(() => {
+  const noun = isExtract.value ? '功能点提取' : '测试用例生成'
   switch (phase.value) {
     case 'running':
-      return 'AI 测试用例生成中'
+      return `AI ${noun}中`
     case 'lost':
       return '进度暂时无法获取'
     case 'failed':
-      return '生成任务失败'
+      return `${noun}任务失败`
     default:
-      return hasProblem.value ? '生成完成（部分未成功）' : '生成完成'
+      return hasProblem.value ? `${noun}完成（部分未成功）` : `${noun}完成`
   }
 })
 
@@ -44,6 +48,7 @@ const progressStatus = computed(() => {
 
 const canDownload = computed(
   () =>
+    !isExtract.value &&
     phase.value === 'done' &&
     (progress.value?.total ?? 0) > 0 &&
     hasPermission('acceptance:result:aiTestCase:download')
@@ -92,7 +97,9 @@ onMounted(() => {
         <template v-if="phase === 'running'">可以继续其他操作，完成后会在这里提醒你</template>
         <template v-else-if="phase === 'lost'">任务可能仍在后台执行，网络恢复后可重试</template>
         <template v-else-if="phase === 'failed'">{{ progress.message || '请稍后重试' }}</template>
+        <template v-else-if="isExtract && progress.total === 0">没有需要提取的测试项（素材未变更的已跳过）</template>
         <template v-else-if="progress.total === 0">没有需要生成的测试项</template>
+        <template v-else-if="isExtract">请到测试项详情确认功能点清单后再生成用例</template>
         <template v-else-if="hasProblem">未成功的项可进入子系统单项重新生成</template>
       </div>
 

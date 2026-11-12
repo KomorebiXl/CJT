@@ -158,15 +158,18 @@ export type TestCaseAiRegenerateItem = {
 export type TestCaseAiGenerateParams = {
   subjectId: string
   feature: string
-  /** 子特性码（功能性固定 1；六特性不传=整特性范围） */
+  /** 子特性码（功能性固定 1；六个特性不传=整特性范围） */
   subFeature?: string
   subsystem?: string
   mode?: 'increment' | 'overwrite'
+  /** 用例版本（detail 详细-功能点拆分成例，默认；simple 常规-一测试项一用例含正反用例；两版各自落库互不覆盖） */
+  caseType?: 'detail' | 'simple'
 }
 
-/** AI 任务进度（status：idle 无任务 running 进行中 success 成功 failed 失败） */
+/** AI 任务进度（status：idle 无任务 running 进行中 success 成功 failed 失败；taskType：generate 生成 extract 功能点提取） */
 export type TestCaseAiTaskProgress = {
   subjectId?: string
+  taskType?: 'generate' | 'extract'
   status: 'idle' | 'running' | 'success' | 'failed'
   total?: number
   processed?: number
@@ -178,12 +181,39 @@ export type TestCaseAiTaskProgress = {
   endTime?: string | null
 }
 
+/** 功能点（两段式：提取→评审→按清单生成；pointType：1 功能点 0 非功能剔除区；status：0 待评审 1 已确认 2 已剔除） */
+export type AiFunctionPoint = {
+  id?: string
+  resultId?: string
+  /** 功能点名称（剔除区行为剔除原文） */
+  name: string
+  /** 功能点描述（可独立执行验证的操作） */
+  description?: string
+  /** 提取来源原文片段 */
+  sourceText?: string
+  /** 提取时素材指纹（后端用于说明变更阻断，保存时原样带回） */
+  sourceHash?: string
+  pointType: '0' | '1'
+  /** 剔除理由（pointType=0） */
+  removeReason?: string
+  status: '0' | '1' | '2'
+  sort?: number
+}
+
+/** 功能点评审保存参数（按测试项全量置换） */
+export type AiFunctionPointReviewParams = {
+  resultId: string
+  items: AiFunctionPoint[]
+}
+
 /** AI 用例 Word 下载参数（feature 空=全部特性合并一个文档；subsystem 空=范围内全部子系统；subFeature 空=按子特性分组渲染） */
 export type TestCaseAiDownloadParams = {
   subjectId: string
   /** 特性码（空=全部特性 1-7 合并文档） */
   feature?: string
-  /** 子特性码（功能性固定 1；六特性不传=整特性导出） */
+  /** 子特性码（功能性固定 1；六个特性不传=整体特性导出） */
   subFeature?: string
   subsystem?: string
+  /** 用例版本（detail 详细-默认；simple 常规版，导出常规版落库记录） */
+  caseType?: 'detail' | 'simple'
 }
