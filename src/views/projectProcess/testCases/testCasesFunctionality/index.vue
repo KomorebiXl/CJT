@@ -38,6 +38,7 @@ const fetchData = (params: ListQuery<TestCaseFnSystemSearchParams>) =>
 const handleExtractFunctionPoints = async () => {
   try {
     await scConfirm({
+      title: '提示',
       message:
         '将对本项目全部子系统提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的待评审编辑将被覆盖），确认执行？',
       confirmText: '确认提取'
@@ -66,6 +67,7 @@ const handleGenerateTestCases = async (caseType: 'detail' | 'simple' = 'detail')
   const versionLabel = caseType === 'simple' ? '常规版（一测试项一用例，含正反用例）' : '详细版（按功能点拆分成例）'
   try {
     await scConfirm({
+      title: '提示',
       message:
         `将对本项目全部子系统生成${versionLabel} AI 测试用例（同版本已有成功结果的项自动跳过，降级/失败项自动重试），确认执行？`,
       confirmText: '确认生成'

@@ -9,12 +9,13 @@ const { hasPermission } = usePermission()
 
 const progress = computed(() => aiTaskStore.progress)
 
-/** 卡片形态：进行中 / 失联 / 完成（含部分失败）/ 失败 */
+/** 卡片形态：进行中 / 失联 / 完成（含部分失败）/ 失败 / 已停止 */
 const phase = computed(() => {
   if (aiTaskStore.lostConnection) return 'lost'
   const status = progress.value?.status
   if (status === 'running') return 'running'
   if (status === 'failed') return 'failed'
+  if (status === 'stopped') return 'stopped'
   return 'done'
 })
 
@@ -34,6 +35,8 @@ const title = computed(() => {
       return '进度暂时无法获取'
     case 'failed':
       return `${noun}任务失败`
+    case 'stopped':
+      return `${noun}已停止`
     default:
       return hasProblem.value ? `${noun}完成（部分未成功）` : `${noun}完成`
   }
@@ -41,10 +44,16 @@ const title = computed(() => {
 
 const progressStatus = computed(() => {
   if (phase.value === 'failed') return 'exception'
-  if (phase.value === 'lost') return 'warning'
+  if (phase.value === 'lost' || phase.value === 'stopped') return 'warning'
   if (phase.value === 'done') return hasProblem.value ? 'warning' : 'success'
   return undefined
 })
+
+/** 停止：点击即发停止请求（无二次确认——确认期间的生成会随停止作废，犹豫即浪费；
+ *  误触代价=重新生成，可接受；在途调用（≤并发数）跑完后完全停止） */
+const handleStop = () => {
+  void aiTaskStore.stop()
+}
 
 const canDownload = computed(
   () =>
@@ -91,12 +100,16 @@ onMounted(() => {
         <span class="is-success">成功 {{ progress.success ?? 0 }}</span>
         <span v-if="progress.degraded" class="is-warning">原文回填 {{ progress.degraded }}</span>
         <span v-if="progress.failed" class="is-danger">失败 {{ progress.failed }}</span>
+        <span v-if="progress.skipped" class="is-warning">停止跳过 {{ progress.skipped }}</span>
       </div>
 
       <div class="ai-task-card__tip">
         <template v-if="phase === 'running'">可以继续其他操作，完成后会在这里提醒你</template>
         <template v-else-if="phase === 'lost'">任务可能仍在后台执行，网络恢复后可重试</template>
         <template v-else-if="phase === 'failed'">{{ progress.message || '请稍后重试' }}</template>
+        <template v-else-if="phase === 'stopped'">
+          {{ progress.message || '已停止' }}——本批内容已作废，可重新发起生成
+        </template>
         <template v-else-if="isExtract && progress.total === 0">没有需要提取的测试项（素材未变更的已跳过）</template>
         <template v-else-if="progress.total === 0">没有需要生成的测试项</template>
         <template v-else-if="isExtract">请到测试项详情确认功能点清单后再生成用例</template>
@@ -104,19 +117,30 @@ onMounted(() => {
       </div>
 
       <div v-if="phase !== 'running'" class="ai-task-card__footer">
-        <el-button v-if="phase === 'lost'" size="small" type="primary" @click="aiTaskStore.retry()">
+        <ScButton v-if="phase === 'lost'" size="small" type="primary" @click="aiTaskStore.retry()">
           重试
-        </el-button>
-        <el-button
+        </ScButton>
+        <!-- on-click 异步自动 loading（ScButton 封装点，替代手动 :loading） -->
+        <ScButton
           v-if="canDownload"
           size="small"
           type="primary"
-          :loading="aiTaskStore.downloading"
-          @click="aiTaskStore.download()"
+          :on-click="() => aiTaskStore.download()"
         >
           下载用例文档
-        </el-button>
-        <el-button size="small" @click="aiTaskStore.closeCard()">知道了</el-button>
+        </ScButton>
+        <ScButton size="small" @click="aiTaskStore.closeCard()">知道了</ScButton>
+      </div>
+      <div v-else class="ai-task-card__footer">
+        <ScButton
+          size="small"
+          type="danger"
+          plain
+          title="停止并作废本批已生成内容（在途项跑完后生效），再次生成将从头开始"
+          @click="handleStop"
+        >
+          停止
+        </ScButton>
       </div>
     </div>
   </transition>

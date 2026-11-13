@@ -166,16 +166,32 @@ export type TestCaseAiGenerateParams = {
   caseType?: 'detail' | 'simple'
 }
 
-/** AI 任务进度（status：idle 无任务 running 进行中 success 成功 failed 失败；taskType：generate 生成 extract 功能点提取） */
+/** AI 用户文档集核查步骤生成参数（整特性一次 AI 调用，需求6.2） */
+export type TestCaseAiDocSetGenerateParams = {
+  subjectId: string
+}
+
+/** AI 用户文档集核查步骤记录（每项目一份；status：1 成功 2 降级-固定步骤兜底） */
+export type TestCaseAiDocSetRecord = {
+  subjectId: string
+  step: string
+  status: number
+  model?: string
+  updateTime?: string
+}
+
+/** AI 任务进度（status：idle 无任务 running 进行中 success 成功 failed 失败 stopped 已停止-本批作废；taskType：generate 生成 extract 功能点提取） */
 export type TestCaseAiTaskProgress = {
   subjectId?: string
   taskType?: 'generate' | 'extract'
-  status: 'idle' | 'running' | 'success' | 'failed'
+  status: 'idle' | 'running' | 'success' | 'failed' | 'stopped'
   total?: number
   processed?: number
   success?: number
   degraded?: number
   failed?: number
+  /** 停止时跳过的剩余项数 */
+  skipped?: number
   message?: string | null
   startTime?: string | null
   endTime?: string | null

@@ -26,6 +26,8 @@ const props = defineProps<{
   row: TestCaseFnItemResult | null
   /** 动态文件列定义（折叠区展示） */
   dynamicColumns: DynamicFileColumn[]
+  /** 隐藏单项 AI 动作（单项生成按钮+功能点面板）；用户文档集等整特性单表形态用（需求6.2） */
+  hideAiActions?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -184,15 +186,14 @@ defineExpose({
   <div class="detail-panel">
     <div class="panel-header">
       <div class="panel-title" :title="panelTitle">{{ panelTitle }}</div>
-      <el-button
-        v-if="canRegenerate"
+      <ScButton
+        v-if="canRegenerate && !props.hideAiActions"
         type="primary"
         :icon="RefreshRight"
-        :loading="regenerating"
-        @click="regenerateCurrent"
+        :on-click="() => regenerateCurrent()"
       >
         {{ props.row?.aiExpansion ? '重新生成' : '生成' }}
-      </el-button>
+      </ScButton>
     </div>
     <template v-if="showDetail">
       <div class="summary-bar">
@@ -211,7 +212,7 @@ defineExpose({
           </span>
         </div>
       </div>
-      <FunctionPointPanel ref="fpPanelRef" :result-id="props.row?.id" />
+      <FunctionPointPanel v-if="!props.hideAiActions" ref="fpPanelRef" :result-id="props.row?.id" />
       <div class="detail-collapse">
         <el-collapse v-model="detailExpanded">
           <el-collapse-item title="更多详情" name="detail">

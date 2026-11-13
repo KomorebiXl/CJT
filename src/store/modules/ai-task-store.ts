@@ -3,9 +3,12 @@ import {
   downloadAiTestCaseAPI,
   extractFunctionPointsAPI,
   generateAiTestCaseAPI,
-  getAiTestCaseProgressAPI
+  generateDocSetAPI,
+  getAiTestCaseProgressAPI,
+  stopAiTestCaseAPI
 } from '@/api/projectProcess/testCases-api'
 import type {
+  TestCaseAiDocSetGenerateParams,
   TestCaseAiDownloadParams,
   TestCaseAiGenerateParams,
   TestCaseAiTaskProgress
@@ -111,12 +114,12 @@ export const useAiTaskStore = defineStore(
     }
 
     /**
-     * 提交任务（kind：generate 用例生成 / extract 功能点提取）；提交失败抛出，由调用方提示
+     * 提交任务（kind：generate 用例生成 / extract 功能点提取 / docset 用户文档集步骤生成）；提交失败抛出，由调用方提示
      */
     const start = async (
-      params: TestCaseAiGenerateParams,
+      params: TestCaseAiGenerateParams | TestCaseAiDocSetGenerateParams,
       taskMeta: AiTaskMeta,
-      kind: 'generate' | 'extract' = 'generate'
+      kind: 'generate' | 'extract' | 'docset' = 'generate'
     ) => {
       if (isRunning.value) {
         throw new Error(
@@ -125,8 +128,10 @@ export const useAiTaskStore = defineStore(
       }
       const { data } =
         kind === 'extract'
-          ? await extractFunctionPointsAPI(params)
-          : await generateAiTestCaseAPI(params)
+          ? await extractFunctionPointsAPI(params as TestCaseAiGenerateParams)
+          : kind === 'docset'
+            ? await generateDocSetAPI(params as TestCaseAiDocSetGenerateParams)
+            : await generateAiTestCaseAPI(params as TestCaseAiGenerateParams)
       if (data.status === 'failed') {
         throw new Error(data.message || '任务启动失败')
       }
@@ -193,6 +198,20 @@ export const useAiTaskStore = defineStore(
       }
     }
 
+    /**
+     * 停止进行中的任务（2026-11-13）：剩余项跳过、本批已生成记录作废；
+     * 终态由轮询拿到 stopped，页面经 finishSeq 自动恢复按钮
+     */
+    const stop = async () => {
+      if (!isRunning.value || !meta.value) return
+      try {
+        await stopAiTestCaseAPI({ subjectId: meta.value.subjectId })
+        ElMessage.success('停止请求已发出，等待进行中的项结束后生效')
+      } catch (error) {
+        ElMessage.error(error instanceof Error ? error.message : '停止请求失败')
+      }
+    }
+
     /** 关闭卡片：进行中仅收起；已结束则清理任务 */
     const closeCard = () => {
       cardVisible.value = false
@@ -217,6 +236,7 @@ export const useAiTaskStore = defineStore(
       resume,
       retry,
       download,
+      stop,
       closeCard
     }
   },

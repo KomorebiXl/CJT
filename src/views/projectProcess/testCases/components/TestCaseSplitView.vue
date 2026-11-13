@@ -4,8 +4,12 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { Back } from '@element-plus/icons-vue'
-import type { TestCaseFnItemResult } from '@/types/projectProcess/testCases'
-import { downloadAiTestCaseAPI, getTestCaseFnItemListAPI } from '@/api/projectProcess/testCases-api'
+import type { TestCaseAiDocSetRecord, TestCaseFnItemResult } from '@/types/projectProcess/testCases'
+import {
+  downloadAiTestCaseAPI,
+  getDocSetAPI,
+  getTestCaseFnItemListAPI
+} from '@/api/projectProcess/testCases-api'
 import LeftTreePanel from './LeftTreePanel.vue'
 import CaseDetailPanel from './CaseDetailPanel.vue'
 import { downloadFile } from '@/utils/file'
@@ -44,6 +48,10 @@ const scopeParams = computed(() => ({
   ...(props.subFeature ? { subFeature: props.subFeature } : {}),
   ...(props.subsystem ? { subsystem: props.subsystem.id } : {})
 }))
+
+/** 用户文档集（feature=8，2026-11-12 需求6.2）：整特性一张用例表，
+ *  生成=单次 AI 步骤扩写（触发点40），不走逐项提取/生成/重新生成 */
+const isDocSet = computed(() => props.feature === '8')
 
 /** 范围名：子系统名（功能性）或特性名（六个特性），用于 Tag / 确认文案 / 文件命名 */
 const scopeName = computed(() => props.subsystem?.name ?? props.featureName)
@@ -90,6 +98,20 @@ const fetchTreeData = async () => {
   }
 }
 
+// ---- 用户文档集：整特性 AI 核查步骤（生成后页面直接可见，不必下载文档核对） ----
+const docSetStep = ref<TestCaseAiDocSetRecord | null>(null)
+const fetchDocSetStep = async () => {
+  if (!isDocSet.value) return
+  const detail = await getProcessProjectDetail()
+  if (!detail?.id) return
+  try {
+    const { data } = await getDocSetAPI(String(detail.id))
+    docSetStep.value = data ?? null
+  } catch {
+    docSetStep.value = null
+  }
+}
+
 // ---- 平铺按钮（提取/生成/重新生成/下载） ----
 const getSubjectScope = async () => {
   const detail = await getProcessProjectDetail()
@@ -104,6 +126,7 @@ const getSubjectScope = async () => {
 const handleExtractAll = async () => {
   try {
     await scConfirm({
+      title: '提示',
       message: `将对「${scopeName.value}」提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的待评审编辑将被覆盖），确认执行？`,
       confirmText: '确认提取'
     })
@@ -123,10 +146,35 @@ const handleExtractAll = async () => {
   }
 }
 
+/** 「生成文档集用例」：整特性一次 AI 调用扩写核查步骤（用户文档集专用，需求6.2） */
+const handleGenerateDocSet = async () => {
+  try {
+    await scConfirm({
+      title: '提示',
+      message: `将基于测试对象文档与核查项清单，AI 扩写「${scopeName.value}」核查步骤（约一次调用，完成后可直接下载用例文档），确认执行？`,
+      confirmText: '确认生成'
+    })
+  } catch {
+    return
+  }
+  const detail = await getSubjectScope()
+  if (!detail) return
+  try {
+    await aiTaskStore.start(
+      { subjectId: String(detail.id) },
+      makeTaskMeta(detail, scopeName.value),
+      'docset'
+    )
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
+  }
+}
+
 /** 「生成测试用例」：当前范围增量生成（已有结果的项自动跳过，问题1 六个特性一键生成入口） */
 const handleGenerateAll = async () => {
   try {
     await scConfirm({
+      title: '提示',
       message: `将对「${scopeName.value}」生成 AI 测试用例（已有结果的项自动跳过），确认执行？`,
       confirmText: '确认生成'
     })
@@ -149,6 +197,7 @@ const handleGenerateAll = async () => {
 const handleRegenerateAll = async () => {
   try {
     await scConfirm({
+      title: '提示',
       message: `将重新生成「${scopeName.value}」下全部测试项的 AI 扩写内容（覆盖已有结果），确认执行？`,
       confirmText: '确认生成'
     })
@@ -191,6 +240,24 @@ const FLAT_BUTTONS = computed(() => {
   if (props.showBack) {
     list.push({ id: 'back', name: '返回', type: 'info', icon: Back })
   }
+  if (isDocSet.value) {
+    // 用户文档集：整特性单表语义，仅单次步骤生成 + 下载
+    list.push(
+      {
+        id: 'generateDocSet',
+        name: '生成文档集用例',
+        type: 'primary',
+        permission: 'acceptance:result:aiTestCase:generate'
+      },
+      {
+        id: 'downloadWord',
+        name: '下载用例文档',
+        type: 'success',
+        permission: 'acceptance:result:aiTestCase:download'
+      }
+    )
+    return list
+  }
   list.push(
     {
       id: 'extractAll',
@@ -225,7 +292,8 @@ const flatButtons = computed(() =>
   FLAT_BUTTONS.value.map(btn => {
     if (aiTaskStore.isRunning) {
       const p = aiTaskStore.progress
-      const runningKind = p?.taskType === 'extract' ? 'extractAll' : 'generateAll'
+      const runningKind =
+        p?.taskType === 'extract' ? 'extractAll' : isDocSet.value ? 'generateDocSet' : 'generateAll'
       if (btn.id === runningKind) {
         const noun = p?.taskType === 'extract' ? '提取' : '生成'
         return {
@@ -234,7 +302,7 @@ const flatButtons = computed(() =>
           disabled: true
         }
       }
-      if (['extractAll', 'generateAll', 'regenerateAll'].includes(btn.id)) {
+      if (['extractAll', 'generateAll', 'regenerateAll', 'generateDocSet'].includes(btn.id)) {
         return { ...btn, disabled: true }
       }
     }
@@ -250,6 +318,7 @@ const handleFlatClick = async (btnId: string) => {
   if (btnId === 'extractAll') await handleExtractAll()
   if (btnId === 'generateAll') await handleGenerateAll()
   if (btnId === 'regenerateAll') await handleRegenerateAll()
+  if (btnId === 'generateDocSet') await handleGenerateDocSet()
   if (btnId === 'downloadWord') await handleDownloadWord()
 }
 
@@ -262,11 +331,13 @@ watch(
   () => {
     void fetchTreeData()
     detailPanelRef.value?.refreshFunctionPoints()
+    void fetchDocSetStep()
   }
 )
 
 onMounted(async () => {
   await fetchTreeData()
+  void fetchDocSetStep()
   // 进入页面时接上本项目进行中的任务（来源不明时按全项目范围恢复）
   const detail = await getProcessProjectDetail()
   if (detail?.id) await aiTaskStore.resume(String(detail.id), makeTaskMeta(detail))
@@ -290,12 +361,28 @@ onMounted(async () => {
         :loading="loading"
         @select="currentRow = $event"
       />
-      <CaseDetailPanel
-        ref="detailPanelRef"
-        :row="currentRow"
-        :dynamic-columns="dynamicData"
-        @regenerated="fetchTreeData()"
-      />
+      <div class="right-column">
+        <!-- 用户文档集：整特性 AI 核查步骤（项目级一份，生成后此卡片直接可见） -->
+        <div v-if="isDocSet" class="docset-step-card">
+          <div class="step-card-header">
+            <span>AI 核查步骤（整特性一份，导出文档“步骤”列取此内容）</span>
+            <el-tag v-if="docSetStep" :type="docSetStep.status === 2 ? 'warning' : 'success'" size="small">
+              {{ docSetStep.status === 2 ? '降级-固定步骤' : '已生成' }}
+            </el-tag>
+          </div>
+          <pre v-if="docSetStep?.step" class="step-card-body">{{ docSetStep.step }}</pre>
+          <div v-else class="step-card-empty">
+            尚未生成，点击上方「生成文档集用例」基于测试对象文档与核查项清单扩写核查步骤
+          </div>
+        </div>
+        <CaseDetailPanel
+          ref="detailPanelRef"
+          :row="currentRow"
+          :dynamic-columns="dynamicData"
+          :hide-ai-actions="isDocSet"
+          @regenerated="fetchTreeData()"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -325,5 +412,56 @@ onMounted(async () => {
   min-height: 0;
   display: flex;
   gap: 12px;
+}
+
+/* 用户文档集右栏：步骤卡片（项目级一份）+ 行级详情纵向排布 */
+.right-column {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.docset-step-card {
+  flex-shrink: 0;
+  max-height: 40%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 5px;
+  background-color: var(--card-bg, #fff);
+  padding: 10px 12px;
+}
+
+.step-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.step-card-body {
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+
+.step-card-empty {
+  padding: 14px 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
 }
 </style>

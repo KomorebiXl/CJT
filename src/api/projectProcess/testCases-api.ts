@@ -3,6 +3,8 @@ import { createListAPI } from '@/utils/pageRequest.ts'
 import type {
   AiFunctionPoint,
   AiFunctionPointReviewParams,
+  TestCaseAiDocSetGenerateParams,
+  TestCaseAiDocSetRecord,
   TestCaseAiDownloadParams,
   TestCaseAiGenerateParams,
   TestCaseAiRegenerateItem,
@@ -60,6 +62,27 @@ export const generateAiTestCaseAPI = (data: TestCaseAiGenerateParams) =>
 export const getAiTestCaseProgressAPI = (subjectId: string) =>
   request.get<DataResponse<TestCaseAiTaskProgress>>({
     url: `${testCaseResultBaseUrl}/aiTestCase/progress`,
+    params: { subjectId }
+  })
+
+/** 测试用例-AI 任务停止（剩余项跳过、本批已生成记录作废；再次生成=全新一轮） */
+export const stopAiTestCaseAPI = (data: TestCaseAiDocSetGenerateParams) =>
+  request.post<DataResponse<TestCaseAiTaskProgress>>({
+    url: `${testCaseResultBaseUrl}/aiTestCase/stop`,
+    data
+  })
+
+/** 测试用例-用户文档集核查步骤生成任务（整特性一次 AI 调用，异步） */
+export const generateDocSetAPI = (data: TestCaseAiDocSetGenerateParams) =>
+  request.post<DataResponse<TestCaseAiTaskProgress>>({
+    url: `${testCaseResultBaseUrl}/aiTestCase/generateDocSet`,
+    data
+  })
+
+/** 测试用例-用户文档集核查步骤查询（整特性一份；无记录返回 null） */
+export const getDocSetAPI = (subjectId: string) =>
+  request.get<DataResponse<TestCaseAiDocSetRecord | null>>({
+    url: `${testCaseResultBaseUrl}/aiTestCase/docSet`,
     params: { subjectId }
   })
 

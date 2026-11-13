@@ -84,6 +84,7 @@ const extractCurrent = async () => {
   if (!props.resultId || fpExtracting.value) return
   try {
     await scConfirm({
+      title: '提示',
       message: '将重新提取该测试项的功能点（覆盖当前清单），确认执行？',
       confirmText: '确认提取'
     })
