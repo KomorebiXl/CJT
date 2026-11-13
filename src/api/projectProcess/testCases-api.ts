@@ -22,6 +22,11 @@ const testCaseSubsystemBaseUrl = '/ras/subsystem'
 /** 测试用例-测试项基地址 */
 const testCaseResultBaseUrl = '/asset/acceptance/result'
 
+// 后端每项最多3次调用，连接/读取各180s，加1s/2s退避；同步批量逐项处理。
+// 20分钟/项包含上述1083s上界与本地处理余量，仅覆盖这两个长任务接口。
+const aiSyncTimeout = (count: number) =>
+  Math.max(1, Math.min(count, 10)) * 20 * 60 * 1000
+
 /** 测试用例功能性-系统名称列表 */
 export const getTestCaseFnSystemListAPI = createListAPI<
   TestCaseFnSystemSearchParams,
@@ -48,12 +53,14 @@ export const getTestCaseFnItemListAPI = (
 export const regenerateAiTestCaseAPI = (data: TestCaseAiRegenerateParams) =>
   request.post<DataResponse<TestCaseAiRegenerateItem[]>>({
     url: `${testCaseResultBaseUrl}/aiTestCase/regenerate`,
+    timeout: aiSyncTimeout(data.resultIds.length),
     data
   })
 
 /** 测试用例-AI 批量生成任务（外层全量=增量；里层子系统 mode=overwrite；caseType=simple 生成常规版） */
 export const generateAiTestCaseAPI = (data: TestCaseAiGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/generate`,
     data
   })
@@ -61,6 +68,7 @@ export const generateAiTestCaseAPI = (data: TestCaseAiGenerateParams) =>
 /** 测试用例-AI 任务进度查询 */
 export const getAiTestCaseProgressAPI = (subjectId: string) =>
   request.get<DataResponse<TestCaseAiTaskProgress>>({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/progress`,
     params: { subjectId }
   })
@@ -68,6 +76,7 @@ export const getAiTestCaseProgressAPI = (subjectId: string) =>
 /** 测试用例-AI 任务停止（剩余项跳过、本批已生成记录作废；再次生成=全新一轮） */
 export const stopAiTestCaseAPI = (data: TestCaseAiDocSetGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/stop`,
     data
   })
@@ -75,6 +84,7 @@ export const stopAiTestCaseAPI = (data: TestCaseAiDocSetGenerateParams) =>
 /** 测试用例-用户文档集核查步骤生成任务（整特性一次 AI 调用，异步） */
 export const generateDocSetAPI = (data: TestCaseAiDocSetGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/generateDocSet`,
     data
   })
@@ -82,6 +92,7 @@ export const generateDocSetAPI = (data: TestCaseAiDocSetGenerateParams) =>
 /** 测试用例-用户文档集核查步骤查询（整特性一份；无记录返回 null） */
 export const getDocSetAPI = (subjectId: string) =>
   request.get<DataResponse<TestCaseAiDocSetRecord | null>>({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/docSet`,
     params: { subjectId }
   })
@@ -89,6 +100,7 @@ export const getDocSetAPI = (subjectId: string) =>
 /** 测试用例-AI 复杂版用例 Word 下载（caseType=simple 导出常规版记录） */
 export const downloadAiTestCaseAPI = (params: TestCaseAiDownloadParams) =>
   request.download({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/download`,
     params,
     method: 'GET'
@@ -99,14 +111,18 @@ export const downloadAiTestCaseAPI = (params: TestCaseAiDownloadParams) =>
 /** 功能点-AI 批量提取任务（异步；已有清单且素材未变更的项自动跳过） */
 export const extractFunctionPointsAPI = (data: TestCaseAiGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
+    needSubjectId: false,
     url: `${testCaseResultBaseUrl}/aiTestCase/extractFunctionPoints`,
     data
   })
 
 /** 功能点-AI 单项/小批量提取（同步，≤10；详情页单项提取用） */
-export const extractFunctionPointsSyncAPI = (data: TestCaseAiRegenerateParams) =>
+export const extractFunctionPointsSyncAPI = (
+  data: TestCaseAiRegenerateParams
+) =>
   request.post<DataResponse<TestCaseAiRegenerateItem[]>>({
     url: `${testCaseResultBaseUrl}/aiTestCase/functionPoints/extractSync`,
+    timeout: aiSyncTimeout(data.resultIds.length),
     data
   })
 
@@ -119,7 +135,7 @@ export const getFunctionPointsAPI = (resultId: string) =>
 
 /** 功能点-评审保存（按测试项全量置换） */
 export const saveFunctionPointsAPI = (data: AiFunctionPointReviewParams) =>
-  request.put<DataResponse<number>>({
+  request.put<DataResponse<AiFunctionPoint[]>>({
     url: `${testCaseResultBaseUrl}/aiTestCase/functionPoints`,
     data
   })

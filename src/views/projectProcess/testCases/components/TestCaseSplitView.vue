@@ -4,7 +4,10 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { Back } from '@element-plus/icons-vue'
-import type { TestCaseAiDocSetRecord, TestCaseFnItemResult } from '@/types/projectProcess/testCases'
+import type {
+  TestCaseAiDocSetRecord,
+  TestCaseFnItemResult
+} from '@/types/projectProcess/testCases'
 import {
   downloadAiTestCaseAPI,
   getDocSetAPI,
@@ -175,6 +178,7 @@ const handleGenerateDocSet = async () => {
 
 /** 「生成测试用例」：当前范围增量生成（已有结果的项自动跳过，问题1 六个特性一键生成入口） */
 const handleGenerateAll = async () => {
+  if (!(await detailPanelRef.value?.ensureSaved())) return
   try {
     await scConfirm({
       title: '提示',
@@ -198,6 +202,7 @@ const handleGenerateAll = async () => {
 
 /** 「重新生成」：覆盖当前范围全部扩写，进度在右下角卡片展示，不锁屏 */
 const handleRegenerateAll = async () => {
+  if (!(await detailPanelRef.value?.ensureSaved())) return
   try {
     await scConfirm({
       title: '提示',
@@ -230,7 +235,10 @@ const handleDownloadWord = async () => {
       subjectId: String(detail.id),
       ...scopeParams.value
     })
-    await downloadFile(response, `测试用例-${detail.code}-${scopeName.value}.docx`)
+    await downloadFile(
+      response,
+      `测试用例-${detail.code}-${scopeName.value}.docx`
+    )
   } catch {
     ElMessage.error('用例文档下载失败，请稍后重试')
   } finally {
@@ -239,7 +247,13 @@ const handleDownloadWord = async () => {
 }
 
 const FLAT_BUTTONS = computed(() => {
-  const list: Array<{ id: string; name: string; type: any; icon?: any; permission?: string }> = []
+  const list: Array<{
+    id: string
+    name: string
+    type: any
+    icon?: any
+    permission?: string
+  }> = []
   if (props.showBack) {
     list.push({ id: 'back', name: '返回', type: 'info', icon: Back })
   }
@@ -306,7 +320,11 @@ const flatButtons = computed(() =>
     if (aiTaskStore.isRunning) {
       const p = aiTaskStore.progress
       const runningKind =
-        p?.taskType === 'extract' ? 'extractAll' : isDocSet.value ? 'generateDocSet' : 'generateAll'
+        p?.taskType === 'extract'
+          ? 'extractAll'
+          : isDocSet.value
+            ? 'generateDocSet'
+            : 'generateAll'
       if (btn.id === runningKind) {
         const noun = p?.taskType === 'extract' ? '提取' : '生成'
         return {
@@ -315,7 +333,14 @@ const flatButtons = computed(() =>
           disabled: true
         }
       }
-      if (['extractAll', 'generateAll', 'regenerateAll', 'generateDocSet'].includes(btn.id)) {
+      if (
+        [
+          'extractAll',
+          'generateAll',
+          'regenerateAll',
+          'generateDocSet'
+        ].includes(btn.id)
+      ) {
         return { ...btn, disabled: true }
       }
     }
@@ -336,9 +361,10 @@ const handleFlatClick = async (btnId: string) => {
 }
 
 // 任务结束后刷新树与功能点清单（不在进行中逐次刷新：避免展开状态被反复重置）
-const detailPanelRef = useTemplateRef<{ refreshFunctionPoints: () => void }>(
-  'detailPanelRef'
-)
+const detailPanelRef = useTemplateRef<{
+  refreshFunctionPoints: () => void
+  ensureSaved: () => Promise<boolean>
+}>('detailPanelRef')
 watch(
   () => aiTaskStore.finishSeq,
   () => {
@@ -353,7 +379,8 @@ onMounted(async () => {
   void fetchDocSetStep()
   // 进入页面时接上本项目进行中的任务（来源不明时按全项目范围恢复）
   const detail = await getProcessProjectDetail()
-  if (detail?.id) await aiTaskStore.resume(String(detail.id), makeTaskMeta(detail))
+  if (detail?.id)
+    await aiTaskStore.resume(String(detail.id), makeTaskMeta(detail))
 })
 </script>
 
@@ -379,11 +406,17 @@ onMounted(async () => {
         <div v-if="isDocSet" class="docset-step-card">
           <div class="step-card-header">
             <span>AI 核查步骤（整特性一份，导出文档“步骤”列取此内容）</span>
-            <el-tag v-if="docSetStep" :type="docSetStep.status === 2 ? 'warning' : 'success'" size="small">
+            <el-tag
+              v-if="docSetStep"
+              :type="docSetStep.status === 2 ? 'warning' : 'success'"
+              size="small"
+            >
               {{ docSetStep.status === 2 ? '降级-固定步骤' : '已生成' }}
             </el-tag>
           </div>
-          <pre v-if="docSetStep?.step" class="step-card-body">{{ docSetStep.step }}</pre>
+          <pre v-if="docSetStep?.step" class="step-card-body">{{
+            docSetStep.step
+          }}</pre>
           <div v-else class="step-card-empty">
             尚未生成，点击上方「生成文档集用例」基于测试对象文档与核查项清单扩写核查步骤
           </div>

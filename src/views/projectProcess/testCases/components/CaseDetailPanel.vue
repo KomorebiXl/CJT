@@ -43,9 +43,7 @@ const showDetail = computed(() => !!props.row && isLeafRow(props.row))
 const dash = (v?: string | null) => (v && v.trim() ? v : '--')
 
 const panelTitle = computed(() =>
-  props.row
-    ? `${props.row.serialNumber} ${props.row.item}`
-    : '未选择测试项'
+  props.row ? `${props.row.serialNumber} ${props.row.item}` : '未选择测试项'
 )
 
 const emptyDescription = computed(() => {
@@ -157,6 +155,8 @@ const regenerateCurrent = async () => {
   if (!row || regenerating.value) return
   regenerating.value = true
   try {
+    if (!(await fpPanelRef.value?.ensureSaved()) || row.id !== props.row?.id)
+      return
     const { data } = await regenerateAiTestCaseAPI({ resultIds: [row.id] })
     const item = data?.[0]
     if (!item || item.status === 3) {
@@ -175,10 +175,14 @@ const regenerateCurrent = async () => {
 }
 
 // ---- 功能点面板（任务结束后由父组件经 refreshFunctionPoints 刷新） ----
-const fpPanelRef = useTemplateRef<{ refresh: () => Promise<void> }>('fpPanelRef')
+const fpPanelRef = useTemplateRef<{
+  refresh: () => Promise<void>
+  ensureSaved: () => Promise<boolean>
+}>('fpPanelRef')
 
 defineExpose({
-  refreshFunctionPoints: () => fpPanelRef.value?.refresh()
+  refreshFunctionPoints: () => fpPanelRef.value?.refresh(),
+  ensureSaved: () => fpPanelRef.value?.ensureSaved() ?? Promise.resolve(true)
 })
 </script>
 
@@ -212,7 +216,11 @@ defineExpose({
           </span>
         </div>
       </div>
-      <FunctionPointPanel v-if="!props.hideAiActions" ref="fpPanelRef" :result-id="props.row?.id" />
+      <FunctionPointPanel
+        v-if="!props.hideAiActions"
+        ref="fpPanelRef"
+        :result-id="props.row?.id"
+      />
       <div class="detail-collapse">
         <el-collapse v-model="detailExpanded">
           <el-collapse-item title="更多详情" name="detail">

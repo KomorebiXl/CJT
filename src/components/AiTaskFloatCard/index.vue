@@ -58,6 +58,7 @@ const handleStop = () => {
 const canDownload = computed(
   () =>
     !isExtract.value &&
+    !!aiTaskStore.meta?.downloadParams &&
     phase.value === 'done' &&
     (progress.value?.total ?? 0) > 0 &&
     hasPermission('acceptance:result:aiTestCase:download')
@@ -73,7 +74,10 @@ onMounted(() => {
   <transition name="ai-task-card">
     <div v-if="aiTaskStore.cardVisible && progress" class="ai-task-card">
       <div class="ai-task-card__header">
-        <el-icon class="ai-task-card__icon" :class="{ 'is-running': phase === 'running' }">
+        <el-icon
+          class="ai-task-card__icon"
+          :class="{ 'is-running': phase === 'running' }"
+        >
           <MagicStick />
         </el-icon>
         <span class="ai-task-card__title">{{ title }}</span>
@@ -87,6 +91,13 @@ onMounted(() => {
       </div>
 
       <div class="ai-task-card__scope">{{ aiTaskStore.meta?.scopeLabel }}</div>
+      <ScButton
+        v-if="progress.status === 'failed' && progress.cleanupPending"
+        size="small"
+        type="danger"
+        @click="handleStop"
+        >重试作废</ScButton
+      >
 
       <el-progress
         :percentage="aiTaskStore.percent"
@@ -98,26 +109,51 @@ onMounted(() => {
       <div class="ai-task-card__stats">
         <span>{{ progress.processed ?? 0 }}/{{ progress.total ?? 0 }}</span>
         <span class="is-success">成功 {{ progress.success ?? 0 }}</span>
-        <span v-if="progress.degraded" class="is-warning">原文回填 {{ progress.degraded }}</span>
-        <span v-if="progress.failed" class="is-danger">失败 {{ progress.failed }}</span>
-        <span v-if="progress.skipped" class="is-warning">停止跳过 {{ progress.skipped }}</span>
+        <span v-if="progress.degraded" class="is-warning"
+          >原文回填 {{ progress.degraded }}</span
+        >
+        <span v-if="progress.failed" class="is-danger"
+          >失败 {{ progress.failed }}</span
+        >
+        <span v-if="progress.skipped" class="is-warning"
+          >停止跳过 {{ progress.skipped }}</span
+        >
       </div>
 
       <div class="ai-task-card__tip">
-        <template v-if="phase === 'running'">可以继续其他操作，完成后会在这里提醒你</template>
-        <template v-else-if="phase === 'lost'">任务可能仍在后台执行，网络恢复后可重试</template>
-        <template v-else-if="phase === 'failed'">{{ progress.message || '请稍后重试' }}</template>
+        <template v-if="phase === 'running'"
+          >可以继续其他操作，完成后会在这里提醒你</template
+        >
+        <template v-else-if="phase === 'lost'"
+          >任务可能仍在后台执行，网络恢复后可重试</template
+        >
+        <template v-else-if="phase === 'failed'">{{
+          progress.message || '请稍后重试'
+        }}</template>
         <template v-else-if="phase === 'stopped'">
           {{ progress.message || '已停止' }}——本批内容已作废，可重新发起生成
         </template>
-        <template v-else-if="isExtract && progress.total === 0">没有需要提取的测试项（素材未变更的已跳过）</template>
-        <template v-else-if="progress.total === 0">没有需要生成的测试项</template>
-        <template v-else-if="isExtract">请到测试项详情确认功能点清单后再生成用例</template>
-        <template v-else-if="hasProblem">未成功的项可进入子系统单项重新生成</template>
+        <template v-else-if="isExtract && progress.total === 0"
+          >没有需要提取的测试项（素材未变更的已跳过）</template
+        >
+        <template v-else-if="progress.total === 0"
+          >没有需要生成的测试项</template
+        >
+        <template v-else-if="isExtract"
+          >请到测试项详情确认功能点清单后再生成用例</template
+        >
+        <template v-else-if="hasProblem"
+          >未成功的项可进入子系统单项重新生成</template
+        >
       </div>
 
       <div v-if="phase !== 'running'" class="ai-task-card__footer">
-        <ScButton v-if="phase === 'lost'" size="small" type="primary" @click="aiTaskStore.retry()">
+        <ScButton
+          v-if="phase === 'lost'"
+          size="small"
+          type="primary"
+          @click="aiTaskStore.retry()"
+        >
           重试
         </ScButton>
         <!-- on-click 异步自动 loading（ScButton 封装点，替代手动 :loading） -->
@@ -129,7 +165,9 @@ onMounted(() => {
         >
           下载用例文档
         </ScButton>
-        <ScButton size="small" @click="aiTaskStore.closeCard()">知道了</ScButton>
+        <ScButton size="small" @click="aiTaskStore.closeCard()"
+          >知道了</ScButton
+        >
       </div>
       <div v-else class="ai-task-card__footer">
         <ScButton

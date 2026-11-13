@@ -24,12 +24,54 @@ const MAX_POLL_FAILURES = 5
 /** 任务元信息：刷新页面后据此恢复轮询与「下载用例文档」入口（存 sessionStorage） */
 export type AiTaskMeta = {
   subjectId: string
+  taskId?: string
   /** 范围说明，如「全部子系统」或子系统名 */
   scopeLabel: string
   /** 完成后下载用例文档所用参数（与本次生成范围一致） */
-  downloadParams: TestCaseAiDownloadParams
+  downloadParams: TestCaseAiDownloadParams | null
   /** 下载文件名 */
   fileName: string
+}
+
+/** 恢复范围只信服务端任务快照；旧快照可以看进度，但不能猜测下载版本/范围。 */
+export const resolveAiTaskMeta = (
+  data: TestCaseAiTaskProgress,
+  subjectId: string,
+  displayMeta?: AiTaskMeta,
+  submitted?: TestCaseAiDownloadParams
+): AiTaskMeta => {
+  const trusted =
+    data.subjectId === subjectId &&
+    !!data.taskId &&
+    !!data.feature &&
+    (data.caseType === 'detail' || data.caseType === 'simple')
+  const downloadParams: TestCaseAiDownloadParams | null = trusted
+    ? {
+        subjectId,
+        feature: data.feature,
+        ...(data.subFeature ? { subFeature: data.subFeature } : {}),
+        ...(data.subsystem ? { subsystem: data.subsystem } : {}),
+        caseType: data.caseType
+      }
+    : (submitted ?? null)
+  const featureNames: Record<string, string> = {
+    '1': '功能性',
+    '8': '用户文档集',
+    '9': '性能效率'
+  }
+  const feature = downloadParams?.feature ?? ''
+  const scope = `${featureNames[feature] ?? `特性${feature}`}${downloadParams?.subFeature ? ` · 子特性${downloadParams.subFeature}` : ''}${downloadParams?.subsystem ? ` · 子系统${downloadParams.subsystem}` : ''}`
+  const version = downloadParams?.caseType === 'simple' ? '常规版' : '详细版'
+  return {
+    subjectId,
+    taskId: data.taskId,
+    scopeLabel: downloadParams
+      ? `项目 ${subjectId} · ${scope} · ${version}`
+      : '任务范围信息不足，请回原范围选择版本下载',
+    downloadParams,
+    fileName: `测试用例-${subjectId}-${featureNames[feature] ?? feature}-${version}.docx`,
+    ...(submitted && displayMeta ? { scopeLabel: displayMeta.scopeLabel } : {})
+  }
 }
 
 /**
@@ -51,13 +93,19 @@ export const useAiTaskStore = defineStore(
 
     let pollTimer: number | undefined
     let pollFailures = 0
+    let lifecycle = 0
+    let submitting = false
+    let stopping = false
 
     const isRunning = computed(() => progress.value?.status === 'running')
 
     const percent = computed(() => {
       const total = progress.value?.total ?? 0
       if (!total) return isRunning.value ? 0 : 100
-      return Math.min(100, Math.round(((progress.value?.processed ?? 0) / total) * 100))
+      return Math.min(
+        100,
+        Math.round(((progress.value?.processed ?? 0) / total) * 100)
+      )
     })
 
     const stopPolling = () => {
@@ -76,8 +124,11 @@ export const useAiTaskStore = defineStore(
     // setTimeout 链式轮询：上一次请求结束后才排下一次，避免慢请求叠加
     const poll = async () => {
       if (!meta.value) return
+      const request = lifecycle
+      const subjectId = meta.value.subjectId
       try {
-        const { data } = await getAiTestCaseProgressAPI(meta.value.subjectId)
+        const { data } = await getAiTestCaseProgressAPI(subjectId)
+        if (request !== lifecycle || subjectId !== meta.value?.subjectId) return
         pollFailures = 0
         lostConnection.value = false
         if (data.status === 'idle') {
@@ -85,11 +136,13 @@ export const useAiTaskStore = defineStore(
           progress.value = {
             ...(progress.value ?? { status: 'failed' }),
             status: 'failed',
-            message: '任务记录已丢失（服务可能重启过），已生成的内容不受影响，可重新执行补齐'
+            message:
+              '任务记录已丢失（服务可能重启过），已生成的内容不受影响，可重新执行补齐'
           }
           markFinished()
           return
         }
+        meta.value = resolveAiTaskMeta(data, subjectId)
         progress.value = data
         if (data.status === 'running') {
           pollTimer = window.setTimeout(poll, POLL_INTERVAL)
@@ -97,6 +150,7 @@ export const useAiTaskStore = defineStore(
         }
         markFinished()
       } catch {
+        if (request !== lifecycle || subjectId !== meta.value?.subjectId) return
         pollFailures += 1
         if (pollFailures >= MAX_POLL_FAILURES) {
           lostConnection.value = true
@@ -121,28 +175,47 @@ export const useAiTaskStore = defineStore(
       taskMeta: AiTaskMeta,
       kind: 'generate' | 'extract' | 'docset' = 'generate'
     ) => {
+      if (submitting || stopping) throw new Error('任务请求处理中，请稍候')
+      if (progress.value?.cleanupPending)
+        throw new Error('上次停止清理失败，请先重试作废本批内容')
       if (isRunning.value) {
         throw new Error(
-          kind === 'extract' ? '已有 AI 任务进行中，请等待完成' : '已有 AI 生成任务进行中，请等待完成'
+          kind === 'extract'
+            ? '已有 AI 任务进行中，请等待完成'
+            : '已有 AI 生成任务进行中，请等待完成'
         )
       }
-      const { data } =
-        kind === 'extract'
-          ? await extractFunctionPointsAPI(params as TestCaseAiGenerateParams)
-          : kind === 'docset'
-            ? await generateDocSetAPI(params as TestCaseAiDocSetGenerateParams)
-            : await generateAiTestCaseAPI(params as TestCaseAiGenerateParams)
-      if (data.status === 'failed') {
-        throw new Error(data.message || '任务启动失败')
-      }
-      meta.value = taskMeta
-      progress.value = data
-      lostConnection.value = false
-      cardVisible.value = true
-      if (data.status === 'running') {
-        startPolling()
-      } else {
-        markFinished()
+      const request = ++lifecycle
+      submitting = true
+      stopPolling()
+      try {
+        const { data } =
+          kind === 'extract'
+            ? await extractFunctionPointsAPI(params as TestCaseAiGenerateParams)
+            : kind === 'docset'
+              ? await generateDocSetAPI(
+                  params as TestCaseAiDocSetGenerateParams
+                )
+              : await generateAiTestCaseAPI(params as TestCaseAiGenerateParams)
+        if (request !== lifecycle) return
+        if (data.status === 'failed') {
+          throw new Error(data.message || '任务启动失败')
+        }
+        meta.value = resolveAiTaskMeta(data, params.subjectId, taskMeta, {
+          ...params,
+          ...('feature' in params ? {} : { feature: '8' }),
+          caseType: 'caseType' in params ? params.caseType : 'detail'
+        })
+        progress.value = data
+        lostConnection.value = false
+        cardVisible.value = true
+        if (data.status === 'running') {
+          startPolling()
+        } else {
+          markFinished()
+        }
+      } finally {
+        submitting = false
       }
     }
 
@@ -153,12 +226,20 @@ export const useAiTaskStore = defineStore(
      * 避免 isRunning 永久卡真导致生成/提取按钮一直禁用。
      */
     const resume = async (subjectId?: string, fallbackMeta?: AiTaskMeta) => {
+      if (submitting || stopping) return
       if (pollTimer !== undefined) return
       const targetId = subjectId ?? meta.value?.subjectId
       if (!targetId) return
+      if (
+        (isRunning.value || progress.value?.cleanupPending) &&
+        meta.value?.subjectId !== targetId
+      )
+        return
+      const request = ++lifecycle
       try {
         const { data } = await getAiTestCaseProgressAPI(targetId)
-        if (data.status !== 'running') {
+        if (request !== lifecycle) return
+        if (data.status === 'idle') {
           if (progress.value?.status === 'running') {
             stopPolling()
             progress.value = null
@@ -166,14 +247,11 @@ export const useAiTaskStore = defineStore(
           }
           return
         }
-        if (!meta.value || meta.value.subjectId !== targetId) {
-          if (!fallbackMeta) return
-          meta.value = fallbackMeta
-        }
+        meta.value = resolveAiTaskMeta(data, targetId, fallbackMeta)
         progress.value = data
         lostConnection.value = false
         cardVisible.value = true
-        startPolling()
+        if (data.status === 'running') startPolling()
       } catch {
         // 探测失败不打扰用户
       }
@@ -181,16 +259,23 @@ export const useAiTaskStore = defineStore(
 
     /** 失联后手动重试 */
     const retry = () => {
+      if (submitting || stopping) return
+      lifecycle += 1
       lostConnection.value = false
       startPolling()
     }
 
     const download = async () => {
       if (!meta.value || downloading.value) return
+      if (!meta.value.downloadParams) {
+        ElMessage.warning('任务范围信息不足，请回原范围选择版本下载')
+        return
+      }
       downloading.value = true
+      const { downloadParams, fileName } = meta.value
       try {
-        const response = await downloadAiTestCaseAPI(meta.value.downloadParams)
-        await downloadFile(response, meta.value.fileName)
+        const response = await downloadAiTestCaseAPI(downloadParams)
+        await downloadFile(response, fileName)
       } catch {
         ElMessage.error('用例文档下载失败，请稍后重试')
       } finally {
@@ -203,19 +288,38 @@ export const useAiTaskStore = defineStore(
      * 终态由轮询拿到 stopped，页面经 finishSeq 自动恢复按钮
      */
     const stop = async () => {
-      if (!isRunning.value || !meta.value) return
+      if (submitting || stopping) return
+      if ((!isRunning.value && !progress.value?.cleanupPending) || !meta.value)
+        return
+      const subjectId = meta.value.subjectId
+      const request = ++lifecycle
+      stopping = true
+      stopPolling()
       try {
-        await stopAiTestCaseAPI({ subjectId: meta.value.subjectId })
-        ElMessage.success('停止请求已发出，等待进行中的项结束后生效')
+        const { data } = await stopAiTestCaseAPI({ subjectId })
+        if (request !== lifecycle || subjectId !== meta.value?.subjectId) return
+        progress.value = data
+        ElMessage.success(
+          data.status === 'stopped'
+            ? '本批内容已作废'
+            : '停止请求已发出，等待进行中的项结束后生效'
+        )
+        if (data.status === 'running') startPolling()
+        else markFinished()
       } catch (error) {
         ElMessage.error(error instanceof Error ? error.message : '停止请求失败')
+        if (request === lifecycle) startPolling()
+      } finally {
+        stopping = false
       }
     }
 
     /** 关闭卡片：进行中仅收起；已结束则清理任务 */
     const closeCard = () => {
       cardVisible.value = false
+      if (submitting || stopping || progress.value?.cleanupPending) return
       if (!isRunning.value || lostConnection.value) {
+        lifecycle += 1
         stopPolling()
         meta.value = null
         progress.value = null

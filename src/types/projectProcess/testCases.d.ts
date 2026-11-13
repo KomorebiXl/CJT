@@ -183,6 +183,13 @@ export type TestCaseAiDocSetRecord = {
 /** AI 任务进度（status：idle 无任务 running 进行中 success 成功 failed 失败 stopped 已停止-本批作废；taskType：generate 生成 extract 功能点提取） */
 export type TestCaseAiTaskProgress = {
   subjectId?: string
+  taskId?: string
+  caseType?: 'detail' | 'simple'
+  feature?: string
+  subFeature?: string | null
+  subsystem?: string | null
+  /** 停止清理失败，须重试作废后才能开始下一批 */
+  cleanupPending?: boolean
   taskType?: 'generate' | 'extract'
   status: 'idle' | 'running' | 'success' | 'failed' | 'stopped'
   total?: number
@@ -219,6 +226,8 @@ export type AiFunctionPoint = {
 /** 功能点评审保存参数（按测试项全量置换） */
 export type AiFunctionPointReviewParams = {
   resultId: string
+  /** 查询时完整清单的行ID；服务端用于拒绝过期全量覆盖 */
+  expectedIds: string[]
   items: AiFunctionPoint[]
 }
 
