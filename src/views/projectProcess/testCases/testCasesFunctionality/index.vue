@@ -134,6 +134,24 @@ const handleDownloadAllTestCases = async () => {
   }
 }
 
+// ---- 2026-11-13 生成/下载入口整合：类型选择弹窗 ----
+const generateDialogVisible = ref(false)
+const downloadDialogVisible = ref(false)
+
+const pickGenerate = (caseType: 'detail' | 'simple') => {
+  generateDialogVisible.value = false
+  void handleGenerateTestCases(caseType)
+}
+
+const pickDownload = (mode: 'detail' | 'simple' | 'all') => {
+  downloadDialogVisible.value = false
+  if (mode === 'all') {
+    void handleDownloadAllTestCases()
+    return
+  }
+  void handleDownloadTestCases(mode)
+}
+
 // 进入页面时接上本项目进行中的任务（刷新/换设备/他人发起均可恢复进度卡片）
 onMounted(async () => {
   const detail = await getProcessProjectDetail()
@@ -163,63 +181,36 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
         onClick: () => handleExtractFunctionPoints()
       },
       {
+        // 2026-11-13 整合：生成入口收敛为一个按钮，弹窗选择详细/常规版（功能点提取为生成前置）
         id: 'generateTestCases',
-        // getter：随任务进度实时更新按钮文案与禁用态（提取任务进行中仅禁用不换文案）
         get name() {
           const p = aiTaskStore.progress
           if (aiTaskStore.isRunning && p?.taskType !== 'extract') {
             return `生成中 ${p?.processed ?? 0}/${p?.total ?? 0}`
           }
-          return '生成详细测试用例'
+          return '生成测试用例'
         },
         get disabled() {
           return aiTaskStore.isRunning
         },
         type: 'primary',
         permission: 'acceptance:result:aiTestCase:generate',
-        onClick: () => handleGenerateTestCases('detail')
+        onClick: () => {
+          generateDialogVisible.value = true
+        }
       },
       {
-        // 常规版（2026-11-12 反馈4）：一测试项一用例（含正反用例），节省 Token；与详细版各自落库互不覆盖
-        id: 'generateSimpleTestCases',
-        name: '生成常规测试用例',
-        get disabled() {
-          return aiTaskStore.isRunning
-        },
-        type: 'primary',
-        permission: 'acceptance:result:aiTestCase:generate',
-        onClick: () => handleGenerateTestCases('simple')
-      },
-      {
+        // 2026-11-13 整合：下载入口收敛为一个按钮，弹窗选择版本/范围
         id: 'downloadTestCases',
-        name: '下载功能性用例',
+        name: '下载用例',
         get disabled() {
-          return downloading.value
+          return downloading.value || downloadingAll.value
         },
         type: 'success',
         permission: 'acceptance:result:aiTestCase:download',
-        onClick: () => handleDownloadTestCases('detail')
-      },
-      {
-        // 常规版下载：导出「生成常规测试用例」落库的常规版记录（未生成时后端按测试项原文导出）
-        id: 'downloadSimpleTestCases',
-        name: '下载常规用例',
-        get disabled() {
-          return downloading.value
-        },
-        type: 'success',
-        permission: 'acceptance:result:aiTestCase:download',
-        onClick: () => handleDownloadTestCases('simple')
-      },
-      {
-        id: 'downloadAllTestCases',
-        name: '下载全部用例',
-        get disabled() {
-          return downloadingAll.value
-        },
-        type: 'success',
-        permission: 'acceptance:result:aiTestCase:download',
-        onClick: () => handleDownloadAllTestCases()
+        onClick: () => {
+          downloadDialogVisible.value = true
+        }
       }
     ]
   },
@@ -254,6 +245,52 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
       :system-name="currentSystem.name"
       @back="currentSystem = null"
     />
+
+    <!-- 生成类型选择（2026-11-13 整合） -->
+    <ScDialog
+      v-model="generateDialogVisible"
+      title="生成测试用例"
+      dialog-width="480px"
+      :show-footer-operate="false"
+    >
+      <div class="option-list">
+        <div class="option-card" @click="pickGenerate('detail')">
+          <div class="option-title">详细版测试用例</div>
+          <div class="option-desc">
+            按已确认功能点拆分成例（一功能点一条用例，多数据行）；生成前需先「提取功能点」并在详情中确认
+          </div>
+        </div>
+        <div class="option-card" @click="pickGenerate('simple')">
+          <div class="option-title">常规版测试用例</div>
+          <div class="option-desc">
+            一测试项一条用例，数据行含正用例与反用例，节省 Token；同样需先完成功能点提取与确认
+          </div>
+        </div>
+      </div>
+    </ScDialog>
+
+    <!-- 下载范围/版本选择（2026-11-13 整合） -->
+    <ScDialog
+      v-model="downloadDialogVisible"
+      title="下载用例文档"
+      dialog-width="480px"
+      :show-footer-operate="false"
+    >
+      <div class="option-list">
+        <div class="option-card" @click="pickDownload('detail')">
+          <div class="option-title">详细版（功能性）</div>
+          <div class="option-desc">功能性全部子系统整合为一个 Word 文档</div>
+        </div>
+        <div class="option-card" @click="pickDownload('simple')">
+          <div class="option-title">常规版（功能性）</div>
+          <div class="option-desc">常规版记录整合文档（需已生成常规版）</div>
+        </div>
+        <div class="option-card" @click="pickDownload('all')">
+          <div class="option-title">全部用例</div>
+          <div class="option-desc">全部特性（1-7）合并一个文档，文末附用户文档集核查表</div>
+        </div>
+      </div>
+    </ScDialog>
   </div>
 </template>
 
@@ -263,5 +300,40 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px;
+}
+
+.option-card {
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+
+  &:hover {
+    border-color: var(--el-color-primary);
+    background-color: var(--el-color-primary-light-9);
+  }
+
+  .option-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 4px;
+  }
+
+  .option-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-secondary);
+  }
 }
 </style>

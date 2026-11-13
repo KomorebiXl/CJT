@@ -53,6 +53,9 @@ const scopeParams = computed(() => ({
  *  生成=单次 AI 步骤扩写（触发点40），不走逐项提取/生成/重新生成 */
 const isDocSet = computed(() => props.feature === '8')
 
+/** 性能效率（feature=9，2026-11-13 需求6.4）：纯规则提取（测试准备/测试策略/事务说明直取原值），无生成步骤，仅下载 */
+const isPerformance = computed(() => props.feature === '9')
+
 /** 范围名：子系统名（功能性）或特性名（六个特性），用于 Tag / 确认文案 / 文件命名 */
 const scopeName = computed(() => props.subsystem?.name ?? props.featureName)
 
@@ -258,6 +261,16 @@ const FLAT_BUTTONS = computed(() => {
     )
     return list
   }
+  if (isPerformance.value) {
+    // 性能效率：纯规则提取（无生成步骤），仅下载
+    list.push({
+      id: 'downloadWord',
+      name: '下载用例文档',
+      type: 'success',
+      permission: 'acceptance:result:aiTestCase:download'
+    })
+    return list
+  }
   list.push(
     {
       id: 'extractAll',
@@ -379,7 +392,7 @@ onMounted(async () => {
           ref="detailPanelRef"
           :row="currentRow"
           :dynamic-columns="dynamicData"
-          :hide-ai-actions="isDocSet"
+          :hide-ai-actions="isDocSet || isPerformance"
           @regenerated="fetchTreeData()"
         />
       </div>
