@@ -109,12 +109,7 @@ const handleConfirm = async () => {
 
 const handleViewLog = () => {
   visible.value = false
-  router.push({
-    path: '/projectProcess/executionLog/logManagement',
-    query: {
-      projectId: getProjectIdFromRoute(route)
-    }
-  })
+  router.push({ name: 'IssueLog' })
 }
 
 const handleOpen = () => {
