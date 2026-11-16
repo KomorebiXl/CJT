@@ -98,7 +98,11 @@ const formatStepNo = (index: number) => String(index + 1).padStart(2, '0')
             <span class="step-guide__no">步骤 {{ formatStepNo(index) }}</span>
             <span class="step-guide__title-text">{{ item.title }}</span>
             <div class="step-guide__actions" @click.stop>
-              <ScButton type="primary" @click="item.action.handler()">
+              <ScButton
+                type="primary"
+                :disabled="item.action.disabled"
+                @click="item.action.handler()"
+              >
                 {{ item.action.text }}
               </ScButton>
               <el-icon class="step-guide__caret">

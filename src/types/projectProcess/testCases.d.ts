@@ -231,10 +231,12 @@ export type AiFunctionPointReviewParams = {
   items: AiFunctionPoint[]
 }
 
-/** AI 用例 Word 下载参数（feature 空=全部特性合并一个文档；subsystem 空=范围内全部子系统；subFeature 空=按子特性分组渲染） */
+/** 用例 Word 下载：九特性使用 scope=allFeatures；无 scope 保持旧单特性/旧范围契约。 */
 export type TestCaseAiDownloadParams = {
   subjectId: string
-  /** 特性码（空=全部特性 1-7 合并文档） */
+  /** 九特性集中下载，固定详细版；不与单特性范围混用 */
+  scope?: 'allFeatures'
+  /** 单特性码；无 scope 且为空时沿用旧普通范围1-7并附文档集，不含性能 */
   feature?: string
   /** 子特性码（功能性固定 1；六个特性不传=整体特性导出） */
   subFeature?: string

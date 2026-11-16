@@ -3,7 +3,8 @@ export interface StepItem {
   desc: string[]
   action: {
     text: string
-    handler: () => void
+    handler: () => unknown
+    disabled?: boolean
   }
   permission?: string | string[]
 }

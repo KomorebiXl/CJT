@@ -5,13 +5,20 @@ import type {
   TestCaseFnSystemData,
   TestCaseFnSystemSearchParams
 } from '@/types/projectProcess/testCases'
-import { downloadAiTestCaseAPI, getTestCaseFnSystemListAPI } from '@/api/projectProcess/testCases-api'
+import {
+  downloadAiTestCaseAPI,
+  getTestCaseFnSystemListAPI
+} from '@/api/projectProcess/testCases-api'
 import { downloadFile } from '@/utils/file'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 import { useAiTaskStore } from '@/store/modules/ai-task-store'
 import SystemDetails from './systemDetails.vue'
-import { TEST_CASE_FN_SCOPE, createTestCaseFnTaskMeta } from './testCasesFunctionality.config'
+import {
+  TEST_CASE_FN_SCOPE,
+  createTestCaseFnTaskMeta
+} from './testCasesFunctionality.config'
+import { useAllTestCasesDownload } from '../useAllTestCasesDownload'
 
 const { scConfirm } = useScConfirm()
 const aiTaskStore = useAiTaskStore()
@@ -63,13 +70,17 @@ const handleExtractFunctionPoints = async () => {
 }
 
 /** 外层「生成测试用例」：全子系统增量生成（已有成功结果的跳过，降级/失败项自动重试） */
-const handleGenerateTestCases = async (caseType: 'detail' | 'simple' = 'detail') => {
-  const versionLabel = caseType === 'simple' ? '常规版（一测试项一用例，含正反用例）' : '详细版（按功能点拆分成例）'
+const handleGenerateTestCases = async (
+  caseType: 'detail' | 'simple' = 'detail'
+) => {
+  const versionLabel =
+    caseType === 'simple'
+      ? '常规版（一测试项一用例，含正反用例）'
+      : '详细版（按功能点拆分成例）'
   try {
     await scConfirm({
       title: '提示',
-      message:
-        `将对本项目全部子系统生成${versionLabel} AI 测试用例（同版本已有成功结果的项自动跳过，降级/失败项自动重试），确认执行？`,
+      message: `将对本项目全部子系统生成${versionLabel} AI 测试用例（同版本已有成功结果的项自动跳过，降级/失败项自动重试），确认执行？`,
       confirmText: '确认生成'
     })
   } catch {
@@ -92,7 +103,9 @@ const handleGenerateTestCases = async (caseType: 'detail' | 'simple' = 'detail')
 
 /** 外层「下载测试用例」：功能性全子系统整合为一个 Word 文档（按用例版本下载，默认详细版） */
 const downloading = ref(false)
-const handleDownloadTestCases = async (caseType: 'detail' | 'simple' = 'detail') => {
+const handleDownloadTestCases = async (
+  caseType: 'detail' | 'simple' = 'detail'
+) => {
   if (downloading.value) return
   const detail = await getProcessProjectDetail()
   if (!detail?.id) {
@@ -106,7 +119,10 @@ const handleDownloadTestCases = async (caseType: 'detail' | 'simple' = 'detail')
       ...TEST_CASE_FN_SCOPE,
       caseType
     })
-    await downloadFile(response, `测试用例-${caseType === 'simple' ? '常规版-' : ''}${detail.code}.docx`)
+    await downloadFile(
+      response,
+      `测试用例-${caseType === 'simple' ? '常规版-' : ''}${detail.code}.docx`
+    )
   } catch {
     ElMessage.error('用例文档下载失败，请稍后重试')
   } finally {
@@ -114,25 +130,8 @@ const handleDownloadTestCases = async (caseType: 'detail' | 'simple' = 'detail')
   }
 }
 
-/** 外层「下载全部用例」（问题2）：全部特性（1-7）合并为一个 Word 文档，单特性下载入口保留 */
-const downloadingAll = ref(false)
-const handleDownloadAllTestCases = async () => {
-  if (downloadingAll.value) return
-  const detail = await getProcessProjectDetail()
-  if (!detail?.id) {
-    ElMessage.error('未获取到项目信息')
-    return
-  }
-  downloadingAll.value = true
-  try {
-    const response = await downloadAiTestCaseAPI({ subjectId: String(detail.id) })
-    await downloadFile(response, `测试用例-${detail.code}.docx`)
-  } catch {
-    ElMessage.error('用例文档下载失败，请稍后重试')
-  } finally {
-    downloadingAll.value = false
-  }
-}
+/** 与指引页共用九特性详细版能力，单功能性版本下载保持原范围。 */
+const { downloadingAll, handleDownloadAllTestCases } = useAllTestCasesDownload()
 
 // ---- 2026-11-13 生成/下载入口整合：类型选择弹窗 ----
 const generateDialogVisible = ref(false)
@@ -155,7 +154,8 @@ const pickDownload = (mode: 'detail' | 'simple' | 'all') => {
 // 进入页面时接上本项目进行中的任务（刷新/换设备/他人发起均可恢复进度卡片）
 onMounted(async () => {
   const detail = await getProcessProjectDetail()
-  if (detail?.id) aiTaskStore.resume(String(detail.id), createTestCaseFnTaskMeta(detail))
+  if (detail?.id)
+    aiTaskStore.resume(String(detail.id), createTestCaseFnTaskMeta(detail))
 })
 
 const pageConfig: PageConfig<TestCaseFnSystemData> = {
@@ -202,7 +202,9 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
       {
         // 2026-11-13 整合：下载入口收敛为一个按钮，弹窗选择版本/范围
         id: 'downloadTestCases',
-        name: '下载用例',
+        get name() {
+          return downloadingAll.value ? '正在生成文档…' : '下载用例'
+        },
         get disabled() {
           return downloading.value || downloadingAll.value
         },
@@ -263,7 +265,8 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
         <div class="option-card" @click="pickGenerate('simple')">
           <div class="option-title">常规版测试用例</div>
           <div class="option-desc">
-            一测试项一条用例，数据行含正用例与反用例，节省 Token；同样需先完成功能点提取与确认
+            一测试项一条用例，数据行含正用例与反用例，节省
+            Token；同样需先完成功能点提取与确认
           </div>
         </div>
       </div>
@@ -286,8 +289,10 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
           <div class="option-desc">常规版记录整合文档（需已生成常规版）</div>
         </div>
         <div class="option-card" @click="pickDownload('all')">
-          <div class="option-title">全部用例</div>
-          <div class="option-desc">全部特性（1-7）合并一个文档，文末附用户文档集核查表</div>
+          <div class="option-title">下载全部测试用例（九特性详细版）</div>
+          <div class="option-desc">
+            九特性合并为一个 Word，用户文档集、性能效率保留专用表格格式
+          </div>
         </div>
       </div>
     </ScDialog>
