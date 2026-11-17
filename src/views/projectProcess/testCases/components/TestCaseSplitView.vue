@@ -15,6 +15,15 @@ import {
 } from '@/api/projectProcess/testCases-api'
 import LeftTreePanel from './LeftTreePanel.vue'
 import CaseDetailPanel from './CaseDetailPanel.vue'
+import TestCaseVersionDialog from './TestCaseVersionDialog.vue'
+import {
+  useTestCaseGeneration,
+  isStandardFeature,
+  type CaseType,
+  type GenerateMode
+} from '../useTestCaseGeneration'
+import { PROCESS_PROJECT_ID_KEY } from '@/constant/globalVariables'
+import { sessionStorage } from '@/utils/storage'
 import { downloadFile } from '@/utils/file'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import type { DynamicFileColumn } from '@/types/projectProcess/projectProcessCommon'
@@ -104,7 +113,7 @@ const fetchTreeData = async () => {
   }
 }
 
-// ---- 用户文档集：整特性 AI 核查步骤（生成后页面直接可见，不必下载文档核对） ----
+// ---- 用户文档集：整体特性 AI 核查步骤（生成后页面直接可见，不必下载文档核对） ----
 const docSetStep = ref<TestCaseAiDocSetRecord | null>(null)
 const fetchDocSetStep = async () => {
   if (!isDocSet.value) return
@@ -176,68 +185,54 @@ const handleGenerateDocSet = async () => {
   }
 }
 
-/** 「生成测试用例」：当前范围增量生成（已有结果的项自动跳过，问题1 六个特性一键生成入口） */
-const handleGenerateAll = async () => {
-  if (!(await detailPanelRef.value?.ensureSaved())) return
-  try {
-    await scConfirm({
-      title: '提示',
-      message: `将对「${scopeName.value}」生成 AI 测试用例（已有结果的项自动跳过），确认执行？`,
-      confirmText: '确认生成'
-    })
-  } catch {
-    return
-  }
-  const detail = await getSubjectScope()
-  if (!detail) return
-  try {
-    await aiTaskStore.start(
-      { subjectId: String(detail.id), ...scopeParams.value, mode: 'increment' },
-      makeTaskMeta(detail, scopeName.value)
-    )
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
-  }
+const generation = useTestCaseGeneration({
+  scope: () =>
+    isStandardFeature(props.feature)
+      ? {
+          feature: props.feature,
+          featureName: props.featureName,
+          subFeature: props.subFeature,
+          subsystem: props.subsystem
+        }
+      : null,
+  beforeGenerate: async () =>
+    (await detailPanelRef.value?.ensureSaved()) ?? false
+})
+const generateDialogVisible = ref(false)
+const downloadDialogVisible = ref(false)
+const generateMode = ref<GenerateMode>('increment')
+const openGenerate = (mode: GenerateMode) => {
+  if (generation.disabled.value) return
+  generateMode.value = mode
+  generateDialogVisible.value = true
 }
-
-/** 「重新生成」：覆盖当前范围全部扩写，进度在右下角卡片展示，不锁屏 */
-const handleRegenerateAll = async () => {
-  if (!(await detailPanelRef.value?.ensureSaved())) return
-  try {
-    await scConfirm({
-      title: '提示',
-      message: `将重新生成「${scopeName.value}」下全部测试项的 AI 扩写内容（覆盖已有结果），确认执行？`,
-      confirmText: '确认生成'
-    })
-  } catch {
-    return
-  }
-  const detail = await getSubjectScope()
-  if (!detail) return
-  try {
-    await aiTaskStore.start(
-      { subjectId: String(detail.id), ...scopeParams.value, mode: 'overwrite' },
-      makeTaskMeta(detail, scopeName.value)
-    )
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
-  }
+const pickGenerate = (caseType: CaseType) => {
+  void generation.generate({ caseType, mode: generateMode.value })
+}
+const openDownload = () => {
+  if (isDocSet.value || isPerformance.value) void handleDownloadWord('detail')
+  else downloadDialogVisible.value = true
 }
 
 const downloading = ref(false)
-const handleDownloadWord = async () => {
+const handleDownloadWord = async (caseType: CaseType) => {
   if (downloading.value) return
-  const detail = await getSubjectScope()
-  if (!detail) return
   downloading.value = true
+  const subjectId = sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
+  const downloadScope = { ...scopeParams.value }
+  const downloadScopeName = scopeName.value
   try {
+    const detail = await getProcessProjectDetail()
+    if (!subjectId || !detail || String(detail.id) !== subjectId)
+      throw new Error('未获取到点击时的项目信息')
     const response = await downloadAiTestCaseAPI({
-      subjectId: String(detail.id),
-      ...scopeParams.value
+      subjectId,
+      ...downloadScope,
+      caseType
     })
     await downloadFile(
       response,
-      `测试用例-${detail.code}-${scopeName.value}.docx`
+      `测试用例-${caseType === 'simple' ? '常规版-' : ''}${detail.code}-${downloadScopeName}.docx`
     )
   } catch {
     ElMessage.error('用例文档下载失败，请稍后重试')
@@ -317,31 +312,37 @@ const FLAT_BUTTONS = computed(() => {
 // 平铺按钮随任务状态更新：进行中对应按钮显示进度、其余操作按钮禁用，下载中防重复点击
 const flatButtons = computed(() =>
   FLAT_BUTTONS.value.map(btn => {
-    if (aiTaskStore.isRunning) {
+    const isAction = [
+      'extractAll',
+      'generateAll',
+      'regenerateAll',
+      'generateDocSet'
+    ].includes(btn.id)
+    if (
+      isAction &&
+      (aiTaskStore.isBusy ||
+        generation.pending.value ||
+        aiTaskStore.progress?.cleanupPending)
+    ) {
       const p = aiTaskStore.progress
-      const runningKind =
-        p?.taskType === 'extract'
-          ? 'extractAll'
-          : isDocSet.value
-            ? 'generateDocSet'
-            : 'generateAll'
-      if (btn.id === runningKind) {
-        const noun = p?.taskType === 'extract' ? '提取' : '生成'
-        return {
-          ...btn,
-          name: `${noun}中 ${p?.processed ?? 0}/${p?.total ?? 0}`,
-          disabled: true
-        }
-      }
-      if (
-        [
-          'extractAll',
-          'generateAll',
-          'regenerateAll',
-          'generateDocSet'
-        ].includes(btn.id)
-      ) {
-        return { ...btn, disabled: true }
+      const sameScope =
+        p?.subjectId === sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY) &&
+        p?.feature === props.feature &&
+        (p?.subFeature || '') === (props.subFeature || '') &&
+        (p?.subsystem || '') === (props.subsystem?.id || '')
+      const showTaskProgress =
+        aiTaskStore.isRunning &&
+        sameScope &&
+        ((btn.id === 'extractAll' && p?.taskType === 'extract') ||
+          (btn.id === 'generateDocSet' && p?.taskType !== 'extract'))
+      return {
+        ...btn,
+        name: showTaskProgress
+          ? `${p?.taskType === 'extract' ? '提取' : '生成'}中 ${p?.processed ?? 0}/${p?.total ?? 0}`
+          : btn.id === 'generateAll'
+            ? generation.buttonText.value
+            : btn.name,
+        disabled: true
       }
     }
     if (btn.id === 'downloadWord' && downloading.value) {
@@ -354,10 +355,10 @@ const flatButtons = computed(() =>
 const handleFlatClick = async (btnId: string) => {
   if (btnId === 'back') emit('back')
   if (btnId === 'extractAll') await handleExtractAll()
-  if (btnId === 'generateAll') await handleGenerateAll()
-  if (btnId === 'regenerateAll') await handleRegenerateAll()
+  if (btnId === 'generateAll') openGenerate('increment')
+  if (btnId === 'regenerateAll') openGenerate('overwrite')
   if (btnId === 'generateDocSet') await handleGenerateDocSet()
-  if (btnId === 'downloadWord') await handleDownloadWord()
+  if (btnId === 'downloadWord') openDownload()
 }
 
 // 任务结束后刷新树与功能点清单（不在进行中逐次刷新：避免展开状态被反复重置）
@@ -368,6 +369,11 @@ const detailPanelRef = useTemplateRef<{
 watch(
   () => aiTaskStore.finishSeq,
   () => {
+    if (
+      aiTaskStore.meta?.subjectId !==
+      sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
+    )
+      return
     void fetchTreeData()
     detailPanelRef.value?.refreshFunctionPoints()
     void fetchDocSetStep()
@@ -377,15 +383,31 @@ watch(
 onMounted(async () => {
   await fetchTreeData()
   void fetchDocSetStep()
-  // 进入页面时接上本项目进行中的任务（来源不明时按全项目范围恢复）
-  const detail = await getProcessProjectDetail()
-  if (detail?.id)
-    await aiTaskStore.resume(String(detail.id), makeTaskMeta(detail))
+  // 进入页面时探测本项目任务，真实范围与版本由服务端快照恢复。
+  await generation.resume()
 })
 </script>
 
 <template>
   <div class="system-details">
+    <TestCaseVersionDialog
+      v-model="generateDialogVisible"
+      :title="
+        generateMode === 'overwrite' ? '重新生成测试用例' : '生成测试用例'
+      "
+      action="generate"
+      :context-key="JSON.stringify(scopeParams)"
+      :disabled="generation.disabled.value"
+      @select="pickGenerate"
+    />
+    <TestCaseVersionDialog
+      v-model="downloadDialogVisible"
+      title="下载用例文档"
+      action="download"
+      :context-key="JSON.stringify(scopeParams)"
+      :disabled="downloading"
+      @select="handleDownloadWord"
+    />
     <div class="details-header">
       <div class="header-buttons">
         <OperateButtonGroup

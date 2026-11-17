@@ -111,9 +111,9 @@ const handleRoutePage = async () => {
       :closable="false"
       show-icon
     >
-      <ScButton text type="primary" @click="selectVisible = true"
-        >前往特性页面</ScButton
-      >
+      <ScButton text type="primary" @click="selectVisible = true">
+        前往特性页面
+      </ScButton>
     </el-alert>
     <ScDialog
       v-model="selectVisible"
@@ -130,9 +130,9 @@ const handleRoutePage = async () => {
       />
       <template #footer>
         <ScButton type="warning" @click="selectVisible = false">取消</ScButton>
-        <ScButton type="primary" :disabled="!selected" @click="handleRoutePage"
-          >前往</ScButton
-        >
+        <ScButton type="primary" :disabled="!selected" @click="handleRoutePage">
+          前往
+        </ScButton>
       </template>
     </ScDialog>
   </div>

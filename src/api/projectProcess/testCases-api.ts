@@ -57,7 +57,7 @@ export const regenerateAiTestCaseAPI = (data: TestCaseAiRegenerateParams) =>
     data
   })
 
-/** 测试用例-AI 批量生成任务（外层全量=增量；里层子系统 mode=overwrite；caseType=simple 生成常规版） */
+/** 测试用例-AI 批量生成任务（mode 指定增量/覆盖，caseType 指定详细/常规版，范围由调用方显式传入） */
 export const generateAiTestCaseAPI = (data: TestCaseAiGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
     needSubjectId: false,

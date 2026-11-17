@@ -56,12 +56,32 @@ export const resolveAiTaskMeta = (
     : (submitted ?? null)
   const featureNames: Record<string, string> = {
     '1': '功能性',
+    '2': '信息安全性',
+    '3': '兼容性',
+    '4': '可靠性',
+    '5': '易用性',
+    '6': '可移植性',
+    '7': '维护性',
     '8': '用户文档集',
     '9': '性能效率'
   }
   const feature = downloadParams?.feature ?? ''
   const scope = `${featureNames[feature] ?? `特性${feature}`}${downloadParams?.subFeature ? ` · 子特性${downloadParams.subFeature}` : ''}${downloadParams?.subsystem ? ` · 子系统${downloadParams.subsystem}` : ''}`
   const version = downloadParams?.caseType === 'simple' ? '常规版' : '详细版'
+  const displayParams = displayMeta?.downloadParams
+  const sameScope =
+    !!downloadParams &&
+    !!displayParams &&
+    downloadParams.subjectId === displayParams.subjectId &&
+    downloadParams.feature === displayParams.feature &&
+    (downloadParams.subFeature || '') === (displayParams.subFeature || '') &&
+    (downloadParams.subsystem || '') === (displayParams.subsystem || '') &&
+    (downloadParams.caseType ?? 'detail') ===
+      (displayParams.caseType ?? 'detail')
+  // 只保留本次提交或同一任务的显示信息；恢复时绝不能用当前页面猜下载范围。
+  const keepDisplay =
+    sameScope &&
+    (!!submitted || (!!data.taskId && displayMeta?.taskId === data.taskId))
   return {
     subjectId,
     taskId: data.taskId,
@@ -70,7 +90,9 @@ export const resolveAiTaskMeta = (
       : '任务范围信息不足，请回原范围选择版本下载',
     downloadParams,
     fileName: `测试用例-${subjectId}-${featureNames[feature] ?? feature}-${version}.docx`,
-    ...(submitted && displayMeta ? { scopeLabel: displayMeta.scopeLabel } : {})
+    ...(keepDisplay && displayMeta
+      ? { scopeLabel: displayMeta.scopeLabel, fileName: displayMeta.fileName }
+      : {})
   }
 }
 
@@ -94,10 +116,13 @@ export const useAiTaskStore = defineStore(
     let pollTimer: number | undefined
     let pollFailures = 0
     let lifecycle = 0
-    let submitting = false
-    let stopping = false
+    const submitting = ref(false)
+    const stopping = ref(false)
 
     const isRunning = computed(() => progress.value?.status === 'running')
+    const isBusy = computed(
+      () => submitting.value || stopping.value || isRunning.value
+    )
 
     const percent = computed(() => {
       const total = progress.value?.total ?? 0
@@ -142,7 +167,7 @@ export const useAiTaskStore = defineStore(
           markFinished()
           return
         }
-        meta.value = resolveAiTaskMeta(data, subjectId)
+        meta.value = resolveAiTaskMeta(data, subjectId, meta.value)
         progress.value = data
         if (data.status === 'running') {
           pollTimer = window.setTimeout(poll, POLL_INTERVAL)
@@ -175,7 +200,8 @@ export const useAiTaskStore = defineStore(
       taskMeta: AiTaskMeta,
       kind: 'generate' | 'extract' | 'docset' = 'generate'
     ) => {
-      if (submitting || stopping) throw new Error('任务请求处理中，请稍候')
+      if (submitting.value || stopping.value)
+        throw new Error('任务请求处理中，请稍候')
       if (progress.value?.cleanupPending)
         throw new Error('上次停止清理失败，请先重试作废本批内容')
       if (isRunning.value) {
@@ -186,7 +212,7 @@ export const useAiTaskStore = defineStore(
         )
       }
       const request = ++lifecycle
-      submitting = true
+      submitting.value = true
       stopPolling()
       try {
         const { data } =
@@ -215,7 +241,7 @@ export const useAiTaskStore = defineStore(
           markFinished()
         }
       } finally {
-        submitting = false
+        submitting.value = false
       }
     }
 
@@ -226,7 +252,7 @@ export const useAiTaskStore = defineStore(
      * 避免 isRunning 永久卡真导致生成/提取按钮一直禁用。
      */
     const resume = async (subjectId?: string, fallbackMeta?: AiTaskMeta) => {
-      if (submitting || stopping) return
+      if (submitting.value || stopping.value) return
       if (pollTimer !== undefined) return
       const targetId = subjectId ?? meta.value?.subjectId
       if (!targetId) return
@@ -247,7 +273,11 @@ export const useAiTaskStore = defineStore(
           }
           return
         }
-        meta.value = resolveAiTaskMeta(data, targetId, fallbackMeta)
+        meta.value = resolveAiTaskMeta(
+          data,
+          targetId,
+          meta.value ?? fallbackMeta
+        )
         progress.value = data
         lostConnection.value = false
         cardVisible.value = true
@@ -259,7 +289,7 @@ export const useAiTaskStore = defineStore(
 
     /** 失联后手动重试 */
     const retry = () => {
-      if (submitting || stopping) return
+      if (submitting.value || stopping.value) return
       lifecycle += 1
       lostConnection.value = false
       startPolling()
@@ -288,12 +318,12 @@ export const useAiTaskStore = defineStore(
      * 终态由轮询拿到 stopped，页面经 finishSeq 自动恢复按钮
      */
     const stop = async () => {
-      if (submitting || stopping) return
+      if (submitting.value || stopping.value) return
       if ((!isRunning.value && !progress.value?.cleanupPending) || !meta.value)
         return
       const subjectId = meta.value.subjectId
       const request = ++lifecycle
-      stopping = true
+      stopping.value = true
       stopPolling()
       try {
         const { data } = await stopAiTestCaseAPI({ subjectId })
@@ -310,14 +340,15 @@ export const useAiTaskStore = defineStore(
         ElMessage.error(error instanceof Error ? error.message : '停止请求失败')
         if (request === lifecycle) startPolling()
       } finally {
-        stopping = false
+        stopping.value = false
       }
     }
 
     /** 关闭卡片：进行中仅收起；已结束则清理任务 */
     const closeCard = () => {
       cardVisible.value = false
-      if (submitting || stopping || progress.value?.cleanupPending) return
+      if (submitting.value || stopping.value || progress.value?.cleanupPending)
+        return
       if (!isRunning.value || lostConnection.value) {
         lifecycle += 1
         stopPolling()
@@ -335,6 +366,7 @@ export const useAiTaskStore = defineStore(
       lostConnection,
       downloading,
       isRunning,
+      isBusy,
       percent,
       start,
       resume,

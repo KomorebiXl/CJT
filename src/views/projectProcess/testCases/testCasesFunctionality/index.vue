@@ -19,9 +19,30 @@ import {
   createTestCaseFnTaskMeta
 } from './testCasesFunctionality.config'
 import { useAllTestCasesDownload } from '../useAllTestCasesDownload'
+import { useTestCaseGeneration, type CaseType } from '../useTestCaseGeneration'
+import TestCaseVersionDialog from '../components/TestCaseVersionDialog.vue'
+import type { ScResourcePageInstance } from '@/components/ScBaseComponents/ScResourcePage/types'
+import { PROCESS_PROJECT_ID_KEY } from '@/constant/globalVariables'
+import { sessionStorage } from '@/utils/storage'
 
 const { scConfirm } = useScConfirm()
 const aiTaskStore = useAiTaskStore()
+const generation = useTestCaseGeneration({
+  scope: { ...TEST_CASE_FN_SCOPE, featureName: '功能性' }
+})
+const resourcePageRef =
+  useTemplateRef<ScResourcePageInstance>('resourcePageRef')
+watch(
+  () => aiTaskStore.finishSeq,
+  () => {
+    if (
+      aiTaskStore.meta?.subjectId ===
+      sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
+    ) {
+      void resourcePageRef.value?.refresh()
+    }
+  }
+)
 
 const searchbarItems = reactive<SearchbarItems<TestCaseFnSystemSearchParams>>([
   { prop: 'name', type: 'input', placeholder: '请输入名称' }
@@ -69,51 +90,18 @@ const handleExtractFunctionPoints = async () => {
   }
 }
 
-/** 外层「生成测试用例」：全子系统增量生成（已有成功结果的跳过，降级/失败项自动重试） */
-const handleGenerateTestCases = async (
-  caseType: 'detail' | 'simple' = 'detail'
-) => {
-  const versionLabel =
-    caseType === 'simple'
-      ? '常规版（一测试项一用例，含正反用例）'
-      : '详细版（按功能点拆分成例）'
-  try {
-    await scConfirm({
-      title: '提示',
-      message: `将对本项目全部子系统生成${versionLabel} AI 测试用例（同版本已有成功结果的项自动跳过，降级/失败项自动重试），确认执行？`,
-      confirmText: '确认生成'
-    })
-  } catch {
-    return
-  }
-  const detail = await getProcessProjectDetail()
-  if (!detail?.id) {
-    ElMessage.error('未获取到项目信息')
-    return
-  }
-  try {
-    await aiTaskStore.start(
-      { subjectId: String(detail.id), ...TEST_CASE_FN_SCOPE, caseType },
-      createTestCaseFnTaskMeta(detail, undefined, caseType)
-    )
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '生成任务提交失败')
-  }
-}
-
 /** 外层「下载测试用例」：功能性全子系统整合为一个 Word 文档（按用例版本下载，默认详细版） */
 const downloading = ref(false)
 const handleDownloadTestCases = async (
   caseType: 'detail' | 'simple' = 'detail'
 ) => {
   if (downloading.value) return
-  const detail = await getProcessProjectDetail()
-  if (!detail?.id) {
-    ElMessage.error('未获取到项目信息')
-    return
-  }
   downloading.value = true
+  const subjectId = sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
   try {
+    const detail = await getProcessProjectDetail()
+    if (!subjectId || !detail || String(detail.id) !== subjectId)
+      throw new Error('未获取到点击时的项目信息')
     const response = await downloadAiTestCaseAPI({
       subjectId: String(detail.id),
       ...TEST_CASE_FN_SCOPE,
@@ -137,9 +125,8 @@ const { downloadingAll, handleDownloadAllTestCases } = useAllTestCasesDownload()
 const generateDialogVisible = ref(false)
 const downloadDialogVisible = ref(false)
 
-const pickGenerate = (caseType: 'detail' | 'simple') => {
-  generateDialogVisible.value = false
-  void handleGenerateTestCases(caseType)
+const pickGenerate = (caseType: CaseType) => {
+  void generation.generate({ caseType, mode: 'increment' })
 }
 
 const pickDownload = (mode: 'detail' | 'simple' | 'all') => {
@@ -153,9 +140,7 @@ const pickDownload = (mode: 'detail' | 'simple' | 'all') => {
 
 // 进入页面时接上本项目进行中的任务（刷新/换设备/他人发起均可恢复进度卡片）
 onMounted(async () => {
-  const detail = await getProcessProjectDetail()
-  if (detail?.id)
-    aiTaskStore.resume(String(detail.id), createTestCaseFnTaskMeta(detail))
+  await generation.resume()
 })
 
 const pageConfig: PageConfig<TestCaseFnSystemData> = {
@@ -168,13 +153,21 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
         // getter：随任务进度实时更新按钮文案与禁用态
         get name() {
           const p = aiTaskStore.progress
-          if (aiTaskStore.isRunning && p?.taskType === 'extract') {
+          if (
+            aiTaskStore.isRunning &&
+            generation.matchesCurrentScope.value &&
+            p?.taskType === 'extract'
+          ) {
             return `提取中 ${p?.processed ?? 0}/${p?.total ?? 0}`
           }
           return '提取功能点'
         },
         get disabled() {
-          return aiTaskStore.isRunning
+          return (
+            aiTaskStore.isBusy ||
+            generation.pending.value ||
+            !!aiTaskStore.progress?.cleanupPending
+          )
         },
         type: 'primary',
         permission: 'acceptance:result:aiTestCase:generate',
@@ -184,14 +177,10 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
         // 2026-11-13 整合：生成入口收敛为一个按钮，弹窗选择详细/常规版（功能点提取为生成前置）
         id: 'generateTestCases',
         get name() {
-          const p = aiTaskStore.progress
-          if (aiTaskStore.isRunning && p?.taskType !== 'extract') {
-            return `生成中 ${p?.processed ?? 0}/${p?.total ?? 0}`
-          }
-          return '生成测试用例'
+          return generation.buttonText.value
         },
         get disabled() {
-          return aiTaskStore.isRunning
+          return generation.disabled.value
         },
         type: 'primary',
         permission: 'acceptance:result:aiTestCase:generate',
@@ -239,7 +228,7 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
 <template>
   <div class="page-card h-viewport test-case-page">
     <div v-show="!currentSystem" class="page-level">
-      <ScResourcePage :page-config="pageConfig" />
+      <ScResourcePage ref="resourcePageRef" :page-config="pageConfig" />
     </div>
     <SystemDetails
       v-if="currentSystem"
@@ -249,53 +238,24 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
     />
 
     <!-- 生成类型选择（2026-11-13 整合） -->
-    <ScDialog
+    <TestCaseVersionDialog
       v-model="generateDialogVisible"
       title="生成测试用例"
-      dialog-width="480px"
-      :show-footer-operate="false"
-    >
-      <div class="option-list">
-        <div class="option-card" @click="pickGenerate('detail')">
-          <div class="option-title">详细版测试用例</div>
-          <div class="option-desc">
-            按已确认功能点拆分成例（一功能点一条用例，多数据行）；生成前需先「提取功能点」并在详情中确认
-          </div>
-        </div>
-        <div class="option-card" @click="pickGenerate('simple')">
-          <div class="option-title">常规版测试用例</div>
-          <div class="option-desc">
-            一测试项一条用例，数据行含正用例与反用例，节省
-            Token；同样需先完成功能点提取与确认
-          </div>
-        </div>
-      </div>
-    </ScDialog>
+      action="generate"
+      :disabled="generation.disabled.value"
+      @select="pickGenerate"
+    />
 
     <!-- 下载范围/版本选择（2026-11-13 整合） -->
-    <ScDialog
+    <TestCaseVersionDialog
       v-model="downloadDialogVisible"
       title="下载用例文档"
-      dialog-width="480px"
-      :show-footer-operate="false"
-    >
-      <div class="option-list">
-        <div class="option-card" @click="pickDownload('detail')">
-          <div class="option-title">详细版（功能性）</div>
-          <div class="option-desc">功能性全部子系统整合为一个 Word 文档</div>
-        </div>
-        <div class="option-card" @click="pickDownload('simple')">
-          <div class="option-title">常规版（功能性）</div>
-          <div class="option-desc">常规版记录整合文档（需已生成常规版）</div>
-        </div>
-        <div class="option-card" @click="pickDownload('all')">
-          <div class="option-title">下载全部测试用例（九特性详细版）</div>
-          <div class="option-desc">
-            九特性合并为一个 Word，用户文档集、性能效率保留专用表格格式
-          </div>
-        </div>
-      </div>
-    </ScDialog>
+      action="download"
+      allow-all
+      :disabled="downloading || downloadingAll"
+      @select="pickDownload"
+      @all="pickDownload('all')"
+    />
   </div>
 </template>
 
@@ -309,40 +269,5 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-.option-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 4px 2px;
-}
-
-.option-card {
-  padding: 12px 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
-
-  &:hover {
-    border-color: var(--el-color-primary);
-    background-color: var(--el-color-primary-light-9);
-  }
-
-  .option-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    margin-bottom: 4px;
-  }
-
-  .option-desc {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--el-text-color-secondary);
-  }
 }
 </style>
