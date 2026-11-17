@@ -237,7 +237,7 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
 </script>
 
 <template>
-  <div class="page-card">
+  <div class="page-card h-viewport test-case-page">
     <div v-show="!currentSystem" class="page-level">
       <ScResourcePage :page-config="pageConfig" />
     </div>
@@ -300,6 +300,10 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
 </template>
 
 <style scoped lang="scss">
+.test-case-page {
+  overflow: hidden;
+}
+
 .page-level {
   flex: 1;
   min-height: 0;

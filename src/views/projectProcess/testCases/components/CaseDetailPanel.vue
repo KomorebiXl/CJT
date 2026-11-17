@@ -54,12 +54,16 @@ const emptyDescription = computed(() => {
 
 // ---- 摘要行 + 折叠详情 ----
 
-/** 折叠区展开状态；切换节点自动收起（避免上一篇长内容干扰阅读） */
+const detailScrollRef = useTemplateRef<HTMLDivElement>('detailScrollRef')
+
+/** 仅切换测试项时收起详情并回顶；同项刷新保留阅读位置。 */
 const detailExpanded = ref<string[]>([])
 watch(
-  () => props.row,
-  () => {
+  () => props.row?.id,
+  async () => {
     detailExpanded.value = []
+    await nextTick()
+    detailScrollRef.value?.scrollTo({ top: 0 })
   }
 )
 
@@ -199,95 +203,95 @@ defineExpose({
         {{ props.row?.aiExpansion ? '重新生成' : '生成' }}
       </ScButton>
     </div>
-    <template v-if="showDetail">
-      <div class="summary-bar">
-        <div class="s-item">
-          <span class="s-label">首次测试</span>
-          <span class="s-value">
-            {{ props.row!.firstTester || '--' }}
-            {{ props.row!.firstTestTime || '' }}
-          </span>
+    <div ref="detailScrollRef" class="panel-scroll">
+      <template v-if="showDetail">
+        <div class="summary-bar">
+          <div class="s-item">
+            <span class="s-label">首次测试</span>
+            <span class="s-value">
+              {{ props.row!.firstTester || '--' }}
+              {{ props.row!.firstTestTime || '' }}
+            </span>
+          </div>
+          <div class="s-item">
+            <span class="s-label">回归测试</span>
+            <span class="s-value">
+              {{ props.row!.regressionTester || '--' }}
+              {{ props.row!.regressionTestTime || '' }}
+            </span>
+          </div>
         </div>
-        <div class="s-item">
-          <span class="s-label">回归测试</span>
-          <span class="s-value">
-            {{ props.row!.regressionTester || '--' }}
-            {{ props.row!.regressionTestTime || '' }}
-          </span>
-        </div>
-      </div>
-      <FunctionPointPanel
-        v-if="!props.hideAiActions"
-        ref="fpPanelRef"
-        :result-id="props.row?.id"
-      />
-      <div class="detail-collapse">
-        <el-collapse v-model="detailExpanded">
-          <el-collapse-item title="更多详情" name="detail">
-            <el-descriptions
-              :column="2"
-              border
-              size="small"
-              class="detail-desc"
-            >
-              <el-descriptions-item
-                v-for="field in detailFields"
-                :key="field.label"
-                :label="field.label"
-                :span="2"
+        <FunctionPointPanel
+          v-if="!props.hideAiActions"
+          ref="fpPanelRef"
+          :result-id="props.row?.id"
+        />
+        <div class="detail-collapse">
+          <el-collapse v-model="detailExpanded">
+            <el-collapse-item title="更多详情" name="detail">
+              <el-descriptions
+                :column="2"
+                border
+                size="small"
+                class="detail-desc"
               >
-                {{ field.value }}
+                <el-descriptions-item
+                  v-for="field in detailFields"
+                  :key="field.label"
+                  :label="field.label"
+                  :span="2"
+                >
+                  {{ field.value }}
+                </el-descriptions-item>
+              </el-descriptions>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+        <div class="panel-body">
+          <div
+            v-for="(item, index) in effectiveCases"
+            :key="index"
+            class="case-block"
+          >
+            <div class="case-header">
+              <span class="case-title" :title="caseBlockTitle(item)">
+                {{ caseBlockTitle(item) }}
+              </span>
+              <el-tag
+                v-if="(item.priority || '').trim()"
+                :type="priorityTagType(item.priority)"
+                size="small"
+              >
+                {{ item.priority }}
+              </el-tag>
+            </div>
+            <el-descriptions :column="1" border size="small" class="case-desc">
+              <el-descriptions-item label="需求描述">
+                {{ item.requirementDesc || '--' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="前提条件">
+                {{ item.precondition || '--' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="测试步骤">
+                {{ item.step || '--' }}
               </el-descriptions-item>
             </el-descriptions>
-          </el-collapse-item>
-        </el-collapse>
-      </div>
-    </template>
-    <div class="panel-body">
-      <template v-if="showDetail">
-        <div
-          v-for="(item, index) in effectiveCases"
-          :key="index"
-          class="case-block"
-        >
-          <div class="case-header">
-            <span class="case-title" :title="caseBlockTitle(item)">
-              {{ caseBlockTitle(item) }}
-            </span>
-            <el-tag
-              v-if="(item.priority || '').trim()"
-              :type="priorityTagType(item.priority)"
-              size="small"
-            >
-              {{ item.priority }}
-            </el-tag>
-          </div>
-          <el-descriptions :column="1" border size="small" class="case-desc">
-            <el-descriptions-item label="需求描述">
-              {{ item.requirementDesc || '--' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="前提条件">
-              {{ item.precondition || '--' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="测试步骤">
-              {{ item.step || '--' }}
-            </el-descriptions-item>
-          </el-descriptions>
-          <div class="case-table">
-            <ScTable
-              :data="item.dataRows"
-              :table-columns="AI_DATA_COLUMNS"
-              size="small"
-              :show-action="false"
-              :show-pagination="false"
-            >
-              <template #empty>
-                <el-empty
-                  :image-size="80"
-                  description="暂无测试数据行（AI 降级或未生成数据）"
-                />
-              </template>
-            </ScTable>
+            <div class="case-table">
+              <ScTable
+                :data="item.dataRows"
+                :table-columns="AI_DATA_COLUMNS"
+                size="small"
+                :show-action="false"
+                :show-pagination="false"
+              >
+                <template #empty>
+                  <el-empty
+                    :image-size="80"
+                    description="暂无测试数据行（AI 降级或未生成数据）"
+                  />
+                </template>
+              </ScTable>
+            </div>
           </div>
         </div>
       </template>
@@ -307,6 +311,14 @@ defineExpose({
   border-radius: 5px;
   background-color: var(--card-bg, #fff);
   overflow: hidden;
+
+  .panel-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior-y: contain;
+    overflow-anchor: none;
+  }
 
   .panel-header {
     flex-shrink: 0;
@@ -381,9 +393,6 @@ defineExpose({
 
       .el-collapse-item__content {
         padding: 0 12px 10px;
-        // 长文本限高内部滚动，避免展开后挤压数据行表格
-        max-height: 240px;
-        overflow-y: auto;
       }
     }
   }
@@ -402,13 +411,10 @@ defineExpose({
   }
 
   .panel-body {
-    flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 10px 12px;
-    overflow-y: auto;
 
     .case-block {
       flex-shrink: 0;

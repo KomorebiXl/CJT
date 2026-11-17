@@ -462,8 +462,6 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 280px;
-  overflow-y: auto;
   padding: 8px 12px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 

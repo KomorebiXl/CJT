@@ -436,19 +436,26 @@ onMounted(async () => {
 <style scoped lang="scss">
 .system-details {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: hidden;
 }
 
 .details-header {
+  flex-shrink: 0;
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-content: space-between;
   align-items: center;
 
   .header-buttons {
+    min-width: 0;
     display: flex;
+    flex-wrap: wrap;
     gap: 20px;
   }
 }
@@ -458,6 +465,7 @@ onMounted(async () => {
   min-height: 0;
   display: flex;
   gap: 12px;
+  overflow: hidden;
 }
 
 /* 用户文档集右栏：步骤卡片（项目级一份）+ 行级详情纵向排布 */
@@ -468,20 +476,25 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: hidden;
 }
 
 .docset-step-card {
   flex-shrink: 0;
+  min-height: 0;
   max-height: 40%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 5px;
   background-color: var(--card-bg, #fff);
   padding: 10px 12px;
+  overflow: auto;
 }
 
 .step-card-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -496,6 +509,7 @@ onMounted(async () => {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior-y: contain;
   white-space: pre-wrap;
   word-break: break-all;
   font-family: inherit;
@@ -505,7 +519,9 @@ onMounted(async () => {
 }
 
 .step-card-empty {
+  min-height: 0;
   padding: 14px 0;
+  overflow: auto;
   font-size: 13px;
   color: var(--el-text-color-secondary);
   text-align: center;

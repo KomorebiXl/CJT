@@ -15,7 +15,7 @@ const featureName = computed(() => TEST_CASE_FEATURE_NAME_MAP[feature.value])
 </script>
 
 <template>
-  <div class="page-card">
+  <div class="page-card h-viewport test-case-page">
     <TestCaseSplitView
       v-if="featureName"
       :key="feature"
@@ -25,3 +25,9 @@ const featureName = computed(() => TEST_CASE_FEATURE_NAME_MAP[feature.value])
     <el-empty v-else description="特性参数无效，请从菜单进入" />
   </div>
 </template>
+
+<style scoped lang="scss">
+.test-case-page {
+  overflow: hidden;
+}
+</style>

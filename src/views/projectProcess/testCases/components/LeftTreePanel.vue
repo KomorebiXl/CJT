@@ -138,6 +138,7 @@ const handleNodeClick = (data: TestCaseFnItemResult) => {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
   }
 
   .tree-node {
