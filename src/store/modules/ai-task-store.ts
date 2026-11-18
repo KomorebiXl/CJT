@@ -14,12 +14,17 @@ import type {
   TestCaseAiTaskProgress
 } from '@/types/projectProcess/testCases'
 import { downloadFile } from '@/utils/file'
+import { localStorage } from '@/utils/storage'
+import { useUserStore } from '@/store/modules/user-store'
 
 /** 轮询间隔（毫秒） */
 const POLL_INTERVAL = 2000
 
 /** 进度查询连续失败上限（约 10 秒），超过即停止轮询并提示 */
 const MAX_POLL_FAILURES = 5
+
+/** 范围信息不足时的兜底文案（快照不可信且无提交参数） */
+const INSUFFICIENT_SCOPE_LABEL = '任务范围信息不足，请回原范围选择版本下载'
 
 /** 任务元信息：刷新页面后据此恢复轮询与「下载用例文档」入口（存 sessionStorage） */
 export type AiTaskMeta = {
@@ -33,6 +38,64 @@ export type AiTaskMeta = {
   fileName: string
 }
 
+/** 任务卡范围登记：发起/轮询保住真实范围时按 taskId 记一份，恢复兜底避免「项目+长ID」丑标签（2026-11-18 反馈2） */
+type TaskLabelEntry = {
+  subjectId: string
+  scopeLabel: string
+  fileName?: string
+  at: number
+}
+const TASK_LABEL_KEY = 'aiTaskLabels'
+const TASK_LABEL_LIMIT = 30
+const readTaskLabels = (): Record<string, TaskLabelEntry> =>
+  localStorage.get<Record<string, TaskLabelEntry>>(TASK_LABEL_KEY) ?? {}
+const rememberTaskLabel = (meta: AiTaskMeta) => {
+  if (!meta.taskId) return
+  const labels = readTaskLabels()
+  labels[meta.taskId] = {
+    subjectId: meta.subjectId,
+    scopeLabel: meta.scopeLabel,
+    fileName: meta.fileName,
+    at: Date.now()
+  }
+  const recent = Object.entries(labels)
+    .sort((a, b) => b[1].at - a[1].at)
+    .slice(0, TASK_LABEL_LIMIT)
+  localStorage.set(TASK_LABEL_KEY, Object.fromEntries(recent))
+}
+const readTaskLabel = (
+  taskId: string,
+  subjectId: string
+): TaskLabelEntry | null => {
+  const entry = readTaskLabels()[taskId]
+  // 同项目才可信：不能把别的项目的任务标签套到当前快照上
+  return entry && entry.subjectId === subjectId ? entry : null
+}
+
+/** 终态已知晓登记：同用户+项目+taskId 的完成任务，关闭后切页/刷新不再弹出（2026-11-18 反馈2）；
+ *  无 taskId 的旧快照不登记，避免把无 ID 任务永久去重 */
+const TASK_ACKED_KEY = 'aiTaskAcked'
+const TASK_ACKED_LIMIT = 50
+const ackedKeyOf = (subjectId: string, taskId?: string) =>
+  taskId ? `${useUserStore().username}::${subjectId}::${taskId}` : ''
+const isAckedTask = (subjectId: string, taskId?: string) => {
+  const key = ackedKeyOf(subjectId, taskId)
+  return (
+    !!key &&
+    !!localStorage.get<Record<string, number>>(TASK_ACKED_KEY)?.[key]
+  )
+}
+const markTaskAcked = (subjectId: string, taskId?: string) => {
+  const key = ackedKeyOf(subjectId, taskId)
+  if (!key) return
+  const acked = localStorage.get<Record<string, number>>(TASK_ACKED_KEY) ?? {}
+  acked[key] = Date.now()
+  const recent = Object.entries(acked)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, TASK_ACKED_LIMIT)
+  localStorage.set(TASK_ACKED_KEY, Object.fromEntries(recent))
+}
+
 /** 恢复范围只信服务端任务快照；旧快照可以看进度，但不能猜测下载版本/范围。 */
 export const resolveAiTaskMeta = (
   data: TestCaseAiTaskProgress,
@@ -40,20 +103,24 @@ export const resolveAiTaskMeta = (
   displayMeta?: AiTaskMeta,
   submitted?: TestCaseAiDownloadParams
 ): AiTaskMeta => {
+  // 提取任务无版本语义：不提供下载参数，范围文案也不拼版本（2026-11-18 反馈2）
+  const isExtract = data.taskType === 'extract'
   const trusted =
     data.subjectId === subjectId &&
     !!data.taskId &&
     !!data.feature &&
     (data.caseType === 'detail' || data.caseType === 'simple')
-  const downloadParams: TestCaseAiDownloadParams | null = trusted
-    ? {
-        subjectId,
-        feature: data.feature,
-        ...(data.subFeature ? { subFeature: data.subFeature } : {}),
-        ...(data.subsystem ? { subsystem: data.subsystem } : {}),
-        caseType: data.caseType
-      }
-    : (submitted ?? null)
+  const downloadParams: TestCaseAiDownloadParams | null = isExtract
+    ? null
+    : trusted
+      ? {
+          subjectId,
+          feature: data.feature as string,
+          ...(data.subFeature ? { subFeature: data.subFeature } : {}),
+          ...(data.subsystem ? { subsystem: data.subsystem } : {}),
+          caseType: data.caseType as 'detail' | 'simple'
+        }
+      : (submitted ?? null)
   const featureNames: Record<string, string> = {
     '1': '功能性',
     '2': '信息安全性',
@@ -65,35 +132,49 @@ export const resolveAiTaskMeta = (
     '8': '用户文档集',
     '9': '性能效率'
   }
-  const feature = downloadParams?.feature ?? ''
-  const scope = `${featureNames[feature] ?? `特性${feature}`}${downloadParams?.subFeature ? ` · 子特性${downloadParams.subFeature}` : ''}${downloadParams?.subsystem ? ` · 子系统${downloadParams.subsystem}` : ''}`
+  // 范围只取任务自身快照/提交参数，绝不用当前路由改写任务归属；
+  // 生成任务快照不可信（缺版本）时不拼版本文案，避免猜测下载范围
+  const scopeParams = downloadParams ??
+    (isExtract && data.feature
+      ? {
+          subjectId,
+          feature: data.feature,
+          ...(data.subFeature ? { subFeature: data.subFeature } : {}),
+          ...(data.subsystem ? { subsystem: data.subsystem } : {})
+        }
+      : null)
+  const feature = scopeParams?.feature ?? ''
+  const scope = `${featureNames[feature] ?? `特性${feature}`}${scopeParams?.subFeature ? ` · 子特性${scopeParams.subFeature}` : ''}${scopeParams?.subsystem ? ` · 子系统${scopeParams.subsystem}` : ''}`
   const version = downloadParams?.caseType === 'simple' ? '常规版' : '详细版'
   const displayParams = displayMeta?.downloadParams
+  const scopeKeyOf = (params?: TestCaseAiDownloadParams | null) =>
+    `${params?.feature ?? ''}|${params?.subFeature ?? ''}|${params?.subsystem ?? ''}`
   const sameScope =
-    !!downloadParams &&
+    !!scopeParams &&
     !!displayParams &&
-    downloadParams.subjectId === displayParams.subjectId &&
-    downloadParams.feature === displayParams.feature &&
-    (downloadParams.subFeature || '') === (displayParams.subFeature || '') &&
-    (downloadParams.subsystem || '') === (displayParams.subsystem || '') &&
-    (downloadParams.caseType ?? 'detail') ===
-      (displayParams.caseType ?? 'detail')
+    displayParams.subjectId === subjectId &&
+    scopeKeyOf(scopeParams) === scopeKeyOf(displayParams)
   // 只保留本次提交或同一任务的显示信息；恢复时绝不能用当前页面猜下载范围。
   const keepDisplay =
     sameScope &&
     (!!submitted || (!!data.taskId && displayMeta?.taskId === data.taskId))
-  return {
-    subjectId,
-    taskId: data.taskId,
-    scopeLabel: downloadParams
-      ? `项目 ${subjectId} · ${scope} · ${version}`
-      : '任务范围信息不足，请回原范围选择版本下载',
-    downloadParams,
-    fileName: `测试用例-${subjectId}-${featureNames[feature] ?? feature}-${version}.docx`,
-    ...(keepDisplay && displayMeta
-      ? { scopeLabel: displayMeta.scopeLabel, fileName: displayMeta.fileName }
-      : {})
-  }
+  // 恢复兜底：按 taskId 找回发起时的真实范围文案，再退快照范围，最后才提示信息不足
+  const remembered = data.taskId ? readTaskLabel(data.taskId, subjectId) : null
+  const scopeLabel =
+    keepDisplay && displayMeta
+      ? displayMeta.scopeLabel
+      : remembered?.scopeLabel ??
+        (scope
+          ? `${scope}${isExtract ? '' : ` · ${version}`}`
+          : INSUFFICIENT_SCOPE_LABEL)
+  const fileName =
+    keepDisplay && displayMeta
+      ? displayMeta.fileName
+      : remembered?.fileName ??
+        (isExtract
+          ? `功能点提取-${featureNames[feature] ?? feature}.docx`
+          : `测试用例-${subjectId}-${featureNames[feature] ?? feature}-${version}.docx`)
+  return { subjectId, taskId: data.taskId, scopeLabel, downloadParams, fileName }
 }
 
 /**
@@ -168,6 +249,7 @@ export const useAiTaskStore = defineStore(
           return
         }
         meta.value = resolveAiTaskMeta(data, subjectId, meta.value)
+        rememberTaskLabel(meta.value)
         progress.value = data
         if (data.status === 'running') {
           pollTimer = window.setTimeout(poll, POLL_INTERVAL)
@@ -232,6 +314,7 @@ export const useAiTaskStore = defineStore(
           ...('feature' in params ? {} : { feature: '8' }),
           caseType: 'caseType' in params ? params.caseType : 'detail'
         })
+        rememberTaskLabel(meta.value)
         progress.value = data
         lostConnection.value = false
         cardVisible.value = true
@@ -273,6 +356,9 @@ export const useAiTaskStore = defineStore(
           }
           return
         }
+        // 终态且已知晓（点过「知道了」/关闭）：不再重建任务与弹卡，防止切页/刷新复活（2026-11-18 反馈2）
+        if (data.status !== 'running' && isAckedTask(targetId, data.taskId))
+          return
         meta.value = resolveAiTaskMeta(
           data,
           targetId,
@@ -344,12 +430,14 @@ export const useAiTaskStore = defineStore(
       }
     }
 
-    /** 关闭卡片：进行中仅收起；已结束则清理任务 */
+    /** 关闭卡片：进行中仅收起；已结束则登记已知晓并清理任务（失联收起≠知晓终态，不登记） */
     const closeCard = () => {
       cardVisible.value = false
       if (submitting.value || stopping.value || progress.value?.cleanupPending)
         return
       if (!isRunning.value || lostConnection.value) {
+        if (!lostConnection.value && meta.value)
+          markTaskAcked(meta.value.subjectId, meta.value.taskId)
         lifecycle += 1
         stopPolling()
         meta.value = null

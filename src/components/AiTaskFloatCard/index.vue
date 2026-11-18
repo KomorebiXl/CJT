@@ -140,7 +140,7 @@ onMounted(() => {
           >没有需要生成的测试项</template
         >
         <template v-else-if="isExtract"
-          >请到测试项详情确认功能点清单后再生成用例</template
+          >提取完成，可直接生成测试用例；也可先到测试项详情查看或编辑功能点清单</template
         >
         <template v-else-if="hasProblem"
           >未成功的项可进入子系统单项重新生成</template
