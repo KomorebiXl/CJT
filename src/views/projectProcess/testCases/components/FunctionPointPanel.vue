@@ -295,12 +295,18 @@ defineExpose({
     <div class="fp-header">
       <span class="fp-title">
         功能点清单
+        <!-- 常驻不卸载：切换测试项时若随清单清空重挂，el-tag 自带的 leave 过渡会出现
+             “宽度塌缩+右移”的位移动画（2026-11-18 反馈1），故改为三态文案 -->
         <el-tag
-          v-if="fpPoints.length"
+          v-if="fpPoints.length || fpLoading"
           type="info"
           size="small"
         >
-          有效 {{ fpFunctionPoints.length }} · 剔除 {{ fpRemoved.length }}
+          {{
+            fpLoading
+              ? '加载中…'
+              : `有效 ${fpFunctionPoints.length} · 剔除 ${fpRemoved.length}`
+          }}
         </el-tag>
       </span>
       <div class="fp-actions">

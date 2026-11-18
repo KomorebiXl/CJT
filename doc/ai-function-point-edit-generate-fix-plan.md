@@ -58,3 +58,11 @@
   - 后端（新建本地分支 main，基 liaoyq HEAD；用户调试文件 .gitignore/pom.xml/application-dev.yml 未动未带入）：`AiFunctionPointServiceImpl.requireReady` 取消人工确认门槛（pointType=1 且名称非空即有效，status 0/1 均可；仅空清单/全剔除/素材 hash 变更拦截并分场景报错）；`AiTestCaseTaskManager.collectItemIds` 预检口径、`AiTestCaseServiceImpl` 生成期间重校验文案、四处 AI 提示词中的"已确认功能点清单"口径同步清理（`confirmedPoints` 更名 `usablePoints`）。ras-assessment 模块 mvn 编译通过。SQL 种子数据无旧口径；DB 技能管理页若人工编辑过触发点 30 模板且含"已确认功能点"字样，需在技能页恢复默认（代码兜底已是新口径）。
   - 前端（main 工作区，未提交）：接管 `FunctionPointPanel.vue` 半成品（取消确认、提取后直接生成、显式保存），补齐其悬空的 `saved` 事件接线（CaseDetailPanel 转发 → TestCaseSplitView 刷树，同 `regenerated` 先例）；`ai-task-store.ts` 新增终态已知晓登记（localStorage 键=用户名::项目::taskId，closeCard 终态记录、resume 命中不再弹卡重建）与任务范围登记（taskId→发起时真实文案，恢复兜底不再出现"项目+长ID"；提取任务不拼版本、downloadParams 置 null）；`AiTaskFloatCard` 提取完成 tip、`TestCaseVersionDialog` 三处、`handleExtractAll` 弹窗措辞、`AiFunctionPoint` 类型注释同步清理。vue-tsc -p tsconfig.app.json --noEmit 零报错。
   - 未验证：真实环境端到端（提取→直接生成、知道了→切页/刷新不复活、失联收起后完成仍提醒）待用户验收；验收后再按分支纪律提交（不 push）。
+
+## 第二轮反馈（2026-11-18 同日）
+
+用户实测通过第一轮后提交（前端 2364dab/3e0ef67、后端 b4400ed，未 push），随即报三项新问题，均已实施待验收：
+
+1. 功能点清单 tag 切换位移（反馈1）：浏览器实测定位根因=el-tag 卸载时自带 leave 过渡 + `transition: all` 造成 ~270ms「宽度塌缩+右移」动画；修复=tag 改常驻三态（加载中…/有效 N · 剔除 M），737 帧复测 left 恒定零位移。
+2. 版本弹窗配色（优化1）：详细版 primary 浅蓝底/常规版 success 浅绿底区分（TestCaseVersionDialog modifier 类）。实施中遇 Vite style 子模块 stale（模板新样式旧），touch 源文件后恢复。
+3. Word 集中导出占位段（优化2）：allFeatures 模式改为渲染前过滤空特性/子特性组（文档集章节保留条件=docSet 非空），删除「当前无有效测试数据」占位分支与 insertBodyText 死代码；控制器全空拦截口径不变。
