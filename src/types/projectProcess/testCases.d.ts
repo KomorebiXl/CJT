@@ -204,7 +204,7 @@ export type TestCaseAiTaskProgress = {
   endTime?: string | null
 }
 
-/** 功能点（两段式：提取→评审→按清单生成；pointType：1 功能点 0 非功能剔除区；status：0 待评审 1 已确认 2 已剔除） */
+/** 功能点（2026-11-18 起提取后可直接生成，无需人工确认；pointType：1 功能点 0 非功能剔除区；status：0 提取默认 1 历史已确认 2 已剔除，0/1 生成时均有效） */
 export type AiFunctionPoint = {
   id?: string
   resultId?: string

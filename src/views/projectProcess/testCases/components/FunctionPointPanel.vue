@@ -1,5 +1,4 @@
-<!--功能点确认面板（两段式：提取 → 确认 → 按清单生成）；
-    确认即评审：动作串行落库，文字编辑先保存为待确认，成功后才展示确认；
+<!--功能点编辑面板：提取后可直接生成，所有编辑显式保存；
     由 TestCaseSplitView 在选中叶子测试项时挂载，resultId 变化自动加载清单，
     任务结束后由父组件调 refresh() 刷新-->
 <script setup lang="ts">
@@ -18,6 +17,7 @@ const props = defineProps<{
 }>()
 
 const { scConfirm } = useScConfirm()
+const emit = defineEmits<{ (e: 'saved'): void }>()
 
 type ReviewPoint = AiFunctionPoint & { localKey: number }
 const fpPoints = ref<ReviewPoint[]>([])
@@ -54,9 +54,6 @@ const fpFunctionPoints = computed(() =>
 )
 const fpRemoved = computed(() =>
   fpPoints.value.filter(p => p.pointType === '0')
-)
-const fpConfirmedCount = computed(
-  () => fpFunctionPoints.value.filter(p => p.status === '1').length
 )
 
 const fetchFunctionPoints = async () => {
@@ -101,8 +98,8 @@ onBeforeUnmount(() => {
   contextVersion += 1
 })
 
-/** 捕获所属测试项；排队动作在上一份快照成功后执行，失败不会假确认。 */
-const persist = (change: (draft: ReviewPoint[]) => void = () => {}) => {
+/** 捕获所属测试项；保存完成前禁止继续编辑，服务端校验完整清单快照。 */
+const persist = () => {
   const resultId = loadedResultId.value
   const context = contextVersion
   if (
@@ -117,9 +114,8 @@ const persist = (change: (draft: ReviewPoint[]) => void = () => {}) => {
   const operation = saveQueue.then(async () => {
     if (context !== contextVersion || resultId !== props.resultId) return false
     const draft = clonePoints(fpPoints.value)
-    change(draft)
     if (draft.some(point => !point.name?.trim())) {
-      ElMessage.warning('存在未填写名称的条目，请填写后再保存或确认')
+      ElMessage.warning('存在未填写名称的条目，请填写后再保存')
       return false
     }
     try {
@@ -136,14 +132,12 @@ const persist = (change: (draft: ReviewPoint[]) => void = () => {}) => {
       }))
       fpPoints.value = clonePoints(savedPoints)
       fpDirty.value = false
+      emit('saved')
+      ElMessage.success('功能点已保存，后续生成将使用保存后的清单')
       return true
     } catch {
       if (context === contextVersion) {
-        ElMessage.error('功能点保存失败，请刷新清单后重新评审')
-        // 草稿保留，但不得显示成已经保存的确认状态。
-        fpPoints.value.forEach(point => {
-          point.status = '0'
-        })
+        ElMessage.error('功能点保存失败，草稿已保留；清单冲突时请刷新后重新编辑')
         fpDirty.value = true
       }
       return false
@@ -156,17 +150,35 @@ const persist = (change: (draft: ReviewPoint[]) => void = () => {}) => {
   return operation
 }
 
-const editPoint = (point: AiFunctionPoint) => {
-  point.status = '0'
+const editPoint = () => {
   fpDirty.value = true
 }
 
-/** 生成前等待已提交保存；未提交的草稿要求明确保存/确认。 */
+/** 无选中项不阻止范围生成；有草稿时明确保存并生成，取消或失败均阻止提交。 */
 const ensureSaved = async () => {
+  const context = contextVersion
+  const resultId = props.resultId
   await saveQueue
-  if (fpDirty.value || !loadedResultId.value || fpBusy.value) {
-    ElMessage.warning('请先保存并确认当前功能点清单')
+  if (context !== contextVersion || resultId !== props.resultId) return false
+  if (!resultId) return true
+  if (!loadedResultId.value || fpBusy.value) {
+    ElMessage.warning('功能点清单正在处理或加载失败，请稍后重试')
     return false
+  }
+  if (fpDirty.value) {
+    try {
+      await scConfirm({
+        title: '保存功能点修改',
+        message: '存在未保存的功能点修改，是否保存后生成？',
+        confirmText: '保存并生成',
+        cancelText: '取消'
+      })
+    } catch {
+      return false
+    }
+    if (context !== contextVersion || resultId !== props.resultId || fpBusy.value)
+      return false
+    return persist()
   }
   return true
 }
@@ -200,7 +212,7 @@ const reloadCurrent = async () => {
   await fetchFunctionPoints()
 }
 
-/** 单项 AI 提取（同步接口，完成后逐条确认） */
+/** 单项 AI 提取；明确告知人工编辑将被覆盖。 */
 const extractCurrent = async () => {
   const resultId = loadedResultId.value
   const context = contextVersion
@@ -208,7 +220,7 @@ const extractCurrent = async () => {
   try {
     await scConfirm({
       title: '提示',
-      message: '将重新提取该测试项的功能点（覆盖当前清单），确认执行？',
+      message: '将重新提取该测试项的功能点，覆盖当前清单及人工编辑，并使该项已有用例失效，是否继续？',
       confirmText: '确认提取'
     })
   } catch {
@@ -227,8 +239,9 @@ const extractCurrent = async () => {
       ElMessage.error(item?.message || '功能点提取失败')
       return
     }
-    ElMessage.success('功能点提取完成，请确认清单')
+    ElMessage.success('功能点提取完成，有效清单可直接生成用例，也可先编辑保存')
     await fetchFunctionPoints()
+    emit('saved')
   } finally {
     if (extraction === extractionVersion) fpExtracting.value = false
   }
@@ -246,54 +259,28 @@ const addFpPoint = () => {
   fpDirty.value = true
 }
 
-/** 单条确认：该功能点即评审完成（整份清单随本次落库） */
-const confirmPoint = async (point: ReviewPoint) => {
-  await persist(draft => {
-    const item = draft.find(item => item.localKey === point.localKey)
-    if (item) item.status = '1'
-  })
+/** 剔除、恢复、删除均编辑草稿，统一点击保存后生效。 */
+const removePoint = (point: ReviewPoint) => {
+  if (fpBusy.value) return
+  point.pointType = '0'
+  point.status = '2'
+  if (!point.removeReason) point.removeReason = '其他非功能'
+  editPoint()
 }
 
-/** 剔除：移入剔除区并落库（剔除即生效，不再需要单独确认） */
-const removePoint = async (point: ReviewPoint) => {
-  await persist(draft => {
-    const item = draft.find(item => item.localKey === point.localKey)
-    if (!item) return
-    item.pointType = '0'
-    item.status = '2'
-    if (!item.removeReason) item.removeReason = '其他非功能'
-  })
+const moveToFp = (point: ReviewPoint) => {
+  if (fpBusy.value) return
+  point.pointType = '1'
+  point.status = '0'
+  point.removeReason = undefined
+  editPoint()
 }
 
-/** 拉回功能点：回到待确认态 */
-const moveToFp = async (point: ReviewPoint) => {
-  await persist(draft => {
-    const item = draft.find(item => item.localKey === point.localKey)
-    if (!item) return
-    item.pointType = '1'
-    item.status = '0'
-    item.removeReason = undefined
-  })
-}
-
-const deleteFp = async (point: ReviewPoint) => {
-  await persist(draft => {
-    const index = draft.findIndex(item => item.localKey === point.localKey)
-    if (index >= 0) draft.splice(index, 1)
-  })
-}
-
-/** 全部确认：功能点全部置已确认、剔除区全部置已剔除，即时落库 */
-const confirmAllFp = async () => {
-  if (
-    await persist(draft =>
-      draft.forEach(point => {
-        point.status = point.pointType === '1' ? '1' : '2'
-      })
-    )
-  ) {
-    ElMessage.success('功能点已全部确认，可以生成用例')
-  }
+const deleteFp = (point: ReviewPoint) => {
+  if (fpBusy.value) return
+  const index = fpPoints.value.findIndex(item => item.localKey === point.localKey)
+  if (index >= 0) fpPoints.value.splice(index, 1)
+  editPoint()
 }
 
 defineExpose({
@@ -310,12 +297,10 @@ defineExpose({
         功能点清单
         <el-tag
           v-if="fpPoints.length"
-          :type="
-            fpConfirmedCount === fpFunctionPoints.length ? 'success' : 'info'
-          "
+          type="info"
           size="small"
         >
-          已确认 {{ fpConfirmedCount }}/{{ fpFunctionPoints.length }}
+          有效 {{ fpFunctionPoints.length }} · 剔除 {{ fpRemoved.length }}
         </el-tag>
       </span>
       <div class="fp-actions">
@@ -342,24 +327,15 @@ defineExpose({
         <el-button size="small" :disabled="fpBusy" @click="reloadCurrent"
           >刷新</el-button
         >
-        <el-button
-          size="small"
-          type="primary"
-          plain
-          :disabled="!fpFunctionPoints.length || fpBusy"
-          @click="confirmAllFp"
-        >
-          全部确认
-        </el-button>
       </div>
     </div>
     <div v-if="!fpPoints.length" class="fp-empty">
       尚未提取功能点：点击「AI提取」从测试项说明拆分功能点（非功能描述自动进剔除区），
-      确认后「生成」将按清单逐点成例
+      提取并保存有效清单后可直接生成，也可添加功能点后保存
     </div>
     <template v-else>
       <div class="fp-group-title">
-        功能点（编辑后需重新确认；全部评审完成后才能生成）{{
+        功能点（提取后可直接生成；编辑后需保存，保存会使该项已有用例失效）{{
           fpDirty ? ' · 有未保存编辑' : ''
         }}
       </div>
@@ -371,7 +347,7 @@ defineExpose({
         <el-input
           v-model="point.name"
           :disabled="fpBusy"
-          @input="editPoint(point)"
+          @input="editPoint"
           size="small"
           placeholder="功能点名称"
           class="fp-name"
@@ -379,28 +355,11 @@ defineExpose({
         <el-input
           v-model="point.description"
           :disabled="fpBusy"
-          @input="editPoint(point)"
+          @input="editPoint"
           size="small"
           placeholder="描述（可独立执行验证的操作）"
           class="fp-desc"
         />
-        <el-tag
-          :type="point.status === '1' ? 'success' : 'info'"
-          size="small"
-          class="fp-status"
-        >
-          {{ point.status === '1' ? '已确认' : '待确认' }}
-        </el-tag>
-        <el-button
-          v-if="point.status !== '1'"
-          :disabled="fpBusy"
-          link
-          type="success"
-          size="small"
-          @click="confirmPoint(point)"
-        >
-          确认
-        </el-button>
         <el-button
           link
           type="warning"
@@ -425,7 +384,7 @@ defineExpose({
             :disabled="fpBusy"
             size="small"
             class="fp-reason"
-            @change="editPoint(point)"
+            @change="editPoint"
           >
             <el-option
               v-for="reason in FP_REMOVE_REASONS"
@@ -451,6 +410,9 @@ defineExpose({
             >删除</el-button
           >
         </div>
+    <div v-if="fpPoints.length && !fpFunctionPoints.length" class="fp-empty">
+      当前清单无有效功能点，不能生成用例；请添加功能点或从剔除区恢复后保存
+    </div>
       </template>
     </template>
   </div>

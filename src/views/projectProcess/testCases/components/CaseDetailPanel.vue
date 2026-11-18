@@ -32,6 +32,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'regenerated'): void
+  /** 功能点保存/单项提取成功：清单变更会使该项已有用例失效，父级刷新树（同 regenerated 口径） */
+  (e: 'saved'): void
 }>()
 
 const { hasPermission } = usePermission()
@@ -225,6 +227,7 @@ defineExpose({
           v-if="!props.hideAiActions"
           ref="fpPanelRef"
           :result-id="props.row?.id"
+          @saved="emit('saved')"
         />
         <div class="detail-collapse">
           <el-collapse v-model="detailExpanded">

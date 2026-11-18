@@ -142,7 +142,7 @@ const handleExtractAll = async () => {
   try {
     await scConfirm({
       title: '提示',
-      message: `将对「${scopeName.value}」提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的待评审编辑将被覆盖），确认执行？`,
+      message: `将对「${scopeName.value}」提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的人工编辑将被覆盖），确认执行？`,
       confirmText: '确认提取'
     })
   } catch {
@@ -449,6 +449,7 @@ onMounted(async () => {
           :dynamic-columns="dynamicData"
           :hide-ai-actions="isDocSet || isPerformance"
           @regenerated="fetchTreeData()"
+          @saved="fetchTreeData()"
         />
       </div>
     </div>

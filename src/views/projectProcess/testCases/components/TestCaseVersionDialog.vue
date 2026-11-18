@@ -44,7 +44,7 @@ const select = (caseType: CaseType) => {
   >
     <div class="version-options">
       <p v-if="action === 'generate'" class="version-hint">
-        两种版本均需先提取并确认功能点。页面详情展示详细版，常规版生成后请下载查看。
+        两种版本均需先提取功能点。页面详情展示详细版，常规版生成后请下载查看。
       </p>
       <button
         type="button"
@@ -54,7 +54,7 @@ const select = (caseType: CaseType) => {
       >
         <span class="version-title">详细版测试用例</span>
         <span class="version-description">
-          按已确认功能点拆分成例，一功能点一条用例，可包含多条测试数据。
+          按功能点拆分成例，一功能点一条用例，可包含多条测试数据。
         </span>
       </button>
       <button
@@ -65,7 +65,7 @@ const select = (caseType: CaseType) => {
       >
         <span class="version-title">常规版测试用例</span>
         <span class="version-description">
-          一测试项一条用例，合并已确认功能点，数据包含正用例与反用例。
+          一测试项一条用例，合并全部功能点，数据包含正用例与反用例。
         </span>
       </button>
       <button
