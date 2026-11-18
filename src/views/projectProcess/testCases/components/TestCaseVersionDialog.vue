@@ -48,7 +48,7 @@ const select = (caseType: CaseType) => {
       </p>
       <button
         type="button"
-        class="version-option"
+        class="version-option version-option--detail"
         :disabled="disabled"
         @click="select('detail')"
       >
@@ -59,7 +59,7 @@ const select = (caseType: CaseType) => {
       </button>
       <button
         type="button"
-        class="version-option"
+        class="version-option version-option--simple"
         :disabled="disabled"
         @click="select('simple')"
       >
@@ -115,6 +115,31 @@ const select = (caseType: CaseType) => {
   &:disabled {
     cursor: not-allowed;
     opacity: 0.6;
+  }
+  /* 两个版本以色系区分（2026-11-18 优化1）：详细版=主色、常规版=成功色浅底 */
+  &--detail {
+    background: var(--el-color-primary-light-9);
+    border-color: var(--el-color-primary-light-7);
+    .version-title {
+      color: var(--el-color-primary);
+    }
+    &:hover,
+    &:focus-visible {
+      background: var(--el-color-primary-light-8);
+      border-color: var(--el-color-primary);
+    }
+  }
+  &--simple {
+    background: var(--el-color-success-light-9);
+    border-color: var(--el-color-success-light-7);
+    .version-title {
+      color: var(--el-color-success);
+    }
+    &:hover,
+    &:focus-visible {
+      background: var(--el-color-success-light-8);
+      border-color: var(--el-color-success);
+    }
   }
 }
 .version-title {
