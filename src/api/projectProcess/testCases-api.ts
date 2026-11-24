@@ -1,6 +1,8 @@
 import request from '@/utils/request'
 import { createListAPI } from '@/utils/pageRequest.ts'
 import type {
+  FunctionPointFailurePage,
+  FunctionPointFailureQuery,
   AiFunctionPoint,
   AiFunctionPointReviewParams,
   TestCaseAiDocSetGenerateParams,
@@ -73,6 +75,16 @@ export const getAiTestCaseProgressAPI = (subjectId: string) =>
     params: { subjectId }
   })
 
+/** 功能点提取失败项，必须绑定项目和本次任务，最多每页 100 条。 */
+export const getFunctionPointFailuresAPI = (
+  params: FunctionPointFailureQuery
+) =>
+  request.get<DataResponse<FunctionPointFailurePage>>({
+    needSubjectId: false,
+    url: `${testCaseResultBaseUrl}/aiTestCase/failures`,
+    params
+  })
+
 /** 测试用例-AI 任务停止（剩余项跳过、本批已生成记录作废；再次生成=全新一轮） */
 export const stopAiTestCaseAPI = (data: TestCaseAiDocSetGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
@@ -108,7 +120,7 @@ export const downloadAiTestCaseAPI = (params: TestCaseAiDownloadParams) =>
 
 // ---- 两段式：功能点提取与评审 ----
 
-/** 功能点-AI 批量提取任务（异步；已有清单且素材未变更的项自动跳过） */
+/** 功能点-AI 批量提取任务（异步；默认跳过未变化项，mode=overwrite 强制重提） */
 export const extractFunctionPointsAPI = (data: TestCaseAiGenerateParams) =>
   request.post<DataResponse<TestCaseAiTaskProgress>>({
     needSubjectId: false,

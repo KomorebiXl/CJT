@@ -11,7 +11,7 @@ defineOptions({ name: 'GenerateExecutionRecordDialog' })
 const visible = defineModel<boolean>({ required: true })
 
 /** 确认按钮读秒时长（秒），倒计时结束前禁止生成 */
-const COUNTDOWN_SECONDS = 20
+const COUNTDOWN_SECONDS = 5
 const countdown = ref(COUNTDOWN_SECONDS)
 
 type Stage = 'confirm' | 'loading' | 'done'
@@ -154,12 +154,18 @@ const progressStatus = computed(() =>
         <p class="confirm-desc">
           生成执行记录表将清空原有的记录表数据，是否继续？
         </p>
+        <p class="confirm-desc confirm-desc--extra">
+          启用合并的项目将由
+          AI 根据用例名称与预期结果自动填写「前提条件」和「测试步骤」，耗时较长，请耐心等待。
+        </p>
       </div>
     </div>
     <div v-else class="progress-body">
       <p class="progress-label">
         {{
-          stage === 'done' ? '文件生成完成' : '正在生成执行记录表，请稍候...'
+          stage === 'done'
+            ? '文件生成完成'
+            : '正在生成执行记录表（AI 正在填写前提条件与测试步骤），请稍候...'
         }}
       </p>
       <el-progress
@@ -223,6 +229,12 @@ const progressStatus = computed(() =>
     font-size: 14px;
     color: var(--el-text-color-regular);
     line-height: 1.7;
+
+    &--extra {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--el-text-color-secondary);
+    }
   }
 }
 

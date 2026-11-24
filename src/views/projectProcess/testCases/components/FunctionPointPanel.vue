@@ -14,6 +14,8 @@ import { useScConfirm } from '@/hooks/useScConfirmDialog.ts'
 const props = defineProps<{
   /** 当前测试项 id（叶子行；空则清空面板） */
   resultId?: string
+  itemName?: string
+  itemNumber?: string
 }>()
 
 const { scConfirm } = useScConfirm()
@@ -23,6 +25,7 @@ type ReviewPoint = AiFunctionPoint & { localKey: number }
 const fpPoints = ref<ReviewPoint[]>([])
 const fpLoading = ref(false)
 const fpExtracting = ref(false)
+const fpExtractionError = ref('')
 const fpSaving = ref(false)
 const fpDirty = ref(false)
 const loadedResultId = ref<string>()
@@ -30,6 +33,7 @@ let contextVersion = 0
 let requestVersion = 0
 let extractionVersion = 0
 let savedPoints: AiFunctionPoint[] = []
+let savedResultId: string | undefined
 let saveQueue: Promise<unknown> = Promise.resolve()
 let pendingSaves = 0
 let localKey = 0
@@ -60,9 +64,17 @@ const fetchFunctionPoints = async () => {
   const resultId = props.resultId
   const context = ++contextVersion
   const request = ++requestVersion
+  const savedIds = new Set(
+    savedResultId === resultId
+      ? savedPoints.flatMap(point => (point.id ? [point.id] : []))
+      : []
+  )
+  if (savedResultId !== resultId) {
+    savedPoints = []
+    savedResultId = undefined
+  }
   loadedResultId.value = undefined
   fpPoints.value = []
-  savedPoints = []
   fpDirty.value = false
   fpLoading.value = false
   fpExtracting.value = false
@@ -78,18 +90,32 @@ const fetchFunctionPoints = async () => {
     )
       return
     savedPoints = clonePoints(data ?? [])
+    savedResultId = resultId
     fpPoints.value = clonePoints(savedPoints)
     loadedResultId.value = resultId
+    if (
+      fpPoints.value.some(
+        point =>
+          point.pointType === '1' && point.id && !savedIds.has(point.id)
+      )
+    ) {
+      fpExtractionError.value = ''
+    }
   } catch {
-    if (context === contextVersion) fpPoints.value = []
+    if (context === contextVersion && request === requestVersion) {
+      fpPoints.value = []
+    }
   } finally {
-    if (context === contextVersion) fpLoading.value = false
+    if (context === contextVersion && request === requestVersion) {
+      fpLoading.value = false
+    }
   }
 }
 
 watch(
   () => props.resultId,
   () => {
+    fpExtractionError.value = ''
     void fetchFunctionPoints()
   },
   { immediate: true, flush: 'sync' }
@@ -137,7 +163,9 @@ const persist = () => {
       return true
     } catch {
       if (context === contextVersion) {
-        ElMessage.error('功能点保存失败，草稿已保留；清单冲突时请刷新后重新编辑')
+        ElMessage.error(
+          '功能点保存失败，草稿已保留；清单冲突时请刷新后重新编辑'
+        )
         fpDirty.value = true
       }
       return false
@@ -176,7 +204,11 @@ const ensureSaved = async () => {
     } catch {
       return false
     }
-    if (context !== contextVersion || resultId !== props.resultId || fpBusy.value)
+    if (
+      context !== contextVersion ||
+      resultId !== props.resultId ||
+      fpBusy.value
+    )
       return false
     return persist()
   }
@@ -220,7 +252,8 @@ const extractCurrent = async () => {
   try {
     await scConfirm({
       title: '提示',
-      message: '将重新提取该测试项的功能点，覆盖当前清单及人工编辑，并使该项已有用例失效，是否继续？',
+      message:
+        '将重新提取该测试项的功能点，覆盖当前清单及人工编辑，并使该项已有用例失效，是否继续？',
       confirmText: '确认提取'
     })
   } catch {
@@ -228,6 +261,7 @@ const extractCurrent = async () => {
   }
   if (context !== contextVersion || resultId !== props.resultId) return
   fpExtracting.value = true
+  fpExtractionError.value = ''
   const extraction = ++extractionVersion
   try {
     const { data } = await extractFunctionPointsSyncAPI({
@@ -236,12 +270,18 @@ const extractCurrent = async () => {
     if (context !== contextVersion || resultId !== props.resultId) return
     const item = data?.[0]
     if (!item || item.status === 3) {
-      ElMessage.error(item?.message || '功能点提取失败')
+      fpExtractionError.value =
+        item?.message || '功能点提取失败，服务未返回具体原因'
       return
     }
     ElMessage.success('功能点提取完成，有效清单可直接生成用例，也可先编辑保存')
     await fetchFunctionPoints()
     emit('saved')
+  } catch (failure) {
+    if (context !== contextVersion || resultId !== props.resultId) return
+    const reason = failure as { msg?: string; message?: string }
+    fpExtractionError.value =
+      reason.msg || reason.message || '功能点提取失败，请稍后重试'
   } finally {
     if (extraction === extractionVersion) fpExtracting.value = false
   }
@@ -278,7 +318,9 @@ const moveToFp = (point: ReviewPoint) => {
 
 const deleteFp = (point: ReviewPoint) => {
   if (fpBusy.value) return
-  const index = fpPoints.value.findIndex(item => item.localKey === point.localKey)
+  const index = fpPoints.value.findIndex(
+    item => item.localKey === point.localKey
+  )
   if (index >= 0) fpPoints.value.splice(index, 1)
   editPoint()
 }
@@ -297,11 +339,7 @@ defineExpose({
         功能点清单
         <!-- 常驻不卸载：切换测试项时若随清单清空重挂，el-tag 自带的 leave 过渡会出现
              “宽度塌缩+右移”的位移动画（2026-11-18 反馈1），故改为三态文案 -->
-        <el-tag
-          v-if="fpPoints.length || fpLoading"
-          type="info"
-          size="small"
-        >
+        <el-tag v-if="fpPoints.length || fpLoading" type="info" size="small">
           {{
             fpLoading
               ? '加载中…'
@@ -335,11 +373,25 @@ defineExpose({
         >
       </div>
     </div>
-    <div v-if="!fpPoints.length" class="fp-empty">
-      尚未提取功能点：点击「AI提取」从测试项说明拆分功能点（非功能描述自动进剔除区），
-      提取并保存有效清单后可直接生成，也可添加功能点后保存
+    <el-alert
+      v-if="fpExtractionError"
+      :title="`测试项「${[props.itemNumber, props.itemName].filter(Boolean).join(' ') || props.resultId}」功能点提取失败`"
+      :description="fpExtractionError"
+      type="error"
+      :closable="false"
+      show-icon
+    />
+    <div v-if="fpLoading" class="fp-empty">
+      正在加载功能点清单…
     </div>
-    <template v-else>
+    <div v-else-if="props.resultId && !loadedResultId" class="fp-empty">
+      功能点清单加载失败，请点击「刷新」重试。
+    </div>
+    <div v-else-if="loadedResultId && !fpPoints.length" class="fp-empty">
+      暂无功能点清单。点击「AI提取」拆分功能点，未提取出有效功能点时使用测试项说明。
+      也可手动添加功能点后保存。
+    </div>
+    <template v-else-if="fpPoints.length">
       <div class="fp-group-title">
         功能点（提取后可直接生成；编辑后需保存，保存会使该项已有用例失效）{{
           fpDirty ? ' · 有未保存编辑' : ''
@@ -360,6 +412,9 @@ defineExpose({
         />
         <el-input
           v-model="point.description"
+          type="textarea"
+          :autosize="{ minRows: 1, maxRows: 4 }"
+          :title="point.description"
           :disabled="fpBusy"
           @input="editPoint"
           size="small"
@@ -416,9 +471,12 @@ defineExpose({
             >删除</el-button
           >
         </div>
-    <div v-if="fpPoints.length && !fpFunctionPoints.length" class="fp-empty">
-      当前清单无有效功能点，不能生成用例；请添加功能点或从剔除区恢复后保存
-    </div>
+        <div
+          v-if="!fpFunctionPoints.length"
+          class="fp-empty"
+        >
+          当前清单无有效功能点。请重新提取，或添加、恢复功能点后保存。
+        </div>
       </template>
     </template>
   </div>

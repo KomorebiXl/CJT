@@ -3,11 +3,24 @@
 import { Close, MagicStick } from '@element-plus/icons-vue'
 import { useAiTaskStore } from '@/store/modules/ai-task-store'
 import { usePermission } from '@/components/ScBaseComponents/ScResourcePage/hooks/usePermission.ts'
+import FunctionPointFailuresDialog from './FunctionPointFailuresDialog.vue'
 
 const aiTaskStore = useAiTaskStore()
 const { hasPermission } = usePermission()
 
 const progress = computed(() => aiTaskStore.progress)
+const failuresVisible = ref(false)
+const failureContext = ref({ subjectId: '', taskId: '', scopeLabel: '' })
+const showFailures = () => {
+  const task = aiTaskStore.progress
+  if (!task?.taskId || !aiTaskStore.meta?.subjectId) return
+  failureContext.value = {
+    subjectId: aiTaskStore.meta.subjectId,
+    taskId: task.taskId,
+    scopeLabel: aiTaskStore.meta.scopeLabel
+  }
+  failuresVisible.value = true
+}
 
 /** 卡片形态：进行中 / 失联 / 完成（含部分失败）/ 失败 / 已停止 */
 const phase = computed(() => {
@@ -120,6 +133,20 @@ onMounted(() => {
         >
       </div>
 
+      <ScButton
+        v-if="
+          isExtract &&
+          progress.failed &&
+          progress.taskId &&
+          hasPermission('acceptance:result:aiTestCase:generate')
+        "
+        text
+        type="primary"
+        size="small"
+        @click="showFailures"
+        >查看失败明细（{{ progress.failed }}）</ScButton
+      >
+
       <div class="ai-task-card__tip">
         <template v-if="phase === 'running'"
           >可以继续其他操作，完成后会在这里提醒你</template
@@ -138,6 +165,9 @@ onMounted(() => {
         >
         <template v-else-if="progress.total === 0"
           >没有需要生成的测试项</template
+        >
+        <template v-else-if="isExtract && hasProblem"
+          >有测试项提取失败，请查看失败明细，处理原因后再提取。普通提取会跳过素材未变更的成功项。</template
         >
         <template v-else-if="isExtract"
           >提取完成，可直接生成测试用例；也可先到测试项详情查看或编辑功能点清单</template
@@ -182,6 +212,10 @@ onMounted(() => {
       </div>
     </div>
   </transition>
+  <FunctionPointFailuresDialog
+    v-model="failuresVisible"
+    v-bind="failureContext"
+  />
 </template>
 
 <style scoped lang="scss">

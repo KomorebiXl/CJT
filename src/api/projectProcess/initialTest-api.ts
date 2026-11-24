@@ -20,13 +20,15 @@ export const getInitialTestStatisticsAPI = () =>
     url: `${acceptanceResultBaseUrl}/count`
   })
 
-/** 生成并下载执行记录表（后端 @RequestBody 契约，声明 JSON 头走 download 的 JSON 编码分支） */
+/** 生成并下载执行记录表（后端 @RequestBody 契约，声明 JSON 头走 download 的 JSON 编码分支）；
+ *  2026-11-18 起 AI 补全前提条件/测试步骤，耗时变长，单独放宽超时（全局 100s 不够） */
 export const exportExecutionRecordAPI = () =>
   request.download({
     url: `${planBaseUrl}/resultBatchExportSoftWare`,
     method: 'POST',
     params: {},
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 300000
   })
 
 /** 生成测试日志前检查 */

@@ -227,6 +227,8 @@ defineExpose({
           v-if="!props.hideAiActions"
           ref="fpPanelRef"
           :result-id="props.row?.id"
+          :item-name="props.row?.item"
+          :item-number="props.row?.serialNumber"
           @saved="emit('saved')"
         />
         <div class="detail-collapse">

@@ -154,13 +154,16 @@ export type TestCaseAiRegenerateItem = {
   message?: string
 }
 
-/** AI 批量生成任务参数（subsystem 空=全部子系统增量；mode=overwrite 覆盖范围内全部） */
+/** AI 批量生成/提取任务参数（subsystem 空=全部子系统；mode=overwrite 覆盖范围内全部） */
 export type TestCaseAiGenerateParams = {
   subjectId: string
-  feature: string
+  /** allFeatures 为项目级任务，与单特性范围互斥 */
+  scope?: 'allFeatures'
+  feature?: string
   /** 子特性码（功能性固定 1；六个特性不传=整特性范围） */
   subFeature?: string
   subsystem?: string
+  /** 提取时 increment 跳过素材未变更的已有清单；overwrite 强制重新提取。 */
   mode?: 'increment' | 'overwrite'
   /** 用例版本（detail 详细-功能点拆分成例，默认；simple 常规-一测试项一用例含正反用例；两版各自落库互不覆盖） */
   caseType?: 'detail' | 'simple'
@@ -183,6 +186,9 @@ export type TestCaseAiDocSetRecord = {
 /** AI 任务进度（status：idle 无任务 running 进行中 success 成功 failed 失败 stopped 已停止-本批作废；taskType：generate 生成 extract 功能点提取） */
 export type TestCaseAiTaskProgress = {
   subjectId?: string
+  scope?: 'allFeatures'
+  /** 项目级提取全部成功后为 true；服务重启后需重新执行增量提取 */
+  allFeaturesExtracted?: boolean
   taskId?: string
   caseType?: 'detail' | 'simple'
   feature?: string
@@ -202,6 +208,31 @@ export type TestCaseAiTaskProgress = {
   message?: string | null
   startTime?: string | null
   endTime?: string | null
+}
+
+/** 当前提取任务的失败项快照，分页加载，不放入进度轮询。 */
+export type FunctionPointTaskFailure = {
+  resultId: string
+  serialNumber?: string | null
+  item?: string | null
+  feature?: string | null
+  subFeature?: string | null
+  subsystem?: string | null
+  message: string
+}
+export type FunctionPointFailureQuery = {
+  subjectId: string
+  taskId: string
+  pageNum: number
+  pageSize: number
+  keyword?: string
+}
+export type FunctionPointFailurePage = {
+  taskId: string
+  total: number
+  rows: FunctionPointTaskFailure[]
+  pageNum: number
+  pageSize: number
 }
 
 /** 功能点（2026-11-18 起提取后可直接生成，无需人工确认；pointType：1 功能点 0 非功能剔除区；status：0 提取默认 1 历史已确认 2 已剔除，0/1 生成时均有效） */
@@ -234,7 +265,7 @@ export type AiFunctionPointReviewParams = {
 /** 用例 Word 下载：九特性使用 scope=allFeatures；无 scope 保持旧单特性/旧范围契约。 */
 export type TestCaseAiDownloadParams = {
   subjectId: string
-  /** 九特性集中下载，固定详细版；不与单特性范围混用 */
+  /** 九特性集中下载，须显式选择版本；不与单特性范围混用 */
   scope?: 'allFeatures'
   /** 单特性码；无 scope 且为空时沿用旧普通范围1-7并附文档集，不含性能 */
   feature?: string

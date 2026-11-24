@@ -19,7 +19,11 @@ import {
   createTestCaseFnTaskMeta
 } from './testCasesFunctionality.config'
 import { useAllTestCasesDownload } from '../useAllTestCasesDownload'
-import { useTestCaseGeneration, type CaseType } from '../useTestCaseGeneration'
+import {
+  useTestCaseGeneration,
+  type CaseType,
+  type GenerateMode
+} from '../useTestCaseGeneration'
 import TestCaseVersionDialog from '../components/TestCaseVersionDialog.vue'
 import type { ScResourcePageInstance } from '@/components/ScBaseComponents/ScResourcePage/types'
 import { PROCESS_PROJECT_ID_KEY } from '@/constant/globalVariables'
@@ -62,31 +66,59 @@ const openSystem = (row: TestCaseFnSystemData) => {
 const fetchData = (params: ListQuery<TestCaseFnSystemSearchParams>) =>
   getTestCaseFnSystemListAPI(params)
 
-/** 外层「提取功能点」：全子系统批量提取（两段式第一步；素材未变更且已有清单的项自动跳过） */
-const handleExtractFunctionPoints = async () => {
+/** 全子系统提取：默认跳过未变化项；overwrite 强制重新提取。 */
+const extractPending = ref(false)
+let extractionActive = true
+onBeforeUnmount(() => {
+  extractionActive = false
+})
+const extractionDisabled = computed(
+  () =>
+    extractPending.value ||
+    aiTaskStore.isBusy ||
+    generation.pending.value ||
+    !!aiTaskStore.progress?.cleanupPending
+)
+const handleExtractFunctionPoints = async (
+  mode: GenerateMode = 'increment'
+) => {
+  if (extractionDisabled.value) return
+  extractPending.value = true
+  const subjectId = sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
   try {
-    await scConfirm({
-      title: '提示',
-      message:
-        '将对本项目全部子系统提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的待评审编辑将被覆盖），确认执行？',
-      confirmText: '确认提取'
-    })
-  } catch {
-    return
-  }
-  const detail = await getProcessProjectDetail()
-  if (!detail?.id) {
-    ElMessage.error('未获取到项目信息')
-    return
-  }
-  try {
+    try {
+      await scConfirm({
+        title: mode === 'overwrite' ? '重新提取功能点' : '提示',
+        message:
+          mode === 'overwrite'
+            ? '将重新提取本项目全部子系统中所有测试项的功能点，不跳过已有清单。重提成功后将覆盖该项原清单及人工编辑，并使详细版和常规版 AI 用例失效，需重新生成。停止任务会作废本批已提取结果，不恢复被覆盖的旧清单。确认执行？'
+            : '将对本项目全部子系统提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的人工编辑将被覆盖，已有 AI 用例将失效），确认执行？',
+        confirmText: mode === 'overwrite' ? '确认重新提取' : '确认提取'
+      })
+    } catch {
+      return
+    }
+    if (!extractionActive) return
+    const detail = await getProcessProjectDetail()
+    if (!extractionActive) return
+    if (
+      !subjectId ||
+      !detail?.id ||
+      String(detail.id) !== subjectId ||
+      sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY) !== subjectId
+    ) {
+      ElMessage.error('项目信息已变化，请重新操作')
+      return
+    }
     await aiTaskStore.start(
-      { subjectId: String(detail.id), ...TEST_CASE_FN_SCOPE },
+      { subjectId, ...TEST_CASE_FN_SCOPE, mode },
       createTestCaseFnTaskMeta(detail),
       'extract'
     )
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '提取任务提交失败')
+  } finally {
+    extractPending.value = false
   }
 }
 
@@ -163,15 +195,21 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
           return '提取功能点'
         },
         get disabled() {
-          return (
-            aiTaskStore.isBusy ||
-            generation.pending.value ||
-            !!aiTaskStore.progress?.cleanupPending
-          )
+          return extractionDisabled.value
         },
         type: 'primary',
         permission: 'acceptance:result:aiTestCase:generate',
         onClick: () => handleExtractFunctionPoints()
+      },
+      {
+        id: 'reextractFunctionPoints',
+        name: '重新提取功能点',
+        get disabled() {
+          return extractionDisabled.value
+        },
+        type: 'warning',
+        permission: 'acceptance:result:aiTestCase:generate',
+        onClick: () => handleExtractFunctionPoints('overwrite')
       },
       {
         // 2026-11-13 整合：生成入口收敛为一个按钮，弹窗选择详细/常规版（功能点提取为生成前置）
@@ -180,7 +218,7 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
           return generation.buttonText.value
         },
         get disabled() {
-          return generation.disabled.value
+          return generation.disabled.value || extractPending.value
         },
         type: 'primary',
         permission: 'acceptance:result:aiTestCase:generate',
@@ -242,7 +280,7 @@ const pageConfig: PageConfig<TestCaseFnSystemData> = {
       v-model="generateDialogVisible"
       title="生成测试用例"
       action="generate"
-      :disabled="generation.disabled.value"
+      :disabled="generation.disabled.value || extractPending"
       @select="pickGenerate"
     />
 

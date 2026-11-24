@@ -81,8 +81,7 @@ const ackedKeyOf = (subjectId: string, taskId?: string) =>
 const isAckedTask = (subjectId: string, taskId?: string) => {
   const key = ackedKeyOf(subjectId, taskId)
   return (
-    !!key &&
-    !!localStorage.get<Record<string, number>>(TASK_ACKED_KEY)?.[key]
+    !!key && !!localStorage.get<Record<string, number>>(TASK_ACKED_KEY)?.[key]
   )
 }
 const markTaskAcked = (subjectId: string, taskId?: string) => {
@@ -108,14 +107,16 @@ export const resolveAiTaskMeta = (
   const trusted =
     data.subjectId === subjectId &&
     !!data.taskId &&
-    !!data.feature &&
+    (data.scope === 'allFeatures' || !!data.feature) &&
     (data.caseType === 'detail' || data.caseType === 'simple')
   const downloadParams: TestCaseAiDownloadParams | null = isExtract
     ? null
     : trusted
       ? {
           subjectId,
-          feature: data.feature as string,
+          ...(data.scope === 'allFeatures'
+            ? { scope: data.scope }
+            : { feature: data.feature as string }),
           ...(data.subFeature ? { subFeature: data.subFeature } : {}),
           ...(data.subsystem ? { subsystem: data.subsystem } : {}),
           caseType: data.caseType as 'detail' | 'simple'
@@ -134,21 +135,26 @@ export const resolveAiTaskMeta = (
   }
   // 范围只取任务自身快照/提交参数，绝不用当前路由改写任务归属；
   // 生成任务快照不可信（缺版本）时不拼版本文案，避免猜测下载范围
-  const scopeParams = downloadParams ??
-    (isExtract && data.feature
+  const scopeParams =
+    downloadParams ??
+    (isExtract && (data.feature || data.scope === 'allFeatures')
       ? {
           subjectId,
+          scope: data.scope,
           feature: data.feature,
           ...(data.subFeature ? { subFeature: data.subFeature } : {}),
           ...(data.subsystem ? { subsystem: data.subsystem } : {})
         }
       : null)
   const feature = scopeParams?.feature ?? ''
-  const scope = `${featureNames[feature] ?? `特性${feature}`}${scopeParams?.subFeature ? ` · 子特性${scopeParams.subFeature}` : ''}${scopeParams?.subsystem ? ` · 子系统${scopeParams.subsystem}` : ''}`
+  const scope =
+    scopeParams?.scope === 'allFeatures'
+      ? '全部特性'
+      : `${featureNames[feature] ?? `特性${feature}`}${scopeParams?.subFeature ? ` · 子特性${scopeParams.subFeature}` : ''}${scopeParams?.subsystem ? ` · 子系统${scopeParams.subsystem}` : ''}`
   const version = downloadParams?.caseType === 'simple' ? '常规版' : '详细版'
   const displayParams = displayMeta?.downloadParams
   const scopeKeyOf = (params?: TestCaseAiDownloadParams | null) =>
-    `${params?.feature ?? ''}|${params?.subFeature ?? ''}|${params?.subsystem ?? ''}`
+    `${params?.scope ?? ''}|${params?.feature ?? ''}|${params?.subFeature ?? ''}|${params?.subsystem ?? ''}`
   const sameScope =
     !!scopeParams &&
     !!displayParams &&
@@ -163,18 +169,24 @@ export const resolveAiTaskMeta = (
   const scopeLabel =
     keepDisplay && displayMeta
       ? displayMeta.scopeLabel
-      : remembered?.scopeLabel ??
+      : (remembered?.scopeLabel ??
         (scope
           ? `${scope}${isExtract ? '' : ` · ${version}`}`
-          : INSUFFICIENT_SCOPE_LABEL)
+          : INSUFFICIENT_SCOPE_LABEL))
   const fileName =
     keepDisplay && displayMeta
       ? displayMeta.fileName
-      : remembered?.fileName ??
+      : (remembered?.fileName ??
         (isExtract
-          ? `功能点提取-${featureNames[feature] ?? feature}.docx`
-          : `测试用例-${subjectId}-${featureNames[feature] ?? feature}-${version}.docx`)
-  return { subjectId, taskId: data.taskId, scopeLabel, downloadParams, fileName }
+          ? `功能点提取-${scope}.docx`
+          : `测试用例-${subjectId}-${scope}-${version}.docx`))
+  return {
+    subjectId,
+    taskId: data.taskId,
+    scopeLabel,
+    downloadParams,
+    fileName
+  }
 }
 
 /**
@@ -193,6 +205,13 @@ export const useAiTaskStore = defineStore(
     /** 进度查询连续失败（后端重启/断网），任务可能仍在后台执行 */
     const lostConnection = ref(false)
     const downloading = ref(false)
+    const allFeaturesExtracted = ref<Record<string, boolean>>({})
+    const syncExtractionState = (
+      subjectId: string,
+      data: TestCaseAiTaskProgress
+    ) => {
+      allFeaturesExtracted.value[subjectId] = data.allFeaturesExtracted === true
+    }
 
     let pollTimer: number | undefined
     let pollFailures = 0
@@ -235,6 +254,7 @@ export const useAiTaskStore = defineStore(
       try {
         const { data } = await getAiTestCaseProgressAPI(subjectId)
         if (request !== lifecycle || subjectId !== meta.value?.subjectId) return
+        syncExtractionState(subjectId, data)
         pollFailures = 0
         lostConnection.value = false
         if (data.status === 'idle') {
@@ -306,12 +326,13 @@ export const useAiTaskStore = defineStore(
                 )
               : await generateAiTestCaseAPI(params as TestCaseAiGenerateParams)
         if (request !== lifecycle) return
+        syncExtractionState(params.subjectId, data)
         if (data.status === 'failed') {
           throw new Error(data.message || '任务启动失败')
         }
         meta.value = resolveAiTaskMeta(data, params.subjectId, taskMeta, {
           ...params,
-          ...('feature' in params ? {} : { feature: '8' }),
+          ...('feature' in params || 'scope' in params ? {} : { feature: '8' }),
           caseType: 'caseType' in params ? params.caseType : 'detail'
         })
         rememberTaskLabel(meta.value)
@@ -336,18 +357,27 @@ export const useAiTaskStore = defineStore(
      */
     const resume = async (subjectId?: string, fallbackMeta?: AiTaskMeta) => {
       if (submitting.value || stopping.value) return
-      if (pollTimer !== undefined) return
       const targetId = subjectId ?? meta.value?.subjectId
       if (!targetId) return
       if (
-        (isRunning.value || progress.value?.cleanupPending) &&
+        (pollTimer !== undefined || isRunning.value || progress.value?.cleanupPending) &&
         meta.value?.subjectId !== targetId
-      )
+      ) {
+        // 另一个项目仍在轮询时，只读取目标项目的提取资格，不替换活动任务。
+        try {
+          const { data } = await getAiTestCaseProgressAPI(targetId)
+          syncExtractionState(targetId, data)
+        } catch {
+          /* 状态未确认前保持第三步禁用 */
+        }
         return
+      }
+      if (pollTimer !== undefined) return
       const request = ++lifecycle
       try {
         const { data } = await getAiTestCaseProgressAPI(targetId)
         if (request !== lifecycle) return
+        syncExtractionState(targetId, data)
         if (data.status === 'idle') {
           if (progress.value?.status === 'running') {
             stopPolling()
@@ -453,6 +483,7 @@ export const useAiTaskStore = defineStore(
       finishSeq,
       lostConnection,
       downloading,
+      allFeaturesExtracted,
       isRunning,
       isBusy,
       percent,

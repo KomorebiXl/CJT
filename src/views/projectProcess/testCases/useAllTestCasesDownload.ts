@@ -6,6 +6,7 @@ import { PROCESS_PROJECT_ID_KEY } from '@/constant/globalVariables'
 import { sessionStorage } from '@/utils/storage'
 import { getProcessProjectDetail } from '@/utils/processProject'
 import { downloadFile } from '@/utils/file'
+import type { CaseType } from './useTestCaseGeneration'
 
 const currentProjectId = () =>
   sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
@@ -22,7 +23,7 @@ export const useAllTestCasesDownload = () => {
     }
   )
 
-  const handleDownloadAllTestCases = async () => {
+  const handleDownloadAllTestCases = async (caseType: CaseType = 'detail') => {
     if (downloadingAll.value) return
     downloadingAll.value = true
     downloadError.value = ''
@@ -36,12 +37,15 @@ export const useAllTestCasesDownload = () => {
       const response = await downloadAiTestCaseAPI({
         subjectId,
         scope: 'allFeatures',
-        caseType: 'detail'
+        caseType
       })
       if (!(response.data instanceof Blob) || response.data.size === 0) {
         throw new Error('服务器未返回有效的用例文档，请稍后重试')
       }
-      await downloadFile(response, `测试用例-九特性-详细版-${detail.code}.docx`)
+      await downloadFile(
+        response,
+        `测试用例-九特性-${caseType === 'simple' ? '常规版' : '详细版'}-${detail.code}.docx`
+      )
     } catch (error: unknown) {
       const failure = error as {
         msg?: string

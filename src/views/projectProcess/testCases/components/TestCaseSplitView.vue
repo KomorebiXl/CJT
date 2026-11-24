@@ -137,27 +137,58 @@ const getSubjectScope = async () => {
   return detail
 }
 
-/** 「提取功能点」：当前范围批量提取（素材未变更且已有清单的项自动跳过） */
-const handleExtractAll = async () => {
-  try {
-    await scConfirm({
-      title: '提示',
-      message: `将对「${scopeName.value}」提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的人工编辑将被覆盖），确认执行？`,
-      confirmText: '确认提取'
-    })
-  } catch {
+/** 当前范围提取：默认跳过未变化项；overwrite 强制重新提取。 */
+const extractPending = ref(false)
+let extractionActive = true
+onBeforeUnmount(() => {
+  extractionActive = false
+})
+const handleExtractAll = async (mode: GenerateMode = 'increment') => {
+  if (
+    extractPending.value ||
+    aiTaskStore.isBusy ||
+    generation.pending.value ||
+    aiTaskStore.progress?.cleanupPending
+  )
     return
-  }
-  const detail = await getSubjectScope()
-  if (!detail) return
+  extractPending.value = true
+  const subjectId = sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY)
+  const extractionScope = { ...scopeParams.value }
+  const extractionScopeName = scopeName.value
   try {
+    try {
+      await scConfirm({
+        title: mode === 'overwrite' ? '重新提取功能点' : '提示',
+        message:
+          mode === 'overwrite'
+            ? `将重新提取「${extractionScopeName}」范围内所有测试项的功能点，不跳过已有清单。重提成功后将覆盖该项原清单及人工编辑，并使详细版和常规版 AI 用例失效，需重新生成。停止任务会作废本批已提取结果，不恢复被覆盖的旧清单。确认执行？`
+            : `将对「${extractionScopeName}」提取功能点（素材未变更且已有清单的项自动跳过；说明已变更项的人工编辑将被覆盖，已有 AI 用例将失效），确认执行？`,
+        confirmText: mode === 'overwrite' ? '确认重新提取' : '确认提取'
+      })
+    } catch {
+      return
+    }
+    if (!extractionActive) return
+    const detail = await getSubjectScope()
+    if (!extractionActive || !detail) return
+    if (
+      !subjectId ||
+      String(detail.id) !== subjectId ||
+      sessionStorage.get<string>(PROCESS_PROJECT_ID_KEY) !== subjectId ||
+      JSON.stringify(scopeParams.value) !== JSON.stringify(extractionScope)
+    ) {
+      ElMessage.error('提取范围已变化，请重新操作')
+      return
+    }
     await aiTaskStore.start(
-      { subjectId: String(detail.id), ...scopeParams.value },
-      makeTaskMeta(detail, scopeName.value),
+      { subjectId, ...extractionScope, mode },
+      makeTaskMeta(detail, extractionScopeName),
       'extract'
     )
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '提取任务提交失败')
+  } finally {
+    extractPending.value = false
   }
 }
 
@@ -288,6 +319,12 @@ const FLAT_BUTTONS = computed(() => {
       permission: 'acceptance:result:aiTestCase:generate'
     },
     {
+      id: 'reextractAll',
+      name: '重新提取功能点',
+      type: 'warning',
+      permission: 'acceptance:result:aiTestCase:generate'
+    },
+    {
       id: 'generateAll',
       name: '生成测试用例',
       type: 'primary',
@@ -314,13 +351,15 @@ const flatButtons = computed(() =>
   FLAT_BUTTONS.value.map(btn => {
     const isAction = [
       'extractAll',
+      'reextractAll',
       'generateAll',
       'regenerateAll',
       'generateDocSet'
     ].includes(btn.id)
     if (
       isAction &&
-      (aiTaskStore.isBusy ||
+      (extractPending.value ||
+        aiTaskStore.isBusy ||
         generation.pending.value ||
         aiTaskStore.progress?.cleanupPending)
     ) {
@@ -355,6 +394,7 @@ const flatButtons = computed(() =>
 const handleFlatClick = async (btnId: string) => {
   if (btnId === 'back') emit('back')
   if (btnId === 'extractAll') await handleExtractAll()
+  if (btnId === 'reextractAll') await handleExtractAll('overwrite')
   if (btnId === 'generateAll') openGenerate('increment')
   if (btnId === 'regenerateAll') openGenerate('overwrite')
   if (btnId === 'generateDocSet') await handleGenerateDocSet()
@@ -397,7 +437,7 @@ onMounted(async () => {
       "
       action="generate"
       :context-key="JSON.stringify(scopeParams)"
-      :disabled="generation.disabled.value"
+      :disabled="generation.disabled.value || extractPending"
       @select="pickGenerate"
     />
     <TestCaseVersionDialog
